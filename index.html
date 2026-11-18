@@ -189,7 +189,9 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .battle-fighter:focus-visible{outline:1px dashed #fff8;outline-offset:3px}
 #battleScreen.choosing-target .battle-fighter{cursor:pointer}
 .battle-fighter.defeated{opacity:0;pointer-events:none}
-.battle-fighter.mart-manager-battle.defeated{transition-duration:1.35s}
+@keyframes managerDefeatPulse{0%,100%{opacity:1}45%,55%{opacity:0}}
+.battle-fighter.manager-defeat-pulse{animation:managerDefeatPulse var(--manager-pulse-time) ease-in-out 3;pointer-events:none}
+.battle-fighter.mart-manager-battle.defeated{transition-duration:var(--manager-vanish-time,2.6s)}
 .battle-fighter.item-ko-target{pointer-events:auto}.battle-fighter.defeated.item-ko-target{opacity:.25}
 .battle-damage{position:absolute;z-index:5;font:bold 5cqw monospace;color:#fff;text-shadow:2px 2px #220b12;pointer-events:none;animation:battleDamage .75s ease-out forwards;transform:translate(-50%,-100%)}
 @keyframes battleDamage{0%{opacity:1;translate:0 0}75%{opacity:1}100%{opacity:0;translate:0 -22px}}
@@ -2440,7 +2442,14 @@ async function partyMelee(user,target,skill,epoch){
  positionBattleFighter(user);await drawBattlePose(user,'idle',true);if(!battleAlive(epoch))return;
  await battlePause(Math.max(0,reaction-(performance.now()-hitStarted)),epoch);
 }
-async function partyFinishAction(epoch){if(!battleAlive(epoch))return;for(const f of firstBattleFighters){if(f.hp()<=0){if(f.kind==='enemy')f.node.classList.add('defeated');else f.node.classList.add('knocked-out');}else if(f.pose==='hurt')await drawBattlePose(f,'idle',true);}paintFirstBattle();if(partyHeroes().every(f=>f.hp()<=0)){firstBattlePhase='defeat';battleHint(tr('Party defeated.'));showBattleResult(tr('DEFEAT'),tr('Try the battle again.'),true);return;}if(partyEnemies().every(f=>f.hp()<=0)){await victoryFirstBattle(epoch);return;}if(!await battlePause(200,epoch))return;await nextPartyTurn(epoch);}
+async function partyFinishAction(epoch){
+ if(!battleAlive(epoch))return;
+ for(const f of firstBattleFighters){
+  if(f.hp()>0){if(f.pose==='hurt')await drawBattlePose(f,'idle',true);continue;}
+  if(f.kind!=='enemy')f.node.classList.add('knocked-out');
+  else if(!isManager(f))f.node.classList.add('defeated');
+ }
+ if(!battleAlive(epoch))return;paintFirstBattle();if(partyHeroes().every(f=>f.hp()<=0)){firstBattlePhase='defeat';battleHint(tr('Party defeated.'));showBattleResult(tr('DEFEAT'),tr('Try the battle again.'),true);return;}if(partyEnemies().every(f=>f.hp()<=0)){await victoryFirstBattle(epoch);return;}if(!await battlePause(200,epoch))return;await nextPartyTurn(epoch);}
 const originalPerformBattle=performFirstBattleAttack;performFirstBattleAttack=async function(target){if(!partyBattle)return originalPerformBattle(target);const user=currentPartyFighter(),skill=selectedBattleSkill;if(firstBattlePhase!=='target'||!user?.member||user.hp()<=0||target.hp()<=0)return;if(skill&&(!learnedTechniques(user.member).some(t=>t.id===skill.id)||partyMembers[user.member].ep<skill.ep))return;
  const epoch=firstBattleEpoch;firstBattlePhase='acting';selectedBattleSkill=null;closeBattleSkills();if(skill)updateMember(user.member,{ep:partyMembers[user.member].ep-skill.ep});paintFirstBattle();battleHint(partyName(user)+' · '+(skill?tr(skill.name):'ATK'));
  if(skill?.type==='guard'){user.guard=true;await battlePause(350,epoch);}else if(skill?.id==='scorching_tray')await partyFire(user,target,skill,epoch);else if(skill?.id==='shocking_tray')await partyLightning(user,target,skill,epoch);else await partyMelee(user,target,skill,epoch);if(battleAlive(epoch))await partyFinishAction(epoch);
@@ -2864,8 +2873,10 @@ victoryFirstBattle=async function(epoch){
  const total=partyBattle?partyBattle.rewardExp:(nightState.firstVictoryReward?0:60);
  victoryRewards={epoch,phase:'poses',members,before,total,reports:[],won:0,items:{},claimed:false,rows:[],itemRows:[]};
  firstBattlePhase='victory';selectedBattleSkill=null;closeBattleSkills();$('battleResult').hidden=true;paintFirstBattle();battleHint(tr('Victory!'));
- firstBattleFighters.filter(f=>f.kind==='enemy').forEach(f=>f.node.classList.add('defeated'));
- if(!await battlePause(isManagerBattle()?MART_MANAGER.vanish:FIRST_BATTLE.timing.vanish,epoch))return;
+ const enemies=partyEnemies(),manager=enemies.find(isManager);
+ enemies.filter(f=>f!==manager).forEach(f=>f.node.classList.add('defeated'));
+ const enemiesGone=manager?await playManagerDefeat(manager,epoch):await battlePause(FIRST_BATTLE.timing.vanish,epoch);
+ if(!enemiesGone)return;
  await Promise.all(firstBattleFighters.filter(f=>f.kind!=='enemy'&&f.hp()>0).map(f=>drawBattlePose(f,'victory',true)));
  if(!battleAlive(epoch)||victoryRewards?.epoch!==epoch)return;
  const state=victoryRewards;state.reports=awardExperience(total,members);
@@ -3127,10 +3138,28 @@ async function playRecoveryEffect(target,key,epoch){const p=bodyPoint(target),si
  const effect=effectImage(combatExtras[key],{left:(p.x-size/2)+'px',top:(p.y-size/2)+'px',width:size+'px',height:size+'px'});effect.img.classList.add('item-recovery-effect');
  try{await new Promise((resolve,reject)=>{effect.img.onload=resolve;effect.img.onerror=()=>reject(Error('Unable to play item effect'));if(effect.img.complete&&effect.img.naturalWidth)resolve();});if(!battleAlive(epoch))return false;return await battlePause(1280,epoch);}finally{effect.remove();}
 }
-async function performCombatItem(id,target){if(firstBattlePhase!=='target'||selectedBattleItem!==id||!itemEligible(id,target))return;const user=currentPartyFighter();if(!user?.member||user.hp()<=0)return;const epoch=firstBattleEpoch,item=ITEM_CATALOG[id];firstBattlePhase='acting';selectedBattleSkill=null;selectedBattleItem=null;closeBattleSkills();battleHint(actionSentence(user,item.name));paintFirstBattle();
- try{await drawBattlePose(user,'item',true);if(!await battlePause(1200,epoch))return;await drawBattlePose(user,'idle',true);if(!await playRecoveryEffect(target,item.revive?'revive':item.hp?'hp':'ep',epoch))return;
-  if(!battleAlive(epoch))return;useBattleItem(id,target);await drawBattlePose(target,'idle',true);paintFirstBattle();if(battleAlive(epoch))await partyFinishAction(epoch);
- }catch(e){console.error(e);if(battleAlive(epoch)){await drawBattlePose(user,'idle',true);commandFirstBattle();notice(e.message);}}
+async function performCombatItem(id,target){
+ if(firstBattlePhase!=='target'||selectedBattleItem!==id||!itemEligible(id,target))return;
+ const user=currentPartyFighter();
+ if(!user?.member||user.hp()<=0)return;
+ const epoch=firstBattleEpoch,item=ITEM_CATALOG[id];
+ firstBattlePhase='acting';selectedBattleSkill=null;selectedBattleItem=null;
+ closeBattleSkills();battleHint(actionSentence(user,item.name));paintFirstBattle();
+
+ try{
+  await drawBattlePose(user,'item',true);
+  if(!await battlePause(1200,epoch))return;
+  await drawBattlePose(user,'idle',true);
+  if(!await playRecoveryEffect(target,item.revive?'revive':item.hp?'hp':'ep',epoch))return;
+ }catch(error){console.error(error);}
+ if(!battleAlive(epoch))return;
+
+ // Once confirmed, the item spends this action even if a visual effect fails.
+ useBattleItem(id,target);
+ try{
+  await drawBattlePose(target,'idle',true);
+ }catch(error){console.error(error);}
+ if(battleAlive(epoch))await partyFinishAction(epoch);
 }
 
 /* Story flags are independent from the separate dungeon test save. */
@@ -3555,7 +3584,7 @@ const saveBeforeMiniMap=saveWorld;saveWorld=function(){saveBeforeMiniMap();schem
 
 /* MART chamber encounter and manager's combat actions. */
 const MART_MANAGER={
- x:768,y:490,height:72,range:96,vanish:1350,
+ x:768,y:490,height:72,range:96,defeatPulse:1600,vanish:2600,
  down:'Enemy/boss-mart-mappa-sud.png',up:'Enemy/boss-mart-mappa-nord.png',
  stats:{name:'MART Manager',profile:'manager',hp:380,maxHp:380,attack:38,defense:10,resistance:13,speed:9,accuracy:90,exp:480}
 };
@@ -3768,6 +3797,17 @@ advanceSpeech=function(){
 
 function isManager(f){return f?.stats?.profile==='manager';}
 function isManagerBattle(){return !!partyBattle?.enemyIds?.includes('manager');}
+async function playManagerDefeat(f,epoch){
+ const {defeatPulse,vanish}=MART_MANAGER;
+ const node=f.node;
+ node.style.setProperty('--manager-pulse-time',defeatPulse+'ms');
+ node.style.setProperty('--manager-vanish-time',vanish+'ms');
+ node.classList.add('manager-defeat-pulse');
+ if(!await battlePause(3*defeatPulse,epoch))return false;
+ node.classList.remove('manager-defeat-pulse');
+ node.classList.add('defeated');
+ return battlePause(vanish,epoch);
+}
 const poseBeforeManager=drawBattlePose;
 drawBattlePose=function(f,pose,restart=false){
  return poseBeforeManager(f,isManager(f)&&pose==='idle'&&f.mirrorTurns>0?'shield':pose,restart);
