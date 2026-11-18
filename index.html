@@ -1496,16 +1496,18 @@ const battleAttackButton=battleScreen.querySelector('[data-battle-command="attac
 const lockBeforeFirstBattle=locked;locked=function(){return firstBattleActive||lockBeforeFirstBattle();};
 function battleAlive(epoch){return firstBattleActive&&epoch===firstBattleEpoch;}
 async function battlePause(ms,epoch){await wait(ms);return battleAlive(epoch);}
-async function battleAsset(src){
+async function battleAsset(src,prepareBlob=null){
  const response=await fetch(src);if(!response.ok)throw Error('Unable to load '+src);
- const blob=await response.blob(),url=URL.createObjectURL(blob);
+ const originalBlob=await response.blob();
+ const prepared=prepareBlob?await prepareBlob(originalBlob):{blob:originalBlob};
+ const {blob}=prepared,url=URL.createObjectURL(blob);
  return new Promise((resolve,reject)=>{
  const im=new Image();im.onload=()=>{
   let bounds={x:0,y:0,w:im.naturalWidth,h:im.naturalHeight};
   try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(im,0,0);const data=ctx.getImageData(0,0,c.width,c.height).data;let l=c.width,t=c.height,r=-1,b=-1;
    for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++)if(data[(y*c.width+x)*4+3]>=180){l=Math.min(l,x);t=Math.min(t,y);r=Math.max(r,x);b=Math.max(b,y);}if(r>=l)bounds={x:l,y:t,w:r-l+1,h:b-t+1};
   }catch(_){}
-  resolve({src,blob,url,image:im,width:im.naturalWidth,height:im.naturalHeight,bounds});
+  resolve({src,...prepared,url,image:im,width:im.naturalWidth,height:im.naturalHeight,bounds});
  };im.onerror=()=>{URL.revokeObjectURL(url);reject(Error('Unable to decode '+src));};im.src=url;
  });
 }
@@ -3132,11 +3134,11 @@ const MART_ROOMS={
  }
 };
 const MART_PORTALS={
- 'mart-a':[{x:1087,y:982,dir:'down',to:'mart-b',spawn:{x:327,y:96}}],
- 'mart-b':[{x:327,y:29,dir:'up',to:'mart-a',spawn:{x:1087,y:900}},{x:353,y:995,dir:'down',to:'mart-c',spawn:{x:1160,y:88}}],
- 'mart-c':[{x:1160,y:23,dir:'up',to:'mart-b',spawn:{x:353,y:927}},{x:26,y:736,dir:'left',to:'mart-d',spawn:{x:1447,y:241}}],
- 'mart-d':[{x:1480,y:241,dir:'right',to:'mart-c',spawn:{x:86,y:736}},{x:1199,y:918,dir:'down',to:'mart-e',spawn:{x:768,y:118}}],
- 'mart-e':[{x:768,y:47,dir:'up',to:'mart-d',spawn:{x:1199,y:864}}]
+ 'mart-a':[{x:1087,y:995,span:[1041,1135],dir:'down',to:'mart-b',spawn:{x:327,y:96}}],
+ 'mart-b':[{x:327,y:18,span:[285,366],dir:'up',to:'mart-a',spawn:{x:1087,y:900}},{x:353,y:1004,span:[315,395],dir:'down',to:'mart-c',spawn:{x:1160,y:88}}],
+ 'mart-c':[{x:1160,y:12,span:[1129,1200],dir:'up',to:'mart-b',spawn:{x:353,y:927}},{x:12,y:736,span:[703,769],dir:'left',to:'mart-d',spawn:{x:1447,y:241}}],
+ 'mart-d':[{x:1488,y:241,span:[218,268],dir:'right',to:'mart-c',spawn:{x:86,y:736}},{x:1199,y:931,span:[1170,1231],dir:'down',to:'mart-e',spawn:{x:768,y:118}}],
+ 'mart-e':[{x:768,y:34,span:[716,818],dir:'up',to:'mart-d',spawn:{x:1199,y:864}}]
 };
 function isMartRoom(id){return /^mart-[a-e]$/.test(id);}
 function martRoomWorld({floor,props}){
@@ -3317,6 +3319,13 @@ updateInteractionUI=function(){
  if(nearMartSavePoint())
   addDungeonMarker('mart-save',{x:MART_SAVE_POINT.x,y:MART_SAVE_POINT.y-74},showMartSavePointInfo,'Save Point');
 };
+function reachedMartExit(portal,position,previous){
+ const horizontal=portal.dir==='left'||portal.dir==='right';
+ const forward=horizontal?'x':'y',across=horizontal?'y':'x';
+ if(position[across]<portal.span[0]||position[across]>portal.span[1])return false;
+ const sign=portal.dir==='up'||portal.dir==='left'?-1:1;
+ return sign*(position[forward]-portal[forward])>=0&&sign*(position[forward]-previous[forward])>0;
+}
 const martTravelBefore=updateTravel;
 updateTravel=function(dt){
  martTravelBefore(dt);
@@ -3328,7 +3337,7 @@ updateTravel=function(dt){
  if(locationId==='mart-b'){updateMartGate();if(!martNotice.hidden)return;}
  const distance=Math.hypot(player.x-old.x,player.y-old.y);
  if(distance<=0||distance>25)return;
- const portal=MART_PORTALS[locationId].find(p=>p.dir===player.direction&&martNear(p.x,p.y,15));
+ const portal=MART_PORTALS[locationId].find(p=>reachedMartExit(p,player,old));
  if(portal){void changeWarehouseArea(portal.to,portal.spawn,portal.dir);return;}
  if(locationId==='mart-e')return;
  if(dungeonGrace>0){dungeonGrace=Math.max(0,dungeonGrace-distance);return;}
@@ -3508,13 +3517,14 @@ const MANAGER_POSES={
  attack:'Enemy/boss-mart-attacco-fendente-1.gif',hurt:'Enemy/boss-mart-danno-1.gif',
  cast:'Enemy/boss-mart-raffica-posa-1.gif'
 };
-const MANAGER_KNIVES='Enemy/boss-mart-raffica-proiettili.gif';
+const MANAGER_KNIVES='Enemy/boss-mart-raffica-proiettili-3.gif';
 const MANAGER_BARRAGE={id:'manager_barrage',name:'Knife Barrage',fixedDamage:40,guaranteed:true};
 const MANAGER_LINES=[['Riccardo','Hey. Are you all right?'],['Seoyoon','He’s wearing a MART uniform. Maybe he knows what happened.'],['Seoyoon','Riccardo… back up.']];
 translateLines(MANAGER_LINES,['저기요. 괜찮으세요?','마트 직원인가 봐요. 무슨 일이 있었는지 알지도 몰라요.','리카르도 씨… 물러서요.']);
 [['MART Manager','마트 점장'],['Knife Barrage','칼날 연사'],['Mirror Guard','거울 방어'],['Reflected!','반사됐습니다!']].forEach(pair=>bilingual(...pair));
 
 let managerSprite=null,managerMapAssets=null,managerCombatLoad=null,managerSceneBusy=false;
+let managerCompanionVisible=false;
 function loadManagerMap(){
  return managerMapAssets||(managerMapAssets=Promise.all([loadDungeonImage(MART_MANAGER.down),loadDungeonImage(MART_MANAGER.up)])
   .catch(error=>{managerMapAssets=null;throw error;}));
@@ -3524,11 +3534,63 @@ loadMartRoom=function(id){
  const room=loadMartRoomBeforeManager(id);
  return id==='mart-e'?Promise.all([room,loadManagerMap()]).then(([image])=>image):room;
 };
+async function prepareManagerKnives(blob){
+ const data=new Uint8Array(await blob.arrayBuffer());
+ const decoder=new TextDecoder();
+ if(data.length<14||!['GIF87a','GIF89a'].includes(decoder.decode(data.subarray(0,6))))throw Error('Invalid knife animation');
+ const paletteSize=packed=>packed&0x80?3*(2<<(packed&7)):0;
+ function endOfSubBlocks(offset){
+  while(offset<data.length){
+   const size=data[offset++];
+   if(size===0)return offset;
+   offset+=size;
+  }
+  throw Error('Incomplete knife animation');
+ }
+ const headerSize=13+paletteSize(data[10]);
+ let offset=headerSize,originalTime=0,duration=0,cut=0;
+ const output=[];
+ while(offset<data.length){
+  const start=offset,marker=data[offset++];
+  if(marker===0x3b)break;
+  if(marker===0x47&&start+headerSize<=data.length&&
+     data.subarray(start,start+headerSize).every((byte,index)=>byte===data[index])){
+   // Some encoders repeat the identical stream header before the final frame.
+   output.push(data.subarray(cut,start));
+   cut=offset=start+headerSize;
+   continue;
+  }
+  if(marker===0x2c){
+   if(offset+9>=data.length)throw Error('Incomplete knife frame');
+   offset=endOfSubBlocks(offset+10+paletteSize(data[offset+8]));
+   continue;
+  }
+  if(marker!==0x21)throw Error('Invalid knife animation block');
+  const label=data[offset++];
+  const first=offset;
+  offset=endOfSubBlocks(offset);
+  if(label===0xf9&&data[first]===4){
+   const delay=first+2;
+   originalTime+=(data[delay]|data[delay+1]<<8)||10;
+   // GIF delays are centiseconds. Delays below 20 ms are clamped by some browsers.
+   const shortened=Math.max(2,Math.round(originalTime/3.5)-duration);
+   duration+=shortened;
+   data[delay]=shortened&255;data[delay+1]=shortened>>8;
+  }else if(label===0xff&&data[first]===11&&
+     ['NETSCAPE2.0','ANIMEXTS1.0'].includes(decoder.decode(data.subarray(first+1,first+12)))){
+   // Run each copy once. The action plays three copies explicitly.
+   output.push(data.subarray(cut,start));cut=offset;
+  }
+ }
+ if(!duration)throw Error('Knife animation has no frame delays');
+ output.push(data.subarray(cut));
+ return {blob:new Blob(output,{type:'image/gif'}),duration:duration*10};
+}
 function loadManagerCombat(){
  return managerCombatLoad||(managerCombatLoad=(async()=>{
   const entries=[...Object.entries(MANAGER_POSES),['hold',MANAGER_HOLD_FRAME],['knives',MANAGER_KNIVES]];
   const assets=Object.fromEntries(await Promise.all(entries.map(async([pose,file])=>{
-   const asset=await battleAsset(file);
+   const asset=await battleAsset(file,pose==='knives'?prepareManagerKnives:null);
    if(pose!=='knives'){asset.foot=asset.width*0.5;asset.ground=432/448*asset.height;}
    return [pose,asset];
   })));
@@ -3548,6 +3610,7 @@ const buildMartBeforeManager=buildMartObjects;
 buildMartObjects=function(id){
  buildMartBeforeManager(id);
  managerSprite=null;
+ managerCompanionVisible=false;
  if(id==='mart-e'&&!dungeonProgress().managerDefeated){
   const m=MART_MANAGER,canvasHeight=m.height*256/208;
   managerSprite=placeMartObject(m.down,m.x,m.y+canvasHeight*24/256,canvasHeight,canvasHeight,'mart-manager');
@@ -3578,6 +3641,31 @@ function paintManagerLine(index){
  setSpeechText(speaker+': '+text);
  updateInteractionUI();
 }
+const drawNpcBeforeManager=drawNpc;
+drawNpc=function(n){
+ if(n!==seoyoonNpc||locationId!=='mart-e'||!managerCompanionVisible)return drawNpcBeforeManager(n);
+ const height=MART_DUNGEON_VIEW.actorHeight;
+ if(n.actor.height!==height){n.height=n.actor.height=height;n.actor.active=null;}
+ npcBeforeScale(n);
+ if(n.moving)place(n.actor,n.x,n.y,9);
+ n.actor.node.hidden=false;
+};
+async function showManagerCompanion(epoch){
+ const from={x:player.x,y:player.y};
+ const to=[[48,0],[-48,0],[32,0],[-32,0],[0,-40],[0,32]]
+  .find(([dx,dy])=>[.25,.5,.75,1].every(t=>staticFree(from.x+dx*t,from.y+dy*t)));
+ const [dx,dy]=to||[0,0];
+ managerCompanionVisible=true;
+ Object.assign(seoyoonNpc,from,{direction:to?facing(dx,dy):player.direction,moving:!!to});
+ drawNpc(seoyoonNpc);
+ if(to){
+  if(!await chaosMove(seoyoonNpc,{x:from.x+dx,y:from.y+dy},chaosEpoch,160)||
+     epoch!==sceneEpoch||locationId!=='mart-e')return false;
+  seoyoonNpc.direction=facing(-dx,-dy);
+ }
+ drawNpc(seoyoonNpc);
+ return true;
+}
 async function talkToManager(){
  if(!canTalkToManager()||managerSceneBusy||dialogue||locked())return;
  managerSceneBusy=true;
@@ -3587,11 +3675,7 @@ async function talkToManager(){
   await loadSeoyoon();
   if(epoch!==sceneEpoch||!canTalkToManager())return;
   player.direction=facing(MART_MANAGER.x-player.x,MART_MANAGER.y-player.y);drawPlayer();
-  const x=player.x+(staticFree(player.x+42,player.y-14)?42:-42);
-  Object.assign(seoyoonNpc,{x,y:player.y-14,direction:'down',moving:false});
-  seoyoonNpc.direction=facing(player.x-seoyoonNpc.x,player.y-seoyoonNpc.y);
-  drawNpc(seoyoonNpc);seoyoonNpc.actor.node.hidden=false;
-  paintManagerLine(0);
+  if(await showManagerCompanion(epoch))paintManagerLine(0);
  }catch(error){console.error(error);openMartNotice(tr('Unable to enter this area.'));}
  finally{managerSceneBusy=false;resetInput();updateInteractionUI();}
 }
@@ -3606,6 +3690,7 @@ closeFirstBattle=function(){
    managerSprite.hidden=!!dungeonProgress().managerDefeated;
    managerSprite.src=MART_MANAGER.down;
   }
+  managerCompanionVisible=false;
   if(seoyoonNpc)seoyoonNpc.actor.node.hidden=true;
  }
 };
@@ -3652,14 +3737,14 @@ async function managerVolley(user,targets,epoch){
  const [upper,lower]=targets.map(bodyPoint).sort((a,b)=>a.y-b.y);
  const end=lower?{x:(upper.x+lower.x)/2,y:(upper.y+lower.y)/2}:upper;
  const lane=lower?{x:(lower.x-upper.x)/148,y:(lower.y-upper.y)/148}:{x:0,y:.28};
- const forward={x:(end.x-from.x)/438,y:(end.y-from.y)/438};
+ const forward={x:(end.x-from.x)/411,y:(end.y-from.y)/411};
  const asset=dungeonCombatAssets.enemies.manager.knives;
  for(let pass=0;pass<3;pass++){
   const effect=effectImage(asset,{width:asset.width+'px',height:asset.height+'px',left:from.x+'px',top:from.y+'px',
-   transformOrigin:'0 0',transform:'matrix('+[forward.x,forward.y,lane.x,lane.y,-25*forward.x-103*lane.x,-25*forward.y-103*lane.y].join(',')+')'});
+   transformOrigin:'0 0',transform:'matrix('+[forward.x,forward.y,lane.x,lane.y,-51*forward.x-120*lane.x,-51*forward.y-120*lane.y].join(',')+')'});
   try{
    await effect.img.decode();
-   if(!await battlePause(1070,epoch))return;
+   if(!await battlePause(asset.duration,epoch))return;
   }catch(error){console.error(error);if(!battleAlive(epoch))return;}
   finally{effect.remove();}
  }
