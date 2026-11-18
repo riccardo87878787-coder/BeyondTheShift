@@ -189,9 +189,7 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .battle-fighter:focus-visible{outline:1px dashed #fff8;outline-offset:3px}
 #battleScreen.choosing-target .battle-fighter{cursor:pointer}
 .battle-fighter.defeated{opacity:0;pointer-events:none}
-@keyframes managerDefeatPulse{0%,100%{opacity:1}45%,55%{opacity:0}}
-.battle-fighter.manager-defeat-pulse{animation:managerDefeatPulse var(--manager-pulse-time) ease-in-out 3;pointer-events:none}
-.battle-fighter.mart-manager-battle.defeated{transition-duration:var(--manager-vanish-time,2.6s)}
+.battle-fighter .manager-defeat-pixels{position:absolute;pointer-events:none;image-rendering:pixelated}
 .battle-fighter.item-ko-target{pointer-events:auto}.battle-fighter.defeated.item-ko-target{opacity:.25}
 .battle-damage{position:absolute;z-index:5;font:bold 5cqw monospace;color:#fff;text-shadow:2px 2px #220b12;pointer-events:none;animation:battleDamage .75s ease-out forwards;transform:translate(-50%,-100%)}
 @keyframes battleDamage{0%{opacity:1;translate:0 0}75%{opacity:1}100%{opacity:0;translate:0 -22px}}
@@ -3584,7 +3582,7 @@ const saveBeforeMiniMap=saveWorld;saveWorld=function(){saveBeforeMiniMap();schem
 
 /* MART chamber encounter and manager's combat actions. */
 const MART_MANAGER={
- x:768,y:490,height:72,range:96,defeatPulse:1600,vanish:2600,
+ x:768,y:490,height:72,range:96,vanish:2400,
  down:'Enemy/boss-mart-mappa-sud.png',up:'Enemy/boss-mart-mappa-nord.png',
  stats:{name:'MART Manager',profile:'manager',hp:380,maxHp:380,attack:38,defense:10,resistance:13,speed:9,accuracy:90,exp:480}
 };
@@ -3797,16 +3795,76 @@ advanceSpeech=function(){
 
 function isManager(f){return f?.stats?.profile==='manager';}
 function isManagerBattle(){return !!partyBattle?.enemyIds?.includes('manager');}
+function makeManagerFragments(ctx,width,height){
+ const pixels=ctx.getImageData(0,0,width,height).data;
+ const fragments=[];
+ const size=Math.max(2,Math.round(height/58));
+ for(let y=0;y<height;y+=size)for(let x=0;x<width;x+=size){
+  const w=Math.min(size,width-x),h=Math.min(size,height-y);
+  let sample=-1;
+  for(let dy=0;dy<h&&sample<0;dy++)for(let dx=0;dx<w;dx++){
+   const offset=((y+dy)*width+x+dx)*4;
+   if(pixels[offset+3]>=128){sample=offset;break;}
+  }
+  if(sample<0)continue;
+  const grain=Math.random();
+  const detach=.05+(.65*(1-y/height)+.35*grain)*.66;
+  fragments.push({x,y,w,h,detach,life:.14+Math.random()*.12,
+   drift:(Math.random()-.5)*32,rise:10+Math.random()*26,
+   scatter:Math.random()<.42,color:'rgb('+[pixels[sample],pixels[sample+1],pixels[sample+2]].join(',')+')'});
+ }
+ return fragments;
+}
 async function playManagerDefeat(f,epoch){
- const {defeatPulse,vanish}=MART_MANAGER;
- const node=f.node;
- node.style.setProperty('--manager-pulse-time',defeatPulse+'ms');
- node.style.setProperty('--manager-vanish-time',vanish+'ms');
- node.classList.add('manager-defeat-pulse');
- if(!await battlePause(3*defeatPulse,epoch))return false;
- node.classList.remove('manager-defeat-pulse');
- node.classList.add('defeated');
- return battlePause(vanish,epoch);
+ const image=f.image;
+ const width=Math.round(parseFloat(image?.style.width)),height=Math.round(parseFloat(image?.style.height));
+ const fallback=()=>{f.node.classList.add('defeated');return battlePause(FIRST_BATTLE.timing.vanish,epoch);};
+ if(!image||!(width>0&&height>0))return fallback();
+ const source=document.createElement('canvas'),effect=document.createElement('canvas'),pad=44;
+ source.width=width;source.height=height;
+ effect.width=width+pad*2;effect.height=height+pad*2;
+ const sourceCtx=source.getContext('2d',{willReadFrequently:true}),ctx=effect.getContext('2d');
+ if(!sourceCtx||!ctx)return fallback();
+
+ let fragments;
+ try{
+  sourceCtx.imageSmoothingEnabled=false;
+  sourceCtx.drawImage(image,0,0,width,height);
+  fragments=makeManagerFragments(sourceCtx,width,height);
+ }catch(error){console.error(error);return fallback();}
+ if(!fragments.length)return fallback();
+ effect.className='manager-defeat-pixels';
+ Object.assign(effect.style,{left:(parseFloat(image.style.left||'0')-pad)+'px',
+  top:(parseFloat(image.style.top||'0')-pad)+'px'});
+ f.node.append(effect);
+ image.hidden=true;
+ let finished=false;
+ try{
+  finished=await partyTween(MART_MANAGER.vanish,epoch,progress=>{
+   ctx.clearRect(0,0,effect.width,effect.height);
+   ctx.drawImage(source,pad,pad);
+   for(const part of fragments){
+    if(progress<part.detach)continue;
+    ctx.clearRect(pad+part.x,pad+part.y,part.w,part.h);
+   }
+   ctx.globalCompositeOperation='destination-over';
+   for(const part of fragments){
+    const age=(progress-part.detach)/part.life;
+    if(!part.scatter||age<0||age>=1)continue;
+    ctx.fillStyle=part.color;
+    ctx.globalAlpha=(1-age)*.9;
+    ctx.fillRect(pad+part.x+Math.round(part.drift*age),pad+part.y-Math.round(part.rise*age),
+     Math.max(1,part.w-1),Math.max(1,part.h-1));
+   }
+   ctx.globalAlpha=1;
+   ctx.globalCompositeOperation='source-over';
+  });
+  if(finished)f.node.classList.add('defeated');
+  return finished;
+ }finally{
+  effect.remove();
+  if(!finished&&battleAlive(epoch))image.hidden=false;
+ }
 }
 const poseBeforeManager=drawBattlePose;
 drawBattlePose=function(f,pose,restart=false){
