@@ -263,7 +263,7 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 <style>
 #sleepPrompt,.confirmation-overlay{position:absolute;inset:0;z-index:35;display:grid;place-items:center;background:#0005;padding:16px}
 #sleepPanel,.confirmation-panel{position:relative;width:min(350px,100%);aspect-ratio:2.12;border:0!important;border-image:none!important;border-radius:0;padding:0;background:transparent url('Menu/file_00000000c8588209ad0407e6948e7423.png') center/104% 122% no-repeat;color:#282825;font:700 16px/1.35 Arial,'Noto Sans KR',sans-serif;text-align:center;image-rendering:auto}
-#sleepQuestion,#partyNoticeText{position:absolute;left:9%;right:9%;top:8%;height:49%;display:flex;align-items:center;justify-content:center;margin:0;font-size:clamp(14px,4.2vw,18px)}
+#sleepQuestion,#partyNoticeText,#martNoticeText{position:absolute;left:9%;right:9%;top:8%;height:49%;display:flex;align-items:center;justify-content:center;margin:0;font-size:clamp(14px,4.2vw,18px)}
 .sleep-choices,.confirmation-choices{position:absolute;left:8%;right:8%;top:68%;height:26%;display:flex;align-items:center;justify-content:center;gap:16px}
 .sleep-choices button,.confirmation-choices button{position:relative;min-width:0;width:44%;height:100%;min-height:44px;padding:4px 10px;background:transparent url('Menu/file_00000000f79082099a2ceff0d3e544d6.png') center/106% 180% no-repeat;border:0;color:#f5ead5;font:700 15px Arial,'Noto Sans KR',sans-serif;box-shadow:none;border-radius:0;touch-action:manipulation}
 .sleep-choices button:active,.confirmation-choices button:active{filter:brightness(1.35);transform:translateY(1px)}
@@ -2037,8 +2037,8 @@ function openProgressionPage(view){if(autoMenu)return;progressionView=view;reset
 $('progressionBack').onclick=()=>{progressionPage.hidden=true;$('menuNav').querySelector('[data-menu-index="'+(progressionView==='skills'?1:3)+'"]')?.focus();};
 const menuBeforeProgression=renderMenu;renderMenu=function(){menuBeforeProgression();for(const [index,view] of [[1,'skills'],[3,'status']])$('menuNav').querySelector('[data-menu-index="'+index+'"]')?.addEventListener('click',()=>openProgressionPage(view));const save=$('menuNav').querySelector('[data-menu-index="5"]');if(save)save.onclick=()=>{if(autoMenu)return;const ok=saveRpgGame();save.textContent=ok?'Saved':'Save failed';};if(!progressionPage.hidden)renderProgressionPage();};
 const closeBeforeProgression=closeMenu;closeMenu=function(){if(!autoMenu)progressionPage.hidden=true;closeBeforeProgression();};
-function saveRpgGame(){try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='mart-dungeon')data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};localStorage.setItem(locationId==='mart-dungeon'&&!storyDungeonMode()?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(locationId!=='mart-dungeon')saveEquipState();return true;}catch(_){return false;}}
-function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&['city','office','hongdeon','restaurant','quarters','mart-shop','mart-dungeon'].includes(data.location)&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
+function saveRpgGame(){try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test&&locationId!=='mart-dungeon')saveEquipState();return true;}catch(_){return false;}}
+function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-shop','mart-dungeon'].includes(data.location)||isMartRoom(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
 const beginBeforeProgression=beginIntro;beginIntro=function(){progressionPage.hidden=true;beginBeforeProgression();resetProgression();equipSeoyoonStarter();renderMenu();};
 resetProgression();equipSeoyoonStarter();
 battleStats=function(){return totalStats('riccardo');};
@@ -2146,7 +2146,7 @@ const uiBeforeNight=updateInteractionUI;updateInteractionUI=function(){uiBeforeN
 const travelBeforeNight=updateTravel;updateTravel=function(dt){travelBeforeNight(dt);resumeNightButton.hidden=!(ready&&intro&&pendingNightSave&&!nightTransition);if(nightState.phase==='go-to-bed'&&locationId==='quarters'){if(!nearFirstBed())bedDismissed=false;}};
 const beginBeforeNight=beginIntro;beginIntro=function(){nightEpoch++;nightState={phase:'before-victory',firstVictoryReward:false};nightTransition=false;bedDismissed=false;sleepPrompt.hidden=true;resumeNightButton.hidden=true;const fade=$('fade');fade.style.transition='';fade.style.zIndex='';fade.classList.remove('black');if(seoyoonNpc){seoyoonNpc.talking=false;Object.assign(seoyoonNpc,{x:535,y:525,height:100});seoyoonNpc.actor.height=100;}beginBeforeNight();};
 async function resumeNightGame(){
- const data=readRpgSave();if(!data||nightTransition)return false;const epoch=++nightEpoch;nightTransition=true;resumeNightButton.hidden=true;resetInput();const fade=$('fade');fade.style.zIndex='40';fade.style.transition='none';fade.classList.add('black');
+ const data=readRpgSave();if(!data||nightTransition)return false;if(data.location==='mart-dungeon'){data.location='mart-a';data.player={...MART_FIRST_SPAWN};}const epoch=++nightEpoch;nightTransition=true;resumeNightButton.hidden=true;resetInput();const fade=$('fade');fade.style.zIndex='40';fade.style.transition='none';fade.classList.add('black');
  try{
   await Promise.all([isWarehouseArea(data.location)?loadWarehouseArea(data.location):isInterior(data.location)?loadInteriorImage(data.location):loadHongdeonMap(),loadSeoyoon(),loadDoorSprites(),loadWorkUniform()]);if(epoch!==nightEpoch)return false;
   closeDialogue(false);intro=false;film.phase='play';ending=false;menuOpen=false;autoMenu=false;transitioning=false;destinationOpen=false;officeSequence=null;travelScene=null;$('rpgMenu').hidden=true;$('destinations').hidden=true;$('trainWindow').hidden=true;progressionPage.hidden=true;equipPage.hidden=true;sleepPrompt.hidden=true;
@@ -2155,7 +2155,7 @@ async function resumeNightGame(){
   equipState=freshEquipState();equipState.stage=['new','equip','after','done'].includes(data.equip?.stage)?data.equip.stage:'done';for(const [id,n] of Object.entries(data.equip?.owned||{}))if(EQUIP_ITEMS[id]&&Number.isFinite(n)&&n>0)equipState.owned[id]=clamp(Math.trunc(n),0,99);for(const id of ['riccardo','seoyoon'])for(const [slot,item] of Object.entries(data.equip?.members?.[id]||{}))if(EQUIP_ITEMS[item]?.owner===id&&EQUIP_ITEMS[item].slot===slot&&equipState.owned[item]>0)equipmentFor(id)[slot]=item;equipSeoyoonStarter();for(const id of ['riccardo','seoyoon'])syncMemberProgression(id);
   inventory={};for(const [id,n] of Object.entries(data.inventory||{}))if(ITEM_CATALOG[id]&&Number.isFinite(n))inventory[id]=clamp(Math.trunc(n),0,999);won=clamp(Math.trunc(data.won)||0,0,LIMITS.won);language=data.language==='ko'?'ko':'en';jobAssigned=!!data.jobAssigned;menuUnlocked=!!data.menuUnlocked;
   nightState={...data.story,phase:data.story.phase==='after-battle-dialogue'?'return-inside':data.story.phase,firstVictoryReward:!!data.story.firstVictoryReward};storyPhase='complete';storyNight=!['morning','morning-complete'].includes(nightState.phase);storyCamera=null;storyEncounter=null;setStoryBusy(false);workUniformEnabled=!!data.workUniformEnabled;
-  if(data.dungeon)dungeonState={...freshDungeonState(),...data.dungeon};showLocation(data.location);Object.assign(player,{x:Number(data.player?.x)||CUCCHIAIO[data.location]?.start.x||1360,y:Number(data.player?.y)||CUCCHIAIO[data.location]?.start.y||1950,direction:Object.hasOwn(VECTORS,data.player?.direction)?data.player.direction:'down',moving:false});nearestFree(player);drawPlayer();updateCamera();syncNightSeoyoon();renderMenu();refreshNightObjective();bedDismissed=nearFirstBed();if(nightState.phase==='morning')void startMorningScene();
+  if(data.dungeon||isMartRoom(data.location))dungeonState=restoreMartProgress(data.dungeon);showLocation(data.location);Object.assign(player,{x:Number(data.player?.x)||CUCCHIAIO[data.location]?.start.x||1360,y:Number(data.player?.y)||CUCCHIAIO[data.location]?.start.y||1950,direction:Object.hasOwn(VECTORS,data.player?.direction)?data.player.direction:'down',moving:false});if(!nearestFree(player)&&isMartRoom(data.location))Object.assign(player,martRoomEntry(data.location));drawPlayer();updateCamera();syncNightSeoyoon();renderMenu();refreshNightObjective();bedDismissed=nearFirstBed();if(nightState.phase==='morning')void startMorningScene();
   if(!await nightWait(50,epoch))return false;fade.style.transition='opacity 650ms linear';fade.classList.remove('black');if(!await nightWait(700,epoch))return false;fade.style.transition='';fade.style.zIndex='';nightTransition=false;updateInteractionUI();return true;
  }catch(e){if(epoch===nightEpoch){nightTransition=false;fade.classList.remove('black');fade.style.transition='';fade.style.zIndex='';notice('Unable to resume: '+e.message);}return false;}
 }
@@ -2467,18 +2467,26 @@ async function finishRescueBattle(){const epoch=++chaosEpoch;chaosBusy=true;chao
 const chaosAdvanceBefore=advanceSpeech;advanceSpeech=function(){const q=dialogue?.chaos;if(!q)return chaosAdvanceBefore();if(speechPageIndex+1<speechPages.length){speechPageIndex++;paintBalloonPage();updateInteractionUI();return;}const lines=q.kind==='exit'?CHAOS_EXIT:q.kind==='cry'?CHAOS_CRY:q.kind==='approach'?CHAOS_APPROACH:CHAOS_THANKS;if(q.index+1<lines.length){q.index++;paintChaosPage();return;}
  const kind=q.kind,epoch=chaosEpoch;closeDialogue(false);void(async()=>{if(kind==='exit'){await hideChaosCompanion(epoch);if(epoch!==chaosEpoch)return;chaosProgress().stage='road';chaosBusy=false;}
  else if(kind==='cry'){chaosProgress().revealed=true;chaosProgress().stage='spotted';await panChaos({x:player.x,y:player.y},epoch);if(epoch!==chaosEpoch)return;chaosCamera=null;chaosBusy=false;}
- else if(kind==='approach'){chaosProgress().stage='fighting';saveRpgGame();await startRescueBattle();return;}
+ else if(kind==='approach'){chaosProgress().stage='fighting';saveRpgGame();chaosBusy=false;await startRescueBattle();return;}
  else{await hideChaosCompanion(epoch);if(epoch!==chaosEpoch)return;chaosProgress().stage='done';await panChaos({x:player.x,y:player.y},epoch);if(epoch!==chaosEpoch)return;chaosCamera=null;chaosBusy=false;}
  resetInput();refreshNightObjective();updateInteractionUI();saveRpgGame();})();};
-const chaosObjectiveBefore=nightObjective;nightObjective=function(){if(chaosEnabled())return tr(['rescued','done'].includes(chaosProgress().stage)?'Find the passage inside the MART.':'Reach the bus stop.');return chaosObjectiveBefore();};
+bilingual('Talk to the man you rescued.','구해 준 남자와 대화하세요.');
+const chaosObjectiveBefore=nightObjective;
+nightObjective=function(){
+ if(!chaosEnabled())return chaosObjectiveBefore();
+ const {stage}=chaosProgress();
+ if(stage==='rescued')return tr('Talk to the man you rescued.');
+ if(stage==='done')return tr('Find the passage inside the MART.');
+ return tr('Reach the bus stop.');
+};
 let speakingCivilian=null;
 const civilianBalloon=document.createElement('div');civilianBalloon.id='civilianBalloon';civilianBalloon.hidden=true;game.append(civilianBalloon);
 function tickCivilianBalloons(dt){if(dialogue||firstBattleActive||editor.open||menuOpen||locationId!=='hongdeon'||!chaosEnabled()){civilianBalloon.hidden=true;return;}chaosBubbleTime-=dt;if(chaosBubbleTime>0){if(speakingCivilian&&!civilianBalloon.hidden){const f=chaosFoot(speakingCivilian),p=screenPosition({x:f.x,y:f.headY});civilianBalloon.style.left=clamp(p.x,85,viewWidth-85)+'px';civilianBalloon.style.top=clamp(p.y-12,150,viewHeight-80)+'px';}return;}const visible=chaosActors.filter(a=>a.civilian).filter(a=>{const p=screenPosition(chaosFoot(a));return p.x>20&&p.x<viewWidth-20&&p.y>100&&p.y<viewHeight-40;});if(!visible.length){civilianBalloon.hidden=true;chaosBubbleTime=.5;return;}const a=visible[chaosCivilianIndex++%visible.length],f=chaosFoot(a),p=screenPosition({x:f.x,y:f.headY});speakingCivilian=a;civilianBalloon.textContent=tr(a.line);civilianBalloon.style.left=clamp(p.x,85,viewWidth-85)+'px';civilianBalloon.style.top=clamp(p.y-12,150,viewHeight-80)+'px';civilianBalloon.hidden=false;chaosBubbleTime=2.4;}
 const chaosUIBefore=updateInteractionUI;updateInteractionUI=function(){chaosUIBefore();if(chaosBusy){clearMarkers();portalButton.hidden=true;doorButton.hidden=true;bedMarker.hidden=true;}if(dialogue||firstBattleActive)civilianBalloon.hidden=true;};
-const chaosTravelBefore=updateTravel;updateTravel=function(dt){chaosTravelBefore(dt);if(locationId!=='hongdeon'||!chaosEnabled()){civilianBalloon.hidden=true;return;}syncChaosActors();tickCivilianBalloons(dt);if(intro||transitioning||nightTransition||dialogue||firstBattleActive||menuOpen||editor.open||chaosBusy)return;const state=chaosProgress();if(state.stage==='new'){chaosExitTime+=dt;if(chaosExitTime>.25)void startChaosExit();return;}if(state.stage==='rescued'){void finishRescueBattle();return;}if(state.stage==='fighting'){state.stage='spotted';}
+const chaosTravelBefore=updateTravel;updateTravel=function(dt){chaosTravelBefore(dt);if(locationId!=='hongdeon'||!chaosEnabled()){civilianBalloon.hidden=true;return;}syncChaosActors();tickCivilianBalloons(dt);if(intro||transitioning||nightTransition||dialogue||firstBattleActive||menuOpen||editor.open||chaosBusy)return;const state=chaosProgress();if(state.stage==='new'){chaosExitTime+=dt;if(chaosExitTime>.25)void startChaosExit();return;}if(state.stage==='rescued'){if(!state.poseSeen)void finishRescueBattle();return;}if(state.stage==='fighting'){state.stage='spotted';}
  if(!state.revealed){const top=screenPosition({x:CHAOS.enemy.x,y:CHAOS.enemy.y-CHAOS.enemy.height}).y;if(top<viewHeight+45){void revealChaosRescue();return;}}
  if(state.stage==='spotted'&&Math.hypot(player.x-CHAOS.enemy.x,player.y-CHAOS.enemy.y)<CHAOS.triggerDistance)void approachChaosEnemy();};
-const chaosResumeBefore=resumeNightGame;resumeNightGame=async function(){const data=readRpgSave();resumingChaos=data?.story?.phase==='morning-complete'&&data?.members?.seoyoon?.joined;const result=await chaosResumeBefore();resumingChaos=false;if(result){nightState.chaos=data.story?.chaos?{...data.story.chaos}:{stage:'new',revealed:false};if(nightState.chaos.stage==='fighting')nightState.chaos.stage='spotted';if(chaosEnabled()){await Promise.all([loadChaosImage(),loadChaosActors()]);if(locationId==='hongdeon'){hongMapImage=chaosImage;mapImage.src=chaosImage.src;rebuildDepth();syncChaosActors();}}refreshNightObjective();}return result;};resumeNightButton.onclick=()=>void resumeNightGame();
+const chaosResumeBefore=resumeNightGame;resumeNightGame=async function(){const data=readRpgSave();resumingChaos=data?.story?.phase==='morning-complete'&&data?.members?.seoyoon?.joined;const result=await chaosResumeBefore();resumingChaos=false;if(result){nightState.chaos=data.story?.chaos?{...data.story.chaos}:{stage:'new',revealed:false};if(nightState.chaos.stage==='fighting')nightState.chaos.stage='spotted';if(chaosEnabled()&&locationId==='hongdeon'){await Promise.all([loadChaosImage(),loadChaosActors()]);hongMapImage=chaosImage;mapImage.src=chaosImage.src;rebuildDepth();syncChaosActors();}refreshNightObjective();}return result;};resumeNightButton.onclick=()=>void resumeNightGame();
 const chaosBeginBefore=beginIntro;beginIntro=function(){chaosEpoch++;chaosBusy=false;chaosCamera=null;chaosCompanionVisible=false;chaosExitTime=0;civilianBalloon.hidden=true;chaosActors.forEach(a=>a.actor.node.hidden=true);if(firstBattleActive)closeFirstBattle();chaosBeginBefore();};
 window.TaraiChaos={config:CHAOS,getState:()=>({...chaosProgress(),busy:chaosBusy,camera:chaosCamera?{...chaosCamera}:null,civilians:chaosActors.filter(a=>a.civilian).length}),reveal:revealChaosRescue};
 
@@ -2698,7 +2706,7 @@ const cameraBeforeDungeon=updateCamera;updateCamera=function(){if(locationId!=='
 const targetsBeforeDungeon=allTargets;allTargets=function(){return locationId==='mart-dungeon'?[]:targetsBeforeDungeon();};
 const objectiveBeforeDungeon=refreshNightObjective;refreshNightObjective=function(){if(locationId==='mart-dungeon'){$('objective').textContent=tr('Explore the warehouse')+' · '+dungeonProgress().opened.length+'/10';return;}objectiveBeforeDungeon();};
 const statusBeforeDungeon=updateStatus;updateStatus=function(){if(locationId==='mart-dungeon'){$('status').textContent=tr('MART Basement · Floor 1');return;}statusBeforeDungeon();};
-function addDungeonMarker(id,point,action,label){let b=dungeonMarkers.get(id);if(!b){b=document.createElement('button');b.className='marker object';const img=document.createElement('img');img.src=UI_ASSETS.exclamation;img.alt='!';b.append(img);b.onclick=e=>{e.preventDefault();e.stopPropagation();if(!locked()&&!dialogue&&locationId==='mart-dungeon')action();};$('interactions').append(b);dungeonMarkers.set(id,b);}const p=screenPosition(point);b.style.left=p.x+'px';b.style.top=p.y+'px';b.setAttribute('aria-label',tr(label));b.hidden=p.x<15||p.x>viewWidth-15||p.y<45||p.y>viewHeight-30;return b;}
+function addDungeonMarker(id,point,action,label){let b=dungeonMarkers.get(id);if(!b){b=document.createElement('button');b.className='marker object';const img=document.createElement('img');img.src=UI_ASSETS.exclamation;img.alt='!';b.append(img);b.onclick=e=>{e.preventDefault();e.stopPropagation();if(!locked()&&!dialogue&&(locationId==='mart-dungeon'||isMartRoom(locationId)))action();};$('interactions').append(b);dungeonMarkers.set(id,b);}const p=screenPosition(point);b.style.left=p.x+'px';b.style.top=p.y+'px';b.setAttribute('aria-label',tr(label));b.hidden=p.x<15||p.x>viewWidth-15||p.y<45||p.y>viewHeight-30;return b;}
 function openDungeonChest(chest){if(Math.hypot(player.x-chest.x,player.y-chest.y)>58)return;if(chest.lockedRoom&&!dungeonProgress().doorUnlocked)return;if(dungeonProgress().opened.includes(chest.id))return;dungeonProgress().opened.push(chest.id);paintDungeonBags();resetInput();refreshNightObjective();saveRpgGame();notice(tr('The bag is empty.'));updateInteractionUI();}
 const uiBeforeDungeon=updateInteractionUI;updateInteractionUI=function(){uiBeforeDungeon();if(locationId!=='mart-dungeon'){for(const b of dungeonMarkers.values())b.hidden=true;$('editorOpen').hidden=false;return;}
  $('editorOpen').hidden=true;doorButton.hidden=true;portalButton.hidden=true;for(const b of dungeonMarkers.values())b.hidden=true;
@@ -2712,7 +2720,7 @@ const dungeonTestButton=document.createElement('button');dungeonTestButton.id='t
 const shortcutBeforeDungeon=paintTestShortcuts;paintTestShortcuts=function(){shortcutBeforeDungeon();if(locationId==='mart-dungeon'){testHongButton.hidden=chaosTestButton.hidden=dungeonTestButton.hidden=true;testShortcuts.hidden=true;return;}dungeonTestButton.hidden=!ENABLE_HONGDEON_TEST||testHongButton.hidden||firstBattleActive;dungeonTestButton.disabled=chaosTestButton.disabled||dungeonJumping;testShortcuts.hidden=testHongButton.hidden&&chaosTestButton.hidden&&dungeonTestButton.hidden;};
 const lockBeforeDungeon=locked;locked=function(){return dungeonJumping||lockBeforeDungeon();};
 const dungeonPrompt=document.createElement('section');dungeonPrompt.id='dungeonPrompt';dungeonPrompt.hidden=true;dungeonPrompt.innerHTML='<div><strong>DUNGEON TEST</strong><p></p><nav><button data-resume>RESUME</button><button data-new>NEW TEST</button><button data-cancel>CANCEL</button></nav></div>';game.append(dungeonPrompt);
-function readDungeonSave(){try{const d=JSON.parse(localStorage.getItem(DUNGEON_SAVE_KEY));return d?.version===RPG_VERSION&&d.location==='mart-dungeon'&&d.dungeon?.version===1?d:null;}catch(_){return null;}}
+function readDungeonSave(){try{const d=JSON.parse(localStorage.getItem(DUNGEON_SAVE_KEY));return d?.version===RPG_VERSION&&(d.location==='mart-dungeon'||isMartRoom(d.location))&&d.dungeon?.version===1?d:null;}catch(_){return null;}}
 function requestDungeonTest(){if(dungeonJumping||dungeonTestButton.disabled)return;const save=readDungeonSave();if(!save){void enterDungeonTest();return;}resetInput();dungeonPrompt.querySelector('p').textContent=tr('Resume your dungeon test?');dungeonPrompt.querySelector('[data-resume]').textContent=tr('RESUME');dungeonPrompt.querySelector('[data-new]').textContent=tr('NEW TEST');dungeonPrompt.querySelector('[data-cancel]').textContent=tr('CANCEL');dungeonPrompt.hidden=false;}
 dungeonPrompt.querySelector('[data-resume]').onclick=()=>{dungeonPrompt.hidden=true;void enterDungeonTest(readDungeonSave());};dungeonPrompt.querySelector('[data-new]').onclick=()=>{dungeonPrompt.hidden=true;void enterDungeonTest();};dungeonPrompt.querySelector('[data-cancel]').onclick=()=>dungeonPrompt.hidden=true;
 const lockBeforeDungeonPrompt=locked;locked=function(){return !dungeonPrompt.hidden||lockBeforeDungeonPrompt();};
@@ -2721,21 +2729,21 @@ window.addEventListener('pointerup',e=>{if(e.target?.closest?.('#testDungeonButt
 async function enterDungeonTest(saved=null){
  if(dungeonJumping||firstBattleActive)return;dungeonJumping=true;resetInput();paintTestShortcuts();
  try{
- await Promise.all([loadDungeon(),loadPartyBattle(),loadWorkUniform(),loadSeoyoon()]);const fade=$('fade');fade.style.zIndex='40';fade.style.transition='opacity 400ms linear';fade.classList.add('black');await wait(430);
+ const roomId=isMartRoom(saved?.location)?saved.location:'mart-a';await Promise.all([loadMartRoom(roomId),loadWorkUniform(),loadSeoyoon()]);const fade=$('fade');fade.style.zIndex='40';fade.style.transition='opacity 400ms linear';fade.classList.add('black');await wait(430);
  sceneEpoch++;storyEpoch++;nightEpoch++;morningEpoch++;chaosEpoch++;trainRun++;for(const m of morningMotions.values())m.resolve(false);morningMotions.clear();morningMotion=null;morningRunner=null;morningBusy=false;
  closeDialogue(false);reactionTime=0;intro=false;film.phase='play';ending=false;menuOpen=false;autoMenu=false;transitioning=false;destinationOpen=false;officeSequence=null;travelScene=null;nightTransition=false;chaosBusy=false;chaosCamera=null;chaosCompanionVisible=false;civilianBalloon.hidden=true;
- nightState={phase:'morning-complete',firstVictoryReward:true,chaos:{stage:'done',revealed:true}};storyPhase='complete';storyNight=false;storyCamera=null;storyEncounter=null;setStoryBusy(false);workUniformEnabled=true;
+ nightState={phase:'morning-complete',firstVictoryReward:true,chaos:{stage:'done',revealed:true},mart:{heardPassage:true,visited:true,storyDungeon:true,test:true,dungeon:null}};storyPhase='complete';storyNight=false;storyCamera=null;storyEncounter=null;setStoryBusy(false);workUniformEnabled=true;
  if(storyEnemy){storyEnemy.actor.node.remove();storyEnemy=null;}storyNightLighting.hidden=true;scene.classList.remove('story-night');for(const id of ['rpgMenu','inventoryPage','languagePage','destinations','trainWindow'])$(id).hidden=true;$('rpgMenu').classList.remove('auto');game.classList.remove('travel-ending','battle-active','battle-entering');equipPage.hidden=true;progressionPage.hidden=true;sleepPrompt.hidden=true;partyNotice.hidden=true;resumeNightButton.hidden=true;dinnerMontage.hidden=true;equipTutorial=false;equipTransition=false;jobAssigned=true;menuUnlocked=true;
- equipState=freshEquipState();equipState.stage='done';for(const id of RICCARDO_STARTER_ITEMS){equipState.owned[id]=1;equipmentFor('riccardo')[EQUIP_ITEMS[id].slot]=id;}equipSeoyoonStarter();partyMembers.riccardo.joined=partyMembers.seoyoon.joined=true;partySlots.splice(0,4,'riccardo','seoyoon',null,null);resetProgression();
+ equipState=freshEquipState();equipState.stage='done';for(const id of RICCARDO_STARTER_ITEMS){equipState.owned[id]=1;equipmentFor('riccardo')[EQUIP_ITEMS[id].slot]=id;}equipSeoyoonStarter();for(const [id,n] of Object.entries(saved?.equip?.owned||{}))if(EQUIP_ITEMS[id]&&Number.isFinite(n)&&n>0)equipState.owned[id]=clamp(Math.trunc(n),1,99);for(const id of ['riccardo','seoyoon'])for(const [slot,item] of Object.entries(saved?.equip?.members?.[id]||{}))if(EQUIP_ITEMS[item]?.owner===id&&EQUIP_ITEMS[item].slot===slot&&equipState.owned[item]>0)equipmentFor(id)[slot]=item;partyMembers.riccardo.joined=partyMembers.seoyoon.joined=true;partySlots.splice(0,4,'riccardo','seoyoon',null,null);resetProgression();
  for(const id of ['riccardo','seoyoon']){const m=partyMembers[id];m.joined=true;if(saved?.members?.[id]){const s=saved.members[id];Object.assign(m,{level:clamp(Math.trunc(s.level)||3,1,50),exp:Math.max(0,Number(s.exp)||0),hp:Math.max(0,Number(s.hp)||0),ep:Math.max(0,Number(s.ep)||0)});syncMemberProgression(id);}else{m.exp=id==='riccardo'?260:200;m.level=3;syncMemberProgression(id,{refill:true});}}
  won=clamp(Number(saved?.won??50000),0,LIMITS.won);inventory=saved?{}:{staff_meal:5,espresso_shot:3,emergency_snack:1};if(saved)for(const[id,n]of Object.entries(saved.inventory||{}))if(ITEM_CATALOG[id]&&Number.isInteger(n)&&n>0)inventory[id]=Math.min(999,n);
- dungeonState=saved?{...freshDungeonState(),opened:[...new Set((saved.dungeon.opened||[]).filter(id=>DUNGEON_CHESTS.some(c=>c.id===id)))],doorUnlocked:!!saved.dungeon.doorUnlocked,mapVersion:3}:freshDungeonState();
- showLocation('mart-dungeon');Object.assign(player,saved?.player||DUNGEON.spawn,{direction:saved?.player?.direction||'up',moving:false});if(saved?.dungeon?.mapVersion!==3||!navFree(player.x,player.y))Object.assign(player,DUNGEON.spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;dungeonSaveDistance=0;drawPlayer();updateCamera();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';saveRpgGame();
+ dungeonState=restoreMartProgress(saved?.dungeon);
+ showLocation(roomId);const spawn=martRoomEntry(roomId),position=saved?.location===roomId?saved.player:null;Object.assign(player,spawn,position,{direction:Object.hasOwn(VECTORS,position?.direction)?position.direction:spawn.direction,moving:false});if(!nearestFree(player))Object.assign(player,spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;dungeonSaveDistance=0;drawPlayer();updateCamera();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';saveRpgGame();
  }catch(e){console.error(e);notice(e.message);$('fade').classList.remove('black');$('fade').style.zIndex='';$('fade').style.transition='';}
  finally{dungeonJumping=false;paintTestShortcuts();updateInteractionUI();}
 }
 async function leaveDungeonTest(){if(locationId!=='mart-dungeon'||firstBattleActive)return;saveRpgGame();dungeonJumping=true;resetInput();$('fade').classList.add('black');await wait(430);showLocation('city');beginIntro();$('fade').classList.remove('black');await wait(430);dungeonJumping=false;paintTestShortcuts();}
-function afterDungeonBattle(){if(locationId!=='mart-dungeon')return;dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=220;dungeonProgress().distance=0;dungeonProgress().nextEncounter=350+Math.random()*300;resetInput();refreshNightObjective();updateInteractionUI();saveRpgGame();}
+function afterDungeonBattle(){if(locationId!=='mart-dungeon'&&!isMartRoom(locationId))return;dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=220;dungeonProgress().distance=0;dungeonProgress().nextEncounter=350+Math.random()*300;resetInput();refreshNightObjective();updateInteractionUI();saveRpgGame();}
 const travelBeforeDungeon=updateTravel;updateTravel=function(dt){
  if(locationId!=='mart-dungeon'){travelBeforeDungeon(dt);paintTestShortcuts();return;}
  paintTestShortcuts();updateDungeonDoors(dt);const old=dungeonLastPosition;dungeonLastPosition={x:player.x,y:player.y};if(!old||locked()||dialogue||intro||editor.open||document.hidden)return;
@@ -2747,7 +2755,7 @@ const travelBeforeDungeon=updateTravel;updateTravel=function(dt){
  if(!safe&&p.distance>=p.nextEncounter){p.distance=0;p.nextEncounter=350+Math.random()*300;resetInput();saveRpgGame();void startMartEncounter();}
 };
 const worldSaveBeforeDungeon=saveWorld;saveWorld=function(){if(locationId==='mart-dungeon'){saveRpgGame();return;}return worldSaveBeforeDungeon();};
-const beginBeforeDungeon=beginIntro;beginIntro=function(){if(locationId==='mart-dungeon')showLocation('city');beginBeforeDungeon();};
+const beginBeforeDungeon=beginIntro;beginIntro=function(){if(locationId==='mart-dungeon'||isMartRoom(locationId))showLocation('city');beginBeforeDungeon();};
 Object.assign(ITEM_CATALOG,{mart_storage_key:{name:'Storage Key',description:'Opens the locked storeroom.'}});
 [['Explore the warehouse','창고를 탐색하세요'],['MART Basement · Floor 1','마트 지하 · 1층'],['Open bag','가방 열기'],['The bag is empty.','가방이 비어 있습니다.'],['Locked door','잠긴 문'],['The door is locked. You need a storage key.','문이 잠겨 있습니다. 창고 열쇠가 필요합니다.'],['The door is unlocked.','문이 열렸습니다.'],['The lower floor is not available yet.','아래층은 아직 이용할 수 없습니다.'],['Stairs down','아래층 계단'],['Leave dungeon test','던전 테스트 나가기'],['Resume your dungeon test?','던전 테스트를 이어 하시겠습니까?'],['RESUME','이어서 하기'],['NEW TEST','새 테스트'],['Storage Key','창고 열쇠'],['Opens the locked storeroom.','잠긴 창고를 엽니다.']].forEach(p=>bilingual(...p));
 window.TaraiDungeon={config:DUNGEON,chests:DUNGEON_CHESTS,doors:DUNGEON_DOORS,start:enterDungeonTest,resume:()=>enterDungeonTest(readDungeonSave()),getState:()=>({...dungeonProgress(),location:locationId,grace:dungeonGrace}),isWalkable:navFree,openChest:id=>{const c=DUNGEON_CHESTS.find(c=>c.id===id);if(c)openDungeonChest(c);},save:saveRpgGame};
@@ -3027,27 +3035,300 @@ async function performCombatItem(id,target){if(firstBattlePhase!=='command'||!it
 }
 
 /* Story flags are independent from the separate dungeon test save. */
+/* MART basement: all coordinates use the 1536 × 1024 artwork grid. */
+const MART_WIDTH=1536,MART_HEIGHT=1024;
+const MART_SAVE_SPRITE='icons/save-point-forchetta-coltello.gif';
+const MART_SAVE_POINT={x:888,y:260};
+const MART_GATE={x:769,y:709};
+const MART_FIRST_SPAWN={x:401,y:88,direction:'down'};
+const MART_ROOMS={
+ 'mart-a':{
+  map:'Map/535207ff-ef67-474b-abba-15738c3b41b9.png',name:'MART Backrooms',
+  floor:[[177,160,654,410],[816,160,1356,410],[177,550,655,831],[815,550,1356,831],[648,244,823,294],[367,385,436,561],[1099,386,1164,560],[648,673,823,722],[365,0,438,168],[1041,826,1135,1007]],
+  props:[[177,134,230,411],[238,345,341,407],[452,345,565,407],[577,317,636,391],[830,135,1044,223],[843,262,910,373],[825,342,1063,410],[1175,142,1268,226],[1200,337,1320,410],[1302,139,1356,410],[186,550,276,822],[245,760,343,824],[441,752,556,824],[561,737,637,810],[473,549,651,638],[828,549,998,644],[837,715,948,810],[1174,747,1302,827],[1298,550,1356,827]],
+  bags:[[261,291,'staff_meal'],[1258,322,'espresso_shot'],[281,709,'staff_meal']]
+ },
+ 'mart-b':{
+  map:'Map/29afef53-8a73-4ecb-bbf1-8e4d7c42c542.png',name:'Underground Storage',
+  floor:[[110,170,704,436],[844,185,1432,436],[110,565,704,867],[844,565,1432,868],[695,272,851,333],[304,411,369,577],[696,675,852,737],[285,6,366,178],[315,857,395,1016]],
+  props:[[113,161,204,366],[128,365,217,433],[216,371,274,431],[469,166,682,245],[456,353,688,434],[852,151,890,312],[940,176,1052,249],[851,360,944,433],[1125,156,1257,203],[1280,344,1335,436],[1335,154,1431,434],[110,549,245,652],[126,682,183,753],[121,764,258,860],[442,550,702,649],[427,750,700,861],[858,552,953,668],[861,773,1007,861],[1340,551,1432,868]],
+  bags:[[260,290,'staff_meal'],[1270,294,'staff_meal'],[274,731,'espresso_shot'],[989,629,'emergency_snack'],[1122,629,'emergency_snack'],[1247,810,'mart_iron_pan'],[1100,810,'mart_bar_spoon']]
+ },
+ 'mart-c':{
+  map:'Map/fca45e35-e4b7-4acb-8872-7a45d61d6d14.png',name:'Service Corridors',
+  floor:[[115,201,633,438],[801,200,1425,438],[139,613,632,869],[803,613,1425,868],[625,282,807,341],[339,427,406,620],[628,701,809,760],[1129,0,1200,209],[0,703,149,769]],
+  props:[[128,233,210,438],[477,187,628,270],[528,360,620,438],[808,383,957,438],[1180,378,1360,438],[1354,187,1409,378],[144,606,216,644],[198,680,376,823],[143,775,415,864],[439,599,615,694],[442,796,617,865],[817,600,860,697],[862,794,1032,867],[1252,617,1411,668],[1253,756,1415,868],[1368,622,1415,768]],
+  bags:[[260,264,'espresso_shot'],[1270,262,'staff_meal'],[1181,817,'espresso_shot']]
+ },
+ 'mart-d':{
+  map:'Map/a45b5d75-41e1-4184-87fe-f6f1febc55dd.png',name:'Underground Gallery',
+  floor:[[111,132,459,360],[601,132,908,360],[1044,132,1382,361],[111,521,460,805],[599,524,910,805],[1045,524,1384,805],[451,220,609,253],[901,220,1050,253],[454,642,606,681],[903,642,1052,681],[270,349,322,531],[730,350,777,534],[1174,351,1221,530],[1370,218,1500,268],[1170,797,1231,943]],
+  props:[[115,126,165,280],[113,280,207,354],[362,285,453,357],[602,113,646,202],[601,301,709,354],[839,290,900,355],[1043,124,1141,175],[1044,276,1141,331],[1248,298,1374,354],[113,507,160,750],[118,745,181,801],[312,724,453,802],[600,691,704,802],[714,594,842,777],[835,715,910,803],[1044,712,1109,801],[1346,525,1380,658]],
+  bags:[[220,165,'staff_meal'],[815,176,'espresso_shot'],[208,765,'staff_meal'],[1319,750,'espresso_shot'],[1361,782,'mart_storage_key']]
+ },
+ 'mart-e':{
+  map:'Map/2110753e-39d7-4cd0-89e3-9975ad51ba13.png',name:'Boss Chamber',
+  floor:[[150,218,1390,885],[716,22,818,230]],
+  props:[[151,193,284,328],[295,226,333,280],[150,338,239,700],[155,702,431,884],[615,800,916,884],[1109,703,1389,886],[1320,379,1391,705],[1218,190,1388,383]],
+  bags:[]
+ }
+};
+const MART_PORTALS={
+ 'mart-a':[{x:1087,y:982,dir:'down',to:'mart-b',spawn:{x:327,y:96}}],
+ 'mart-b':[{x:327,y:29,dir:'up',to:'mart-a',spawn:{x:1087,y:900}},{x:353,y:995,dir:'down',to:'mart-c',spawn:{x:1160,y:88}}],
+ 'mart-c':[{x:1160,y:23,dir:'up',to:'mart-b',spawn:{x:353,y:927}},{x:26,y:736,dir:'left',to:'mart-d',spawn:{x:1447,y:241}}],
+ 'mart-d':[{x:1480,y:241,dir:'right',to:'mart-c',spawn:{x:86,y:736}},{x:1199,y:918,dir:'down',to:'mart-e',spawn:{x:768,y:118}}],
+ 'mart-e':[{x:768,y:47,dir:'up',to:'mart-d',spawn:{x:1199,y:864}}]
+};
+function isMartRoom(id){return /^mart-[a-e]$/.test(id);}
+function martRoomWorld({floor,props}){
+ const bounds=[...new Set([0,MART_HEIGHT,...floor.flatMap(([,top,,bottom])=>[top,bottom])])].sort((a,b)=>a-b);
+ const collisions=[];
+ for(let i=1;i<bounds.length;i++){
+  const top=bounds[i-1],height=bounds[i]-top;
+  let right=0;
+  const spans=floor.filter(([,a,,b])=>a<=top&&b>=bounds[i]).map(([a,,b])=>[a,b]).sort((a,b)=>a[0]-b[0]);
+  for(const [left,end] of spans){if(left>right)collisions.push(rect(right,top,left-right,height));right=Math.max(right,end);}
+  if(right<MART_WIDTH)collisions.push(rect(right,top,MART_WIDTH-right,height));
+ }
+ const depth=props.map(([x,y,r,b],i)=>({name:'Prop '+(i+1),baseY:b,polygon:rect(x,y,r-x,b-y)}));
+ for(const [x,y,r,b] of props)collisions.push(rect(x,Math.max(y,b-42),r-x,b-Math.max(y,b-42)));
+ return {collisions,depth};
+}
+for(const [id,room] of Object.entries(MART_ROOMS))
+ registerEditableMap({id,map:room.map,width:MART_WIDTH,height:MART_HEIGHT,version:'mart-rooms-v1',world:martRoomWorld(room)});
+
+Object.assign(EQUIP_ITEMS,{
+ mart_iron_pan:{name:'Cast-Iron Pan',description:'A heavy pan with a reinforced handle.',owner:'riccardo',slot:'weapon',attack:9,icon:EQUIP_ITEMS.chipped_pan.icon},
+ mart_bar_spoon:{name:'Steel Bar Spoon',description:'A long steel bar spoon for Seon Jong.',owner:'seon_jong',slot:'weapon',attack:4,technique:5,icon:EQUIP_ITEMS.serving_tray.icon}
+});
+[
+ ['Cast-Iron Pan','무쇠 프라이팬'],['A heavy pan with a reinforced handle.','손잡이를 보강한 무거운 프라이팬입니다.'],
+ ['Steel Bar Spoon','스틸 바 스푼'],['A long steel bar spoon for Seon Jong.','선종이 쓰는 긴 스틸 바 스푼입니다.'],
+ ['Storage Key','창고 열쇠'],['Opens the locked storeroom.','잠긴 창고를 열 수 있습니다.'],
+ ['MART Backrooms','마트 작업실'],['Underground Storage','지하 창고'],['Service Corridors','정비 통로'],
+ ['Underground Gallery','지하 통로'],['Boss Chamber','보스 방'],['Explore the MART basement.','마트 지하를 탐색하세요.'],
+ ['Locked. You need a key.','잠겨 있습니다. 열쇠가 필요합니다.'],['The door is unlocked.','문이 열렸습니다.'],
+ ['Save Point','저장 지점'],['Save your progress?','진행 상황을 저장할까요?'],['Progress saved.','진행 상황을 저장했습니다.'],
+ ['Unable to save progress.','진행 상황을 저장할 수 없습니다.'],['Unable to enter this area.','이 구역에 들어갈 수 없습니다.'],
+ ['Your inventory is full.','인벤토리가 가득 찼습니다.'],['OK','확인']
+].forEach(([en,ko])=>bilingual(en,ko));
+
+const martRoomImages=new Map();
+let martBagPromise=null,martSaveImage=null,martGateNear=false,martGateCanvas=null,martBagSprites=new Map();
+function loadMartBags(){
+ if(dungeonBagImages)return Promise.resolve(dungeonBagImages);
+ if(!martBagPromise)martBagPromise=loadDungeonImage(DUNGEON.bags).then(bags=>{
+  return dungeonBagImages=[0,1].map(i=>{
+   const canvas=document.createElement('canvas');
+   canvas.width=570;canvas.height=800;
+   canvas.getContext('2d').drawImage(bags,i*887+160,35,570,800,0,0,570,800);
+   return canvas.toDataURL('image/png');
+  });
+ }).catch(error=>{martBagPromise=null;throw error;});
+ return martBagPromise;
+}
+async function loadMartRoom(id){
+ if(!martRoomImages.has(id))
+  martRoomImages.set(id,loadDungeonImage(MART_ROOMS[id].map).catch(error=>{martRoomImages.delete(id);throw error;}));
+ const [image]=await Promise.all([
+  martRoomImages.get(id),
+  MART_ROOMS[id].bags.length?loadMartBags():null,
+  id==='mart-e'?(martSaveImage||=loadDungeonImage(MART_SAVE_SPRITE).catch(error=>{martSaveImage=null;throw error;})):null
+ ]);
+ MART_ROOMS[id].image=image;
+ return image;
+}
+
+function placeMartObject(src,x,y,width,height,kind){
+ const image=document.createElement('img');
+ image.src=src;image.alt='';image.draggable=false;image.className=kind;
+ Object.assign(image.style,{position:'absolute',left:(x-width/2)+'px',top:(y-height)+'px',
+  width:width+'px',height:height+'px',zIndex:String(Math.round(y*100+10)),pointerEvents:'none',imageRendering:'pixelated'});
+ dungeonLayer.append(image);
+ return image;
+}
+function paintMartDoor(){
+ if(!martGateCanvas)return;
+ martGateCanvas.hidden=!dungeonProgress().doorUnlocked;
+}
+function buildMartObjects(id){
+ dungeonLayer.replaceChildren();
+ martBagSprites.clear();
+ martGateNear=false;martGateCanvas=null;
+ const room=MART_ROOMS[id],state=dungeonProgress();
+ room.bags.forEach(([x,y],i)=>{
+  const key=id+'-'+i;
+  martBagSprites.set(key,placeMartObject(dungeonBagImages[state.opened.includes(key)?1:0],x,y,43,60,'dungeon-bag'));
+ });
+ if(id==='mart-b'){
+  const canvas=document.createElement('canvas');
+  canvas.width=111;canvas.height=112;
+  Object.assign(canvas.style,{position:'absolute',left:'720px',top:'650px'});
+  const image=room.image,sx=image.naturalWidth/MART_WIDTH,sy=image.naturalHeight/MART_HEIGHT;
+  const ctx=canvas.getContext('2d');
+  ctx.imageSmoothingEnabled=false;
+  // Restore a walkable threshold over the door painted into the background.
+  ctx.drawImage(image,720*sx,250*sy,111*sx,112*sy,0,0,111,112);
+  martGateCanvas=canvas;dungeonLayer.append(canvas);paintMartDoor();
+ }
+ if(id==='mart-e')placeMartObject(MART_SAVE_SPRITE,MART_SAVE_POINT.x,MART_SAVE_POINT.y+9,135,135,'mart-save-point');
+ dungeonLayer.hidden=false;
+}
+
+const martNotice=document.createElement('section');
+martNotice.className='confirmation-overlay';martNotice.hidden=true;
+martNotice.setAttribute('role','dialog');martNotice.setAttribute('aria-modal','true');martNotice.setAttribute('aria-labelledby','martNoticeText');
+martNotice.innerHTML='<div class="confirmation-panel"><p id="martNoticeText"></p><div class="confirmation-choices"><button data-confirm></button><button data-cancel></button></div></div>';
+game.append(martNotice);
+const martConfirm=martNotice.querySelector('[data-confirm]'),martCancel=martNotice.querySelector('[data-cancel]');
+function closeMartNotice(){martNotice.hidden=true;resetInput();updateInteractionUI();}
+function openMartNotice(message,onConfirm=null){
+ $('martNoticeText').textContent=message;
+ martConfirm.textContent=tr(onConfirm?'YES':'OK');
+ martCancel.textContent=tr('NO');martCancel.hidden=!onConfirm;
+ martConfirm.onclick=()=>{closeMartNotice();onConfirm?.();};
+ martCancel.onclick=closeMartNotice;
+ resetInput();martNotice.hidden=false;updateInteractionUI();martConfirm.focus();
+}
+martNotice.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){e.preventDefault();closeMartNotice();}
+ if(e.key==='Tab'){e.preventDefault();(!martCancel.hidden&&document.activeElement===martConfirm?martCancel:martConfirm).focus();}
+});
+
+function martNear(x,y,r){return Math.hypot(player.x-x,player.y-y)<r;}
+function openMartBag(id,index){
+ const [x,y,reward]=MART_ROOMS[id].bags[index],key=id+'-'+index,state=dungeonProgress();
+ if(locationId!==id||!martNear(x,y,66)||state.opened.includes(key))return false;
+ if(id==='mart-b'&&index>=3&&!state.doorUnlocked)return false;
+ const item=ITEM_CATALOG[reward]||EQUIP_ITEMS[reward];
+ const container=ITEM_CATALOG[reward]?inventory:equipState.owned;
+ const count=container[reward]||0;
+ if(count>=(container===inventory?999:99)){openMartNotice(tr('Your inventory is full.'));return false;}
+ container[reward]=count+1;
+ state.opened.push(key);
+ if(!saveRpgGame()){
+  if(count)container[reward]=count;else delete container[reward];
+  state.opened.pop();
+  openMartNotice(tr('Unable to save progress.'));
+  return false;
+ }
+ martBagSprites.get(key).src=dungeonBagImages[1];
+ const name=tr(item.name);
+ openMartNotice(language==='ko'?name+' 획득!':'You obtained '+name+'.');
+ return true;
+}
+function updateMartGate(){
+ const state=dungeonProgress(),near=martNear(MART_GATE.x,MART_GATE.y,76);
+ if(!near){martGateNear=false;return;}
+ if(martGateNear||state.doorUnlocked)return;
+ martGateNear=true;
+ if(!inventory.mart_storage_key){openMartNotice(tr('Locked. You need a key.'));return;}
+ state.doorUnlocked=true;
+ if(!saveRpgGame()){
+  state.doorUnlocked=false;
+  openMartNotice(tr('Unable to save progress.'));
+  return;
+ }
+ paintMartDoor();openMartNotice(tr('The door is unlocked.'));
+}
+
+const martStaticBefore=staticFree;
+staticFree=function(x,y,r=CONFIG.radius){
+ if(!martStaticBefore(x,y,r))return false;
+ const room=MART_ROOMS[locationId];
+ if(!room)return true;
+ if(locationId==='mart-b'&&!dungeonProgress().doorUnlocked&&circleRect(x,y,r,{left:747,right:789,top:673,bottom:739}))return false;
+ if(room.bags.some(([bx,by])=>circleRect(x,y,r,{left:bx-11,right:bx+11,top:by-8,bottom:by+1})))return false;
+ return locationId!=='mart-e'||!circleRect(x,y,r,{left:MART_SAVE_POINT.x-12,right:MART_SAVE_POINT.x+12,top:MART_SAVE_POINT.y-7,bottom:MART_SAVE_POINT.y+8});
+};
+const lockBeforeMartNotice=locked;
+locked=function(){return !martNotice.hidden||lockBeforeMartNotice();};
+
+const martUiBefore=updateInteractionUI;
+updateInteractionUI=function(){
+ martUiBefore();
+ const room=MART_ROOMS[locationId];
+ if(!room||!ready||intro||locked()||dialogue||editor.open)return;
+ const id=locationId,state=dungeonProgress();
+ room.bags.forEach(([x,y],i)=>{
+  if((id!=='mart-b'||i<3||state.doorUnlocked)&&!state.opened.includes(id+'-'+i)&&martNear(x,y,59))
+   addDungeonMarker(id+'-'+i,{x,y:y-50},()=>openMartBag(id,i),'Open bag');
+ });
+ if(id==='mart-e'&&martNear(MART_SAVE_POINT.x,MART_SAVE_POINT.y,66))
+  addDungeonMarker('mart-save',{x:MART_SAVE_POINT.x,y:MART_SAVE_POINT.y-65},()=>{
+   openMartNotice(tr('Save your progress?'),()=>openMartNotice(tr(saveRpgGame()?'Progress saved.':'Unable to save progress.')));
+  },tr('Save Point'));
+};
+const martTravelBefore=updateTravel;
+updateTravel=function(dt){
+ martTravelBefore(dt);
+ const room=MART_ROOMS[locationId];
+ if(!room)return;
+ const old=dungeonLastPosition;
+ dungeonLastPosition={x:player.x,y:player.y};
+ if(!old||intro||locked()||dialogue||editor.open||document.hidden)return;
+ if(locationId==='mart-b'){updateMartGate();if(!martNotice.hidden)return;}
+ const distance=Math.hypot(player.x-old.x,player.y-old.y);
+ if(distance<=0||distance>25)return;
+ const portal=MART_PORTALS[locationId].find(p=>p.dir===player.direction&&martNear(p.x,p.y,15));
+ if(portal){void changeWarehouseArea(portal.to,portal.spawn,portal.dir);return;}
+ if(locationId==='mart-e')return;
+ dungeonSaveDistance+=distance;
+ if(dungeonSaveDistance>250){saveRpgGame();dungeonSaveDistance=0;}
+ if(dungeonGrace>0){dungeonGrace=Math.max(0,dungeonGrace-distance);return;}
+ const state=dungeonProgress();
+ state.distance+=distance;
+ if(state.distance<state.nextEncounter)return;
+ if(MART_PORTALS[locationId].some(p=>martNear(p.x,p.y,95))||
+    room.bags.some(([x,y])=>martNear(x,y,60))||
+    (locationId==='mart-a'&&martNear(MART_FIRST_SPAWN.x,MART_FIRST_SPAWN.y,95))||
+    (locationId==='mart-b'&&martNear(MART_GATE.x,MART_GATE.y,96)))return;
+ state.distance=0;state.nextEncounter=350+Math.random()*300;resetInput();saveRpgGame();
+ void startMartEncounter();
+};
+
+function restoreMartProgress(saved){
+ const state=freshDungeonState();
+ if(!saved)return state;
+ state.opened=Array.isArray(saved.opened)?[...new Set(saved.opened.filter(id=>/^mart-[a-d]-[0-6]$/.test(id)))]:[];
+ state.doorUnlocked=!!saved.doorUnlocked;
+ if(Number.isFinite(saved.distance))state.distance=Math.max(0,saved.distance);
+ if(Number.isFinite(saved.nextEncounter)&&saved.nextEncounter>0)state.nextEncounter=saved.nextEncounter;
+ return state;
+}
+function martRoomEntry(id){
+ if(id==='mart-a')return {...MART_FIRST_SPAWN};
+ const previous=Object.keys(MART_PORTALS).find(room=>room<id&&MART_PORTALS[room].some(p=>p.to===id));
+ const link=MART_PORTALS[previous].find(p=>p.to===id);
+ return {...link.spawn,direction:link.dir};
+}
 const MART_SHOP={map:'Map/e632f69d-d1bd-4806-9e78-21f31c650d8a.png',spawn:{x:500,y:1140},exit:{x:500,y:1158},boxes:{x:550,y:357},outside:{x:1345,y:2630},returnPoint:{x:1345,y:2670},height:64};
 let shopImage=null,shopImageLoad=null,warehouseBusy=false;
 function martProgress(){if(!nightState.mart)nightState.mart={heardPassage:chaosProgress().stage==='done',visited:false,storyDungeon:false,dungeon:null};return nightState.mart;}
 function storyDungeonMode(){return !!nightState?.mart?.storyDungeon;}
-function isWarehouseArea(id){return id==='mart-shop'||id==='mart-dungeon';}
+function isWarehouseArea(id){return id==='mart-shop'||id==='mart-dungeon'||isMartRoom(id);}
 function loadShopImage(){return shopImageLoad||(shopImageLoad=loadDungeonImage(MART_SHOP.map).then(im=>shopImage=im).catch(e=>{shopImageLoad=null;throw e;}));}
-async function loadWarehouseArea(id){if(id==='mart-shop')await loadShopImage();else await loadDungeon();}
+async function loadWarehouseArea(id){if(isMartRoom(id))await loadMartRoom(id);else if(id==='mart-shop')await loadShopImage();else await loadDungeon();}
 const shopRects=[[0,0,53,1536],[970,0,54,1536],[0,0,1024,70],[0,1175,1024,361],[55,300,198,755],[180,140,225,186],[460,175,160,170],[650,140,280,220],[360,400,125,510],[616,400,129,510],[880,320,100,810],[320,946,100,100]];
 const shopProps=[{name:'Checkout',baseY:1055,polygon:rect(55,300,198,755)},{name:'Rear shelf',baseY:326,polygon:rect(180,140,225,186)},{name:'Boxes',baseY:345,polygon:rect(460,175,160,170)},{name:'Fridges',baseY:360,polygon:rect(650,140,280,220)},{name:'Snacks west',baseY:910,polygon:rect(360,400,125,510)},{name:'Snacks east',baseY:910,polygon:rect(616,400,129,510)},{name:'Wall shelves',baseY:1130,polygon:rect(880,320,100,810)}];
 const fallenDisplay=[[535,990],[720,1034],[670,1145],[510,1095]];
 registerEditableMap({id:'mart-shop',map:MART_SHOP.map,width:1024,height:1536,version:'mart-shop-v1',world:{collisions:[...shopRects.map(a=>rect(...a)),fallenDisplay],depth:shopProps}});
 const saveBeforeWarehouseStory=saveRpgGame;saveRpgGame=function(){if(locationId==='mart-dungeon'&&storyDungeonMode())martProgress().dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};return saveBeforeWarehouseStory();};
 TaraiDungeon.save=saveRpgGame;
-const showBeforeShop=showLocation;showLocation=function(id){if(id!=='mart-shop'){showBeforeShop(id);return;}if(MAP_EDITOR_REGISTRY.has(locationId))persistEditableMap();if(locationId==='hongdeon')hongWorld=world;else if(isInterior(locationId))interiorWorlds[locationId]=world;
+const showBeforeShop=showLocation;showLocation=function(id){if(id!=='mart-shop'&&!isMartRoom(id)){showBeforeShop(id);return;}if(MAP_EDITOR_REGISTRY.has(locationId))persistEditableMap();if(locationId==='hongdeon')hongWorld=world;else if(isInterior(locationId))interiorWorlds[locationId]=world;
  for(const n of npcs)n.actor.node.hidden=true;npcs.splice(0);for(const a of chaosActors)a.actor.node.hidden=true;if(seoyoonNpc)seoyoonNpc.actor.node.hidden=true;chaosCompanionVisible=false;
  clearHongDepth();clearRoomDoors();depthNodes.forEach(n=>n.remove());depthNodes=[];clearMarkers();for(const b of markerNodes.values())b.remove();markerNodes.clear();doorButton.hidden=true;portalButton.hidden=true;dungeonLayer.hidden=true;for(const b of dungeonMarkers.values())b.hidden=true;
- locationId=id;world=editableMapWorld(id);CONFIG.width=1024;CONFIG.height=1536;scene.style.width=mapImage.style.width='1024px';scene.style.height=mapImage.style.height='1536px';mapImage.style.imageRendering='pixelated';mapImage.onload=()=>{if(locationId===id)rebuildDepth();};mapImage.src=shopImage?.src||MART_SHOP.map;for(const v of vehicles)v.actor.node.hidden=true;$('trainWindow').hidden=true;storyNightLighting.hidden=true;scene.classList.remove('story-night');$('editorOpen').hidden=false;if(mapImage.complete&&mapImage.naturalWidth)rebuildDepth();
+ const room=MART_ROOMS[id];
+ locationId=id;world=editableMapWorld(id);CONFIG.width=room?MART_WIDTH:1024;CONFIG.height=room?MART_HEIGHT:1536;
+ scene.style.width=mapImage.style.width=CONFIG.width+'px';scene.style.height=mapImage.style.height=CONFIG.height+'px';
+ mapImage.style.imageRendering='pixelated';mapImage.onload=()=>{if(locationId===id)rebuildDepth();};
+ mapImage.src=room?.image.src||shopImage?.src||MART_SHOP.map;
+ if(room){buildMartObjects(id);dungeonLastPosition=null;dungeonGrace=220;dungeonSaveDistance=0;document.querySelector('.eyebrow').textContent='MART';refreshNightObjective();}for(const v of vehicles)v.actor.node.hidden=true;$('trainWindow').hidden=true;storyNightLighting.hidden=true;scene.classList.remove('story-night');$('editorOpen').hidden=false;if(mapImage.complete&&mapImage.naturalWidth)rebuildDepth();
 };
-const drawBeforeShop=drawPlayer;drawPlayer=function(){if(locationId!=='mart-shop')return drawBeforeShop();if(player.actor.height!==MART_SHOP.height){player.actor.height=MART_SHOP.height;player.actor.active=null;}renderBeforeScale();};
-const cameraBeforeShop=updateCamera;updateCamera=function(){if(locationId!=='mart-shop')return cameraBeforeShop();zoom=.9;camera.x=clamp(player.x-viewWidth/zoom/2,0,Math.max(0,CONFIG.width-viewWidth/zoom));camera.y=clamp(player.y-viewHeight/zoom/2,0,Math.max(0,CONFIG.height-viewHeight/zoom));scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';};
-const targetsBeforeShop=allTargets;allTargets=function(){return locationId==='mart-shop'?[]:targetsBeforeShop();};
+const drawBeforeShop=drawPlayer;drawPlayer=function(){if(locationId!=='mart-shop'&&!isMartRoom(locationId))return drawBeforeShop();const height=isMartRoom(locationId)?56:MART_SHOP.height;if(player.actor.height!==height){player.actor.height=height;player.actor.active=null;}renderBeforeScale();};
+const cameraBeforeShop=updateCamera;updateCamera=function(){if(locationId!=='mart-shop'&&!isMartRoom(locationId))return cameraBeforeShop();zoom=isMartRoom(locationId)?1.05:.9;const w=viewWidth/zoom,h=viewHeight/zoom;camera.x=CONFIG.width>w?clamp(player.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;camera.y=CONFIG.height>h?clamp(player.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';};
+const targetsBeforeShop=allTargets;allTargets=function(){return locationId==='mart-shop'||isMartRoom(locationId)?[]:targetsBeforeShop();};
 
 const COPYRIGHT_LINES=[['Seoyoon','Wait… those frying-pan spins, and then behind your back… You remind me of that guy from Final—'],['Riccardo','SHH! We don’t have the copyright!'],['Seoyoon','For the pose?'],['Riccardo','As long as it’s a frying pan, we can say I’m cooking.'],['Seoyoon','With the frying pan behind your back?'],['Riccardo','Experimental cooking. Now let’s go.']];
 translateLines(COPYRIGHT_LINES,['잠깐… 프라이팬을 돌리다가 등 뒤로 넘기는 그 자세… 파이널—에 나오는 그 사람 같은데요.','쉿! 우리 저작권 없어요!','그 자세에도요?','프라이팬이니까 요리 중이라고 하면 돼요.','프라이팬을 등 뒤에 놓고요?','실험적인 요리죠. 이제 갑시다.']);
@@ -3067,15 +3348,15 @@ const advanceBeforeWarehouseStory=advanceSpeech;advanceSpeech=function(){const q
 const warehousePrompt=document.createElement('section');warehousePrompt.id='martEnterPrompt';warehousePrompt.className='confirmation-overlay';warehousePrompt.hidden=true;warehousePrompt.setAttribute('role','dialog');warehousePrompt.setAttribute('aria-modal','true');warehousePrompt.innerHTML='<div class="confirmation-panel"><p id="martEnterQuestion"></p><div class="confirmation-choices"><button data-yes>YES</button><button data-no>NO</button></div></div>';game.append(warehousePrompt);
 function closeWarehousePrompt(){warehousePrompt.hidden=true;resetInput();updateInteractionUI();}
 function openWarehousePrompt(){if(locationId!=='mart-shop'||locked()||dialogue||Math.hypot(player.x-MART_SHOP.boxes.x,player.y-MART_SHOP.boxes.y)>76)return;resetInput();$('martEnterQuestion').textContent=tr('Remove the boxes and enter?');warehousePrompt.querySelector('[data-yes]').textContent=tr('YES');warehousePrompt.querySelector('[data-no]').textContent=tr('NO');warehousePrompt.hidden=false;updateInteractionUI();warehousePrompt.querySelector('[data-no]').focus();}
-warehousePrompt.querySelector('[data-no]').onclick=closeWarehousePrompt;warehousePrompt.querySelector('[data-yes]').onclick=()=>{warehousePrompt.hidden=true;void changeWarehouseArea('mart-dungeon',DUNGEON.spawn,'up');};
+warehousePrompt.querySelector('[data-no]').onclick=closeWarehousePrompt;warehousePrompt.querySelector('[data-yes]').onclick=()=>{warehousePrompt.hidden=true;void changeWarehouseArea('mart-a',MART_FIRST_SPAWN,'down');};
 warehousePrompt.addEventListener('keydown',e=>{if(e.key==='Escape')closeWarehousePrompt();});
 const warehouseLockBefore=locked;locked=function(){return warehouseBusy||!warehousePrompt.hidden||warehouseLockBefore();};
 async function changeWarehouseArea(to,spawn,direction){if(warehouseBusy)return;warehouseBusy=true;resetInput();const epoch=sceneEpoch,fade=$('fade'),previous={transition:fade.style.transition,zIndex:fade.style.zIndex};fade.style.zIndex='45';fade.style.transition='opacity 600ms linear';
  try{await Promise.all([to==='hongdeon'?loadChaosImage():loadWarehouseArea(to),loadWorkUniform()]);if(epoch!==sceneEpoch)return;fade.classList.add('black');await wait(650);if(epoch!==sceneEpoch)return;saveWorld();
-  const progress=martProgress();if(locationId==='mart-dungeon')progress.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};progress.storyDungeon=to==='mart-dungeon';progress.visited=true;
-  if(to==='mart-dungeon'){dungeonState=progress.dungeon?{...freshDungeonState(),...progress.dungeon,opened:[...progress.dungeon.opened]}:freshDungeonState();dungeonGrace=220;dungeonLastPosition=null;}
+  const progress=martProgress();if(locationId==='mart-dungeon')progress.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};progress.storyDungeon=to==='mart-dungeon'||isMartRoom(to);progress.visited=true;
+  if(isMartRoom(to)&&!isMartRoom(locationId))dungeonState=restoreMartProgress(progress.dungeon);
   showLocation(to);Object.assign(player,spawn,{direction,moving:false});nearestFree(player);drawPlayer();updateCamera();await wait(75);fade.classList.remove('black');await wait(650);saveRpgGame();
- }catch(e){console.error(e);notice(e.message);fade.classList.remove('black');}finally{if(epoch===sceneEpoch){fade.style.transition=previous.transition;fade.style.zIndex=previous.zIndex;warehouseBusy=false;resetInput();updateInteractionUI();}}
+ }catch(e){console.error(e);if(epoch===sceneEpoch)openMartNotice(tr('Unable to enter this area.'));fade.classList.remove('black');}finally{if(epoch===sceneEpoch){fade.style.transition=previous.transition;fade.style.zIndex=previous.zIndex;warehouseBusy=false;resetInput();updateInteractionUI();}}
 }
 const leaveBeforeWarehouseStory=leaveDungeonTest;leaveDungeonTest=async function(){if(storyDungeonMode())return changeWarehouseArea('mart-shop',{x:550,y:390},'down');return leaveBeforeWarehouseStory();};
 const warehouseMarkers=new Map();
@@ -3091,17 +3372,22 @@ const uiBeforeWarehouseStory=updateInteractionUI;updateInteractionUI=function(){
  }
  if(locationId==='mart-dungeon'&&storyDungeonMode()){const leave=dungeonMarkers.get('leave');if(leave)leave.setAttribute('aria-label',tr('Return to MART'));}
 };
-const statusBeforeWarehouse=updateStatus;updateStatus=function(){if(locationId==='mart-shop'){$('status').textContent='MART';return;}statusBeforeWarehouse();};
+const statusBeforeWarehouse=updateStatus;updateStatus=function(){if(isMartRoom(locationId)){$('status').textContent=tr(MART_ROOMS[locationId].name);return;}if(locationId==='mart-shop'){$('status').textContent='MART';return;}statusBeforeWarehouse();};
 
 const fireLayer=document.createElement('div');fireLayer.id='streetFires';fireLayer.style='position:absolute;inset:0;pointer-events:none';scene.append(fireLayer);
 for(const fire of [{x:545,y:563,h:142},{x:786,y:1378,h:154},{x:302,y:2988,h:184}]){const im=document.createElement('img');im.src='Equip/Icone/fuoco_strada_loop.gif';im.alt='';im.className='street-fire';const w=fire.h*.75;Object.assign(im.style,{left:(fire.x-w/2)+'px',top:(fire.y-fire.h*.89)+'px',width:w+'px',height:fire.h+'px',zIndex:String(Math.round(fire.y*100+35))});fireLayer.append(im);}
 function syncStreetFires(){fireLayer.hidden=locationId!=='hongdeon'||!chaosEnabled();}
 const showBeforeStreetFire=showLocation;showLocation=function(id){showBeforeStreetFire(id);syncStreetFires();};
-const travelBeforeWarehouse=updateTravel;updateTravel=function(dt){travelBeforeWarehouse(dt);syncStreetFires();if(isWarehouseArea(locationId))for(const b of testShortcuts.children)b.hidden=true;if(locationId==='mart-shop')testShortcuts.hidden=true;};
+const travelBeforeWarehouse=updateTravel;updateTravel=function(dt){travelBeforeWarehouse(dt);syncStreetFires();if(isWarehouseArea(locationId))for(const b of testShortcuts.children)b.hidden=true;if(locationId==='mart-shop'||isMartRoom(locationId))testShortcuts.hidden=true;};
 [['Remove the boxes and enter?','상자를 치우고 들어갈까요?'],['Enter MART','마트 들어가기'],['Exit MART','마트 나가기'],['Examine boxes','상자 살펴보기'],['Return to MART','마트로 돌아가기'],['Talk','말하기']].forEach(p=>bilingual(...p));
 window.TaraiWarehouse={shop:MART_SHOP,getState:()=>({...martProgress(),location:locationId,busy:warehouseBusy,prompt:!warehousePrompt.hidden})};
 
 /* A local schematic, deliberately without objectives, route guidance or destinations. */
+const beforeMartObjective=refreshNightObjective;
+refreshNightObjective=function(){
+ if(isMartRoom(locationId)){$('objective').textContent=tr('Explore the MART basement.');return;}
+ beforeMartObjective();
+};
 const miniButton=document.createElement('button');miniButton.id='schematicMinimap';miniButton.type='button';miniButton.setAttribute('aria-label','Map');miniButton.hidden=true;const miniCanvas=document.createElement('canvas');miniCanvas.width=miniCanvas.height=180;miniButton.append(miniCanvas);game.append(miniButton);
 const largeMap=document.createElement('button');largeMap.id='largeMinimap';largeMap.type='button';largeMap.hidden=true;largeMap.setAttribute('aria-label','Close map');const largeCanvas=document.createElement('canvas');largeCanvas.width=600;largeCanvas.height=900;largeMap.append(largeCanvas);game.append(largeMap);
 miniButton.onclick=()=>{if(firstBattleActive||intro||dialogue||editor.open||menuOpen)return;resetInput();largeMap.hidden=false;drawSchematicMaps();};largeMap.onclick=()=>{largeMap.hidden=true;resetInput();};
