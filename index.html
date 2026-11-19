@@ -1207,25 +1207,37 @@ showLocation=function(id){
  mapImage.onload=()=>{if(locationId==='hongdeon')rebuildDepth();};mapImage.src=hongMapImage?.src||HONGDEON.map+'?v=20261108-courtyard';rebuildDepth();$('objective').textContent='Find Cucchiaio';
 };
 const targetsBeforeHongdeon=allTargets;allTargets=function(){return locationId==='hongdeon'?[]:targetsBeforeHongdeon();};
-// Si creano solo i ritagli visibili alla telecamera; nessuna copia intera HD per oggetto.
-let hongDepthRecords=[];
-function clearHongDepth(){for(const d of hongDepthRecords)if(d.canvas){d.canvas.remove();d.canvas.width=d.canvas.height=1;}hongDepthRecords=[];}
-function boundsHong(p){const xs=p.map(v=>v[0]),ys=p.map(v=>v[1]),x=Math.floor(Math.min(...xs)),y=Math.floor(Math.min(...ys));return{x,y,w:Math.ceil(Math.max(...xs))-x,h:Math.ceil(Math.max(...ys))-y};}
-function syncHongDepth(){if(locationId!=='hongdeon'||editor.open||!hongMapImage)return;const v={x:camera.x-80,y:camera.y-100,w:viewWidth/zoom+160,h:viewHeight/zoom+200};
- for(const d of hongDepthRecords){const b=d.box,visible=b.x<v.x+v.w&&b.x+b.w>v.x&&b.y<v.y+v.h&&b.y+b.h>v.y;
-  if(!visible){if(d.canvas){d.canvas.remove();d.canvas.width=d.canvas.height=1;d.canvas=null;}continue;}
-  if(d.canvas)continue;const c=document.createElement('canvas');c.className='depth-piece';const density=1.5;c.width=Math.max(1,Math.ceil(b.w*density));c.height=Math.max(1,Math.ceil(b.h*density));Object.assign(c.style,{left:b.x+'px',top:b.y+'px',width:b.w+'px',height:b.h+'px',zIndex:String(Math.round(d.zone.baseY*100+10)),imageRendering:'auto'});
-  const ctx=c.getContext('2d');ctx.scale(density,density);ctx.translate(-b.x,-b.y);polygonPath(ctx,d.zone.polygon);ctx.clip();ctx.imageSmoothingEnabled=true;const sx=hongMapImage.naturalWidth/2048,sy=hongMapImage.naturalHeight/3072;ctx.drawImage(hongMapImage,b.x*sx,b.y*sy,b.w*sx,b.h*sy,b.x,b.y,b.w,b.h);scene.appendChild(c);d.canvas=c;
- }
- depthNodes=hongDepthRecords.filter(d=>d.canvas).map(d=>d.canvas);
+function clearHongDepth(){
+ if(locationId!=='hongdeon')return;
+ for(const node of depthNodes)node.remove();
+ depthNodes=[];
+}
+function makeHongDepth(zone,backgroundImage){
+ const points=zone.polygon,xs=points.map(([x])=>x),ys=points.map(([,y])=>y);
+ const x=Math.floor(Math.min(...xs)),y=Math.floor(Math.min(...ys));
+ const w=Math.ceil(Math.max(...xs))-x,h=Math.ceil(Math.max(...ys))-y;
+ if(w<1||h<1)return;
+ const node=document.createElement('div');node.className='depth-piece';node.setAttribute('aria-hidden','true');
+ Object.assign(node.style,{
+  left:x+'px',top:y+'px',width:w+'px',height:h+'px',zIndex:String(Math.round(zone.baseY*100+10)),
+  imageRendering:'auto',backgroundImage,backgroundRepeat:'no-repeat',
+  backgroundSize:HONGDEON.width+'px '+HONGDEON.height+'px',backgroundPosition:(-x)+'px '+(-y)+'px',
+  clipPath:'polygon('+points.map(([px,py])=>(px-x)+'px '+(py-y)+'px').join(',')+')'
+ });
+ return node;
 }
 const depthBeforeHongdeon=rebuildDepth;
-rebuildDepth=function(){if(locationId!=='hongdeon'){depthBeforeHongdeon();return;}clearHongDepth();depthNodes.forEach(n=>n.remove());depthNodes=[];hongDepthRecords=world.depth.map(zone=>({zone,box:boundsHong(zone.polygon),canvas:null}));syncHongDepth();};
-const cameraBeforeHongdeon=updateCamera;updateCamera=function(){cameraBeforeHongdeon();if(locationId==='hongdeon')syncHongDepth();};
+rebuildDepth=function(){
+ if(locationId!=='hongdeon')return depthBeforeHongdeon();
+ clearHongDepth();
+ const backgroundImage='url('+JSON.stringify(mapImage.src)+')';
+ depthNodes=world.depth.map(zone=>makeHongDepth(zone,backgroundImage)).filter(Boolean);
+ scene.append(...depthNodes);
+};
 const saveBeforeHongdeon=saveWorld;
 saveWorld=function(){if(locationId!=='hongdeon'){saveBeforeHongdeon();return;}hongWorld=world;try{localStorage.setItem(HONG_WORLD_KEY,JSON.stringify({version:HONG_WORLD_VERSION,world}));storageFailed=false;}catch(_){storageFailed=true;}};
 const statusBeforeHongdeon=updateStatus;
-updateStatus=function(){if(locationId==='hongdeon'){$('status').textContent=hongTravelError||'Hongdeon';return;}statusBeforeHongdeon();};
+updateStatus=function(){if(locationId==='hongdeon'){const status=$('status'),text=hongTravelError||'Hongdeon';if(status.textContent!==text)status.textContent=text;return;}statusBeforeHongdeon();};
 const beginBeforeHongdeon=beginIntro;beginIntro=function(){beginBeforeHongdeon();hongTravelError='';};
 DESTINATIONS[0].map=HONGDEON.map;
 const openPolygonEditor=$('editorOpen').onclick;
@@ -1899,7 +1911,7 @@ function drawHungryEnemy(){if(!storyEnemy)return;setAsset(storyEnemy.actor,story
 const cameraBeforeDinner=updateCamera;
 updateCamera=function(){
  cameraBeforeDinner();
- if(storyCamera&&locationId==='hongdeon'){const u=smooth(storyCamera.progress),focus={x:storyCamera.from.x+(storyCamera.to.x-storyCamera.from.x)*u,y:storyCamera.from.y+(storyCamera.to.y-storyCamera.from.y)*u},w=viewWidth/zoom,h=viewHeight/zoom;camera.x=CONFIG.width>w?clamp(focus.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;camera.y=CONFIG.height>h?clamp(focus.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';syncHongDepth();}
+ if(storyCamera&&locationId==='hongdeon'){const u=smooth(storyCamera.progress),focus={x:storyCamera.from.x+(storyCamera.to.x-storyCamera.from.x)*u,y:storyCamera.from.y+(storyCamera.to.y-storyCamera.from.y)*u},w=viewWidth/zoom,h=viewHeight/zoom;camera.x=CONFIG.width>w?clamp(focus.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;camera.y=CONFIG.height>h?clamp(focus.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';}
  paintStoryNight();
 };
 const travelBeforeDinner=updateTravel;
@@ -2538,7 +2550,7 @@ const chaosShowBefore=showLocation;showLocation=function(id){chaosShowBefore(id)
 // Only the added obstructions change collision; buildings retain existing geometry.
 const CHAOS_BLOCKS=[rect(1630,2715,418,357),rect(0,2700,235,372),rect(655,1310,215,125),rect(1255,1985,110,65)];
 const chaosStaticBefore=staticFree;staticFree=function(x,y,r=CONFIG.radius){return chaosStaticBefore(x,y,r)&&!(locationId==='hongdeon'&&chaosEnabled()&&CHAOS_BLOCKS.some(p=>hitsPolygon(x,y,r,p)));};
-const chaosCameraBefore=updateCamera;updateCamera=function(){chaosCameraBefore();if(locationId!=='hongdeon'||!chaosCamera)return;const p=chaosCamera,w=viewWidth/zoom,h=viewHeight/zoom;camera.x=clamp(p.x-w/2,0,Math.max(0,CONFIG.width-w));camera.y=clamp(p.y-h/2,0,Math.max(0,CONFIG.height-h));scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';syncHongDepth();};
+const chaosCameraBefore=updateCamera;updateCamera=function(){chaosCameraBefore();if(locationId!=='hongdeon'||!chaosCamera)return;const p=chaosCamera,w=viewWidth/zoom,h=viewHeight/zoom;camera.x=clamp(p.x-w/2,0,Math.max(0,CONFIG.width-w));camera.y=clamp(p.y-h/2,0,Math.max(0,CONFIG.height-h));scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';};
 async function panChaos(to,epoch){const from=chaosCamera||{x:player.x,y:player.y};const start=performance.now();return new Promise(resolve=>{function frame(now){if(epoch!==chaosEpoch||locationId!=='hongdeon'){resolve(false);return;}const u=smooth((now-start)/CHAOS.pan);chaosCamera={x:from.x+(to.x-from.x)*u,y:from.y+(to.y-from.y)*u};updateCamera();updateInteractionUI();if(u<1)requestAnimationFrame(frame);else resolve(true);}requestAnimationFrame(frame);});}
 async function chaosMove(n,to,epoch,speed=200,direction=null){const from={x:n.x,y:n.y},dist=Math.hypot(to.x-from.x,to.y-from.y),duration=dist/speed*1000,start=performance.now();n.direction=direction||facing(to.x-n.x,to.y-n.y);return new Promise(resolve=>{function frame(now){if(epoch!==chaosEpoch){n.moving=false;resolve(false);return;}const u=clamp((now-start)/Math.max(1,duration),0,1);n.x=from.x+(to.x-from.x)*u;n.y=from.y+(to.y-from.y)*u;n.moving=u<1;drawNpc(n);if(u<1)requestAnimationFrame(frame);else resolve(true);}requestAnimationFrame(frame);});}
 async function showChaosCompanion(epoch,direction=null){await loadSeoyoon();if(epoch!==chaosEpoch)return false;chaosCompanionVisible=true;Object.assign(seoyoonNpc,{x:player.x,y:player.y,direction:'down',moving:true});let to={x:player.x+90,y:player.y+10};if(!staticFree(to.x,to.y,10))to={x:player.x-90,y:player.y+10};await chaosMove(seoyoonNpc,to,epoch,200,direction);return epoch===chaosEpoch;}
