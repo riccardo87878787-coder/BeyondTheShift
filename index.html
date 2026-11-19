@@ -193,7 +193,8 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .battle-fighter.item-ko-target{pointer-events:auto}.battle-fighter.defeated.item-ko-target{opacity:.25}
 .battle-damage{position:absolute;z-index:5;font:bold 5cqw monospace;color:#fff;text-shadow:2px 2px #220b12;pointer-events:none;animation:battleDamage .75s ease-out forwards;transform:translate(-50%,-100%)}
 @keyframes battleDamage{0%{opacity:1;translate:0 0}75%{opacity:1}100%{opacity:0;translate:0 -22px}}
-#battleMenu{position:absolute;left:1.5%;right:1.5%;top:67.5%;bottom:1.5%;display:grid;grid-template-columns:44% 56%;padding:4px;border:3px double #aac7e6;outline:1px solid #324868;background:linear-gradient(110deg,#060d29,#02071a);box-shadow:inset 0 0 0 1px #283858;opacity:0;transition:opacity .3s}
+#battleMenu,#battleSkillsList{border:3px double #aac7e6;outline:1px solid #324868;background:linear-gradient(110deg,#060d29,#02071a);box-shadow:inset 0 0 0 1px #283858;}
+#battleMenu{position:absolute;left:1.5%;right:1.5%;top:67.5%;bottom:1.5%;display:grid;grid-template-columns:44% 56%;padding:4px;opacity:0;transition:opacity .3s}
 #battleScreen.menu-in #battleMenu{opacity:1}
 #battleStatus{min-width:0;padding:7% 5%;border-right:3px double #aac7e6}
 #battleName{display:block;font-size:4.2cqw;letter-spacing:.04em;margin-bottom:12%;overflow-wrap:anywhere}
@@ -204,9 +205,10 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .battle-meter-value{position:absolute;inset:0;display:grid;place-items:center;color:white;font:bold 2.8cqw monospace;text-shadow:1px 1px #000,-1px -1px #000,1px -1px #000,-1px 1px #000}
 #battleHint{margin:12% 0 0;font:2.6cqw/1.4 Arial,sans-serif;color:#c2cee3;min-height:3em}
 #battleCommands{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:3%;padding:3% 3% 3% 4%;min-height:0}
-#battleCommands button{position:relative;min-height:0;min-width:0;padding:0 8% 0 16%;border:3px double #8ba7cb;border-radius:0;text-align:left;font:bold 4.4cqw Georgia,serif;letter-spacing:.04em;background:linear-gradient(100deg,#09132e,#03081c);color:#fff3d8;touch-action:manipulation}
-#battleCommands button:disabled{opacity:1;color:#687184;border-color:#465370;cursor:default}
-#battleCommands button.available{border-color:#f5cf55;background:linear-gradient(90deg,#084a88,#061b45)}
+#battleCommands button,#battleSkillsList button{position:relative;min-width:0;border:3px double #8ba7cb;border-radius:0;text-align:left;font:bold 4.4cqw Georgia,'Noto Sans KR',serif;letter-spacing:.04em;background:linear-gradient(100deg,#09132e,#03081c);color:#fff3d8;touch-action:manipulation}
+#battleCommands button{min-height:0;padding:0 8% 0 16%}
+#battleCommands button:disabled,#battleSkillsList button:disabled{opacity:1;color:#687184;border-color:#465370;cursor:default}
+#battleCommands button.available,#battleSkillsList button:not(:disabled):focus-visible,#battleSkillsList button:not(:disabled):hover{border-color:#f5cf55;background:linear-gradient(90deg,#084a88,#061b45)}
 #battleCommands button.available::before{content:'▸';position:absolute;left:4%;color:#ffd34d}
 #battleCommands button.cancel-target{font-size:3.5cqw}
 #battleResult{position:absolute;inset:0;z-index:8;background:#02061766;display:grid;place-content:center;text-align:center;gap:14px;padding:12%;font-size:5cqw}
@@ -255,11 +257,13 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .sleep-choices button{min-width:82px;min-height:44px;padding:8px 16px;border:2px solid #677984;border-radius:0;background:#f8f0e2;color:#211b16;font:bold 14px Arial,sans-serif;box-shadow:none}
 .sleep-choices button:focus-visible{outline:3px solid #9c3c4a;outline-offset:2px}
 #resumeNight{position:absolute;left:50%;bottom:10%;transform:translateX(-50%);z-index:25;padding:14px 26px;font:bold 16px Arial,sans-serif;background:#18343fe8;color:#f8e9bc;border:2px solid #b8a26b}
-#battleSkillsList{position:absolute;left:3%;right:3%;bottom:34%;z-index:8;max-height:42%;overflow:auto;padding:12px;background:#102631f5;border:2px solid #9cafa9;display:flex;flex-direction:column;gap:8px}
-#battleSkillsList button{text-align:left;font-size:13px;padding:9px;background:#23414d;color:#fff1d2;border:1px solid #9cafa9;box-shadow:none}
-#battleSkillsList button:disabled{opacity:.45}
-#battleSkillsList small{display:block;font-size:11px;margin-top:4px;color:#cfdbdb}
-#game:has(#rpgMenu:not([hidden])) #testHongdeonButton{display:none}
+#battleSkillsList{position:absolute;z-index:8;inset:0;align-content:start;overflow:auto;padding:4px;display:grid;gap:4px;overscroll-behavior:contain;touch-action:pan-y}
+#battleSkillsList button{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:5px;min-height:40px;padding:5px;box-shadow:none;font-size:clamp(11px,3.4cqw,17px);letter-spacing:0;touch-action:pan-y}
+#battleSkillsList .battle-item-row{grid-template-columns:20px minmax(0,1fr) auto}
+#battleSkillsList .battle-choice-icon{width:20px;height:20px;object-fit:contain;image-rendering:pixelated;pointer-events:none}
+#battleSkillsList .battle-choice-name{min-width:0;overflow-wrap:anywhere}
+#battleSkillsList .battle-choice-value{white-space:nowrap;font-variant-numeric:tabular-nums}
+#battleSkillsList .battle-choice-empty{margin:0;padding:8px;color:#fff3d8;font-size:clamp(11px,3.4cqw,17px)}
 #godToggle[aria-pressed='true']{color:#ffdf7c}
 #menuNav button[data-menu-index='5']:disabled{color:#767676;opacity:.55;cursor:default}
 
@@ -320,17 +324,6 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 
 </style>
 <style>
-#battleSkillsList.styled-skills{display:flex;flex-direction:column;gap:10px;left:2%;right:2%;bottom:34%;max-height:46%;padding:12px;border:3px double #aac7e6;outline:1px solid #324868;border-radius:0;background:linear-gradient(110deg,#060d29,#02071a);box-shadow:inset 0 0 0 1px #283858;color:#fff3d8;font-family:Georgia,'Noto Sans KR',serif}
-.styled-skills h2{flex:none;margin:0;text-align:center;font:bold 4.6cqw/1.2 Georgia,'Noto Sans KR',serif;color:#fff3d8;letter-spacing:.04em}
-.skill-menu-rows{display:flex;flex-direction:column;gap:8px;overflow-y:auto;touch-action:pan-y;min-height:0;max-height:20cqh;flex:0 1 auto}
-#battleSkillsList.styled-skills button{border:3px double #8ba7cb;border-radius:0;background:linear-gradient(100deg,#09132e,#03081c);color:#fff3d8;font:bold 3.7cqw/1.2 Georgia,'Noto Sans KR',serif;box-shadow:none;min-height:42px}
-#battleSkillsList.styled-skills .skill-menu-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 5% 10px 12%;text-align:left;flex:none}
-.skill-menu-cost{white-space:nowrap;font-variant-numeric:tabular-nums}
-#battleSkillsList.styled-skills .skill-preview{border-color:#f5cf55;background:linear-gradient(90deg,#084a88,#061b45)}
-.skill-preview:before{content:'▸';position:absolute;left:4%;color:#ffd34d}
-#battleSkillsList.styled-skills button:disabled{opacity:1;color:#687184;border-color:#465370;background:#060d29}
-.skill-menu-description{margin:0;flex:none;min-height:3em;padding-top:8px;border-top:1px solid #aac7e6;font:3.25cqw/1.4 Georgia,'Noto Sans KR',serif}
-.skill-menu-footer{display:flex;justify-content:flex-end;flex:none}.skill-menu-footer button{min-width:30%;text-align:center!important;border-color:#f5cf55!important;padding:7px 15px!important}
 .battle-fighter.ko-sprite{filter:none!important;opacity:1!important;transition:none!important}.battle-fighter.ko-sprite img,.battle-fighter.ko-sprite canvas{transition:none!important}
 #hud>.panel{display:none!important}
 #schematicMinimap{position:absolute;z-index:6;top:12px;left:12px;width:clamp(68px,19vw,92px);aspect-ratio:1;padding:0;min-width:0;min-height:0;border:2px double #b0c5d9;border-radius:0;background:#081729a8;opacity:.68;overflow:hidden;touch-action:manipulation}
@@ -339,6 +332,28 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 #martEnterPrompt{z-index:46}.street-fire{position:absolute;pointer-events:none;image-rendering:pixelated}
 #resetButton{margin-left:auto}
 
+</style>
+<style>
+#martShopMenu{position:absolute;inset:0;z-index:40;background:#0008;display:grid;place-items:center}
+#martShopPanel{position:relative;width:90%;height:78%;max-height:680px;background:#f4e8ce;border:2px solid #b68e41;border-radius:16px;overflow:hidden;color:#272727;font-weight:800}
+#martShopSkin{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#martShopTitle{position:absolute;left:7%;right:7%;top:7%;margin:0;text-align:center;color:#fff4de;font-size:clamp(18px,5vw,27px)}
+#martShopBalance{position:absolute;top:17%;right:10%;margin:0;font-size:clamp(12px,3.1vw,18px)}
+#martShopBody{position:absolute;inset:24% 9% 16%;min-height:0}
+#martShopBody button,#martShopBack{border:1px solid #b99a60;border-radius:4px;background:#fff5df;color:#252727;font-weight:800}
+#martShopBody button[aria-pressed=true],#martShopBody .mart-shop-details button{background:#32514b;color:#fff4de}
+#martShopBody button:disabled{opacity:.55;cursor:default}
+.mart-shop-choices{display:grid;align-content:center;gap:12px}
+.mart-shop-choices button{min-height:42px;font-size:clamp(17px,4vw,23px)}
+.mart-shop-products{display:grid;grid-template-columns:1.1fr 1fr;gap:8px}
+.mart-shop-product-list,.mart-shop-details{overflow-y:auto;touch-action:pan-y;min-width:0;padding:2px}
+.mart-shop-product-list button{width:100%;display:flex;align-items:center;gap:5px;text-align:left;padding:5px;margin-bottom:5px;font-size:clamp(11px,3.1vw,16px);overflow-wrap:anywhere}
+.mart-shop-product-list img{width:24%;max-width:36px;object-fit:contain;flex:none}
+.mart-shop-product-list small{display:block;margin-top:3px}
+.mart-shop-details{border-left:1px solid #ac956f;padding-left:7px;font-size:clamp(12px,3.1vw,17px)}
+.mart-shop-details p{margin:7px 0;line-height:1.35;font-weight:600}
+.mart-shop-details button{width:100%;padding:6px}
+#martShopBack{position:absolute;left:16%;width:68%;bottom:5%;height:8%;background:#332c25;color:#fff4de}
 </style>
 </head>
 <body>
@@ -800,7 +815,7 @@ function faceConversation(other){
 }
 function openSpeech(lines,options={}){
  resetInput();reactionTime=0;dialogue={lines,index:0,type:options.type||"npc",target:options.target||null,speaker:options.speaker||(options.target?.dog?"Dubu":options.target?.owner?.name)||""};
- if(options.target?.owner&&!options.target.dog)faceConversation(options.target.owner);
+ if(options.target?.owner&&!options.target.dog&&!options.target.owner.mapPainted)faceConversation(options.target.owner);
  setSpeechText(lines[0]);$("speech").hidden=false;pop($("speech"));clearMarkers();
 }
 function interact(t){
@@ -819,7 +834,7 @@ function interact(t){
 function closeDialogue(question=true){
  if(!dialogue)return;
  const previous=dialogue;dialogue=null;$("speech").hidden=true;
- if(previous.target?.owner){const n=previous.target.owner;n.talking=false;n.direction=n.previousDirection||n.direction;drawNpc(n);}
+ if(previous.target?.owner&&!previous.target.owner.mapPainted){const n=previous.target.owner;n.talking=false;n.direction=n.previousDirection||n.direction;drawNpc(n);}
  if(previous.type==="intro"){intro=false;film.phase="play";zoom=CONFIG.zoom;}
  if(question&&language!=="en"&&previous.type==="npc")reactionTime=2;
  resetInput();
@@ -978,7 +993,7 @@ async function loadOfficeNpcs(){if(officeLoaded)return;const jobs=[];for(const [
 function showLocation(id){
  for(const n of npcs)n.actor.node.hidden=true;
  if(locationId==='city'&&id!=='city')cityWorld=world;if(locationId==='office')officeWorld=world;
- locationId=id;player.actor.height=id==='office'?OFFICE_VIEW.playerHeight:CONFIG.spriteHeight;player.actor.active=null;npcs.splice(0,npcs.length,...(id==='city'?cityNpcs:officeNpcs));world=id==='city'?cityWorld:officeWorld;
+ locationId=id;player.actor.height=id==='office'?OFFICE_VIEW.playerHeight:CONFIG.spriteHeight;player.actor.active=null;npcs.splice(0,npcs.length,...(id==='city'?cityNpcs.filter(n=>!jobAssigned||n.id!=='09_negoziante_mart'):officeNpcs));world=id==='city'?cityWorld:officeWorld;
  mapImage.src=id==='city'?CONFIG.map:OFFICE.map;clearMarkers();for(const b of markerNodes.values())b.remove();markerNodes.clear();
  for(const v of vehicles)v.actor.node.hidden=id!=='city';$('trainWindow').hidden=id!=='city';
  if(mapImage.complete)rebuildDepth();else mapImage.onload=()=>rebuildDepth();for(const n of npcs)drawNpc(n);$('objective').textContent=jobAssigned?'Take the bus to Hongdeon':id==='office'?'Speak to the receptionist':'Find the Job Center';
@@ -2065,7 +2080,7 @@ $('progressionBack').onclick=()=>{progressionPage.hidden=true;$('menuNav').query
 const menuBeforeProgression=renderMenu;renderMenu=function(){menuBeforeProgression();for(const [index,view] of [[1,'skills'],[3,'status']])$('menuNav').querySelector('[data-menu-index="'+index+'"]')?.addEventListener('click',()=>openProgressionPage(view));const save=$('menuNav').querySelector('[data-menu-index="5"]');if(save){save.disabled=!nearMartSavePoint();save.onclick=()=>{if(autoMenu||save.disabled||!nearMartSavePoint())return;save.textContent=tr(saveRpgGame()?'Saved':'Save failed');};}if(!progressionPage.hidden)renderProgressionPage();};
 const closeBeforeProgression=closeMenu;closeMenu=function(){if(!autoMenu)progressionPage.hidden=true;closeBeforeProgression();};
 function saveRpgGame(){if(!menuOpen||autoMenu||!nearMartSavePoint())return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
-function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-shop','mart-dungeon'].includes(data.location)||isMartRoom(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
+function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-dungeon'].includes(data.location)||isMartShop(data.location)||isMartRoom(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
 const beginBeforeProgression=beginIntro;beginIntro=function(){progressionPage.hidden=true;beginBeforeProgression();resetProgression();equipSeoyoonStarter();renderMenu();};
 resetProgression();equipSeoyoonStarter();
 battleStats=function(){return totalStats('riccardo');};
@@ -2075,10 +2090,14 @@ window.TaraiProgression={maxLevel:50,experienceTable:EXP_LEVELS.slice(),profiles
 /* Skills are usable once learned; the first Lv1 tutorial remains ATK-only. */
 let selectedBattleSkill=null,selectedBattleItem=null,battleGuard=false;
 const battleSkillsButton=battleScreen.querySelector('#battleCommands button:nth-child(2)');battleSkillsButton.dataset.battleCommand='skills';
-const battleSkillsList=document.createElement('div');battleSkillsList.id='battleSkillsList';battleSkillsList.hidden=true;battleSkillsList.setAttribute('aria-label','Learned techniques');battleScreen.appendChild(battleSkillsList);
+const battleSkillsList=document.createElement('div');battleSkillsList.id='battleSkillsList';battleSkillsList.hidden=true;$('battleStatus').appendChild(battleSkillsList);
 function closeBattleSkills(){battleSkillsList.hidden=true;}
-function openBattleSkills(){if(firstBattlePhase!=='command')return;resetInput();battleSkillsList.replaceChildren();for(const skill of learnedTechniques('riccardo')){const b=document.createElement('button');b.dataset.skillId=skill.id;b.textContent=techniqueName(skill)+' · '+skill.ep+' EP';const d=document.createElement('small');d.textContent=skill.description;b.appendChild(d);b.disabled=battleMember().ep<skill.ep;b.onclick=()=>{if(battleMember().ep<skill.ep)return;selectedBattleSkill=skill;closeBattleSkills();if(skill.target==='self')void performFirstBattleAttack(firstBattleFighters.find(f=>f.kind==='riccardo'));else{firstBattlePhase='target';battleHint(skill.name+' · Tap a target.');paintFirstBattle();}};battleSkillsList.appendChild(b);}const cancel=document.createElement('button');cancel.textContent='CANCEL';cancel.onclick=closeBattleSkills;battleSkillsList.appendChild(cancel);battleSkillsList.hidden=false;}
-battleSkillsButton.onclick=()=>{if(!battleSkillsList.hidden){closeBattleSkills();return;}if(firstBattlePhase==='target'){selectedBattleSkill=null;selectedBattleItem=null;firstBattlePhase='command';paintFirstBattle();}openBattleSkills();};
+battleSkillsButton.onclick=()=>{
+ if(firstBattlePhase==='target'){
+  selectedBattleSkill=null;selectedBattleItem=null;firstBattlePhase='command';paintFirstBattle();
+ }
+ openBattleSkills();
+};
 const paintBeforeSkills=paintFirstBattle;paintFirstBattle=function(){paintBeforeSkills();const available=learnedTechniques('riccardo').length>0&&(firstBattlePhase==='command'||firstBattlePhase==='target');battleSkillsButton.disabled=!available;battleSkillsButton.classList.toggle('available',available);};
 const attackButtonBeforeSkills=battleAttackButton.onclick;battleAttackButton.onclick=()=>{selectedBattleSkill=null;selectedBattleItem=null;closeBattleSkills();attackButtonBeforeSkills();};
 const commandBeforeSkills=commandFirstBattle;commandFirstBattle=function(){selectedBattleSkill=null;battleGuard=false;closeBattleSkills();commandBeforeSkills();};
@@ -2412,7 +2431,6 @@ async function buildPartyFighters(){const stage=$('battleStage');stage.replaceCh
  }):[makePartyFighter('enemy','hungry-1',positions[0],h*FIRST_BATTLE.enemyHeight/100,stats()),makePartyFighter('enemy','hungry-2',positions[1],h*FIRST_BATTLE.enemyHeight/100,stats())];
  firstBattleFighters=[...enemies,...partyBattle.members.map((id,i)=>makePartyFighter(id,id,FIRST_BATTLE.partyPositions[i],h*FIRST_BATTLE.heroHeight/100))];firstBattleEnemy=firstBattleFighters[0].stats;await Promise.all(firstBattleFighters.map(f=>drawBattlePose(f,'idle',true)));}
 const originalCommandBattle=commandFirstBattle;commandFirstBattle=function(){if(!partyBattle)return originalCommandBattle();selectedBattleSkill=null;closeBattleSkills();const f=currentPartyFighter();if(f)f.guard=false;firstBattlePhase='command';battleHint(tr('Choose an action.'));paintFirstBattle();};
-const originalOpenSkills=openBattleSkills;openBattleSkills=function(){if(!partyBattle)return originalOpenSkills();if(firstBattlePhase!=='command')return;const f=currentPartyFighter();if(!f?.member)return;battleSkillsList.replaceChildren();for(const skill of learnedTechniques(f.member)){const b=document.createElement('button'),d=document.createElement('small');b.dataset.skillId=skill.id;b.textContent=techniqueName(skill)+' · '+skill.ep+' EP';d.textContent=tr(skill.description);b.append(d);b.disabled=partyMembers[f.member].ep<skill.ep;b.onclick=()=>{if(firstBattlePhase!=='command'||partyMembers[f.member].ep<skill.ep)return;selectedBattleSkill=skill;closeBattleSkills();firstBattlePhase='target';if(skill.target==='self')void performFirstBattleAttack(f);else{battleHint(tr(skill.name)+' · '+tr('Select a target.'));paintFirstBattle();}};battleSkillsList.append(b);}const cancel=document.createElement('button');cancel.textContent=tr('CANCEL');cancel.onclick=closeBattleSkills;battleSkillsList.append(cancel);battleSkillsList.hidden=false;};
 function effectImage(asset,style){const img=document.createElement('img');img.className='party-skill-effect';img.alt='';img.src=URL.createObjectURL(asset.blob);Object.assign(img.style,style);$('battleStage').append(img);let done=false;return{img,remove(){if(done)return;done=true;URL.revokeObjectURL(img.src);img.remove();}};}
 function bodyPoint(f){const stage=$('battleStage');return{x:f.x/100*stage.clientWidth,y:f.y/100*stage.clientHeight-f.height*.55};}
 async function partyTween(duration,epoch,draw){return new Promise(resolve=>{const start=performance.now();function frame(now){if(!battleAlive(epoch)){resolve(false);return;}const u=clamp((now-start)/duration,0,1);draw(u);if(u<1)requestAnimationFrame(frame);else resolve(true);}requestAnimationFrame(frame);});}
@@ -2723,7 +2741,6 @@ nextPartyTurn=async function(epoch){
 const accuracyLine=document.createElement('small');accuracyLine.id='battleAccuracy';$('battleStatus').insertBefore(accuracyLine,$('battleHint'));
 const itemCommand=$('battleCommands').children[2],defenseCommand=$('battleCommands').children[3],runCommand=$('battleCommands').children[4];
 const paintBeforeDungeon=paintFirstBattle;paintFirstBattle=function(){paintBeforeDungeon();const mart=partyBattle?.kind==='mart',enabled=mart&&firstBattlePhase==='command';for(const b of [itemCommand,defenseCommand,runCommand]){b.disabled=!enabled;b.classList.toggle('available',enabled);}const f=currentPartyFighter();accuracyLine.textContent=f?.member?'ACC '+partyStats(f).accuracy+'%'+(f.precisionDebuff?' · '+f.precisionDebuff.turns+' '+tr('turns'):''):'';};
-itemCommand.onclick=()=>{if(partyBattle?.kind!=='mart'||firstBattlePhase!=='command')return;selectedBattleSkill=null;battleSkillsList.replaceChildren();for(const[id,count]of Object.entries(inventory)){const item=ITEM_CATALOG[id];if(count<=0||!item||!(item.hp||item.ep||item.revive))continue;const b=document.createElement('button');b.textContent=tr(item.name)+' ×'+count;b.onclick=()=>showCombatItemTargets(id);battleSkillsList.append(b);}if(!battleSkillsList.children.length){const p=document.createElement('p');p.textContent=tr('No items');battleSkillsList.append(p);}const cancel=document.createElement('button');cancel.textContent=tr('CANCEL');cancel.onclick=closeBattleSkills;battleSkillsList.append(cancel);battleSkillsList.hidden=false;};
 function showCombatItemTargets(id){
  if(firstBattlePhase!=='command'||!ITEM_CATALOG[id]||!(inventory[id]>0))return;
  selectedBattleSkill=null;selectedBattleItem=id;closeBattleSkills();firstBattlePhase='target';
@@ -3075,7 +3092,11 @@ function refreshTargetHand(){
  const stage=$('battleStage');if(targetHand.parentNode!==stage)stage.append(targetHand);const height=clamp(stage.clientWidth*.085,26,42),scale=height/targetHandAsset.height,headX=selected.x/100*stage.clientWidth,headY=selected.y/100*stage.clientHeight-selected.height;
  Object.assign(targetHand.style,{height:height+'px',width:(targetHandAsset.width*scale)+'px',left:(headX-targetHandAsset.tipX*scale)+'px',top:(headY-height-8)+'px'});targetHand.dataset.target=selected.id||selected.kind;targetHand.hidden=false;
 }
-const paintBeforeTargetHand=paintFirstBattle;paintFirstBattle=function(){paintBeforeTargetHand();refreshTargetHand();};
+const paintBeforeTargetHand=paintFirstBattle;paintFirstBattle=function(){
+ paintBeforeTargetHand();
+ if(firstBattlePhase!=='command')closeBattleSkills();
+ refreshTargetHand();
+};
 const attackBeforeTargetHand=battleAttackButton.onclick;battleAttackButton.onclick=()=>{attackBeforeTargetHand();if(firstBattlePhase==='target'){battleHint(tr('Choose a target'));refreshTargetHand();}};
 $('battleStage').addEventListener('click',event=>{
  if(firstBattlePhase!=='target')return;const node=event.target.closest?.('.battle-fighter'),fighter=firstBattleFighters.find(f=>f.node===node);if(!canChooseBattleTarget(fighter))return;
@@ -3088,18 +3109,65 @@ $('battleStage').addEventListener('click',event=>{
 const closeBeforeTargetHand=closeFirstBattle;closeFirstBattle=function(){targetHand.hidden=true;battleTargetChoice=null;closeBeforeTargetHand();};
 window.addEventListener('resize',refreshTargetHand);void loadTargetHand();
 
-/* The same frame, palette and font as the existing battle commands. */
-let previewTechnique=null;
-openBattleSkills=function(){if(firstBattlePhase!=='command')return;const actor=targetingActor(),member=actor?.member||'riccardo';resetInput();battleSkillsList.replaceChildren();battleSkillsList.classList.add('styled-skills');
- const title=document.createElement('h2'),rows=document.createElement('div'),detail=document.createElement('p'),footer=document.createElement('div'),back=document.createElement('button');title.textContent=tr('SKILLS');rows.className='skill-menu-rows';detail.className='skill-menu-description';detail.id='skillMenuDescription';footer.className='skill-menu-footer';back.textContent=tr('BACK');back.onclick=closeBattleSkills;footer.append(back);battleSkillsList.append(title,rows,detail,footer);
- const skills=learnedTechniques(member),buttons=[];previewTechnique=skills[0]||null;
- const preview=skill=>{previewTechnique=skill;detail.textContent=tr(skill.description);for(const [id,b]of buttons)b.classList.toggle('skill-preview',id===skill.id);};
- for(const skill of skills){const b=document.createElement('button'),name=document.createElement('span'),cost=document.createElement('span');b.dataset.skillId=skill.id;b.className='skill-menu-row';name.textContent=techniqueName(skill);cost.textContent=skill.ep+' EP';cost.className='skill-menu-cost';b.append(name,cost);b.disabled=partyMembers[member].ep<skill.ep;b.setAttribute('aria-describedby',detail.id);buttons.push([skill.id,b]);b.onfocus=()=>preview(skill);b.onpointerenter=()=>preview(skill);b.onpointerdown=()=>preview(skill);
-  b.onclick=()=>{if(firstBattlePhase!=='command'||partyMembers[member].ep<skill.ep)return;selectedBattleSkill=skill;closeBattleSkills();firstBattlePhase='target';if(skill.target==='self')void performFirstBattleAttack(actor);else{battleHint(tr('Choose a target'));paintFirstBattle();}};rows.append(b);}
- if(previewTechnique)preview(previewTechnique);else detail.textContent=tr('No techniques learned yet.');battleSkillsList.hidden=false;
+/* Items and techniques share the list above the party status panel. */
+function openBattleChoiceList(mode,label,rows,emptyMessage){
+ if(firstBattlePhase!=='command')return;
+ if(!battleSkillsList.hidden&&battleSkillsList.dataset.mode===mode){closeBattleSkills();return;}
+ resetInput();
+ battleSkillsList.dataset.mode=mode;
+ battleSkillsList.setAttribute('aria-label',tr(label));
+ battleSkillsList.replaceChildren();
+ for(const {name,value,icon,disabled,select} of rows){
+  const row=document.createElement('button'),title=document.createElement('span'),amount=document.createElement('span');
+  row.type='button';row.disabled=!!disabled;row.onclick=select;
+  if(mode==='items'){
+   const itemIcon=document.createElement(icon?'img':'span');
+   itemIcon.className='battle-choice-icon';
+   if(icon){itemIcon.src=icon;itemIcon.alt='';}
+   row.className='battle-item-row';row.append(itemIcon);
+  }
+  title.className='battle-choice-name';title.textContent=name;
+  amount.className='battle-choice-value';amount.textContent=value;
+  row.append(title,amount);battleSkillsList.append(row);
+ }
+ if(!rows.length){
+  const message=document.createElement('p');
+  message.className='battle-choice-empty';message.textContent=tr(emptyMessage);battleSkillsList.append(message);
+ }
+ battleSkillsList.hidden=false;
+ battleSkillsList.scrollTop=0;
+}
+function openBattleSkills(){
+ if(firstBattlePhase!=='command')return;
+ const actor=targetingActor();
+ if(!actor)return;
+ const member=actor.member||'riccardo';
+ openBattleChoiceList('skills','SKILLS',learnedTechniques(member).map(skill=>({
+  name:techniqueName(skill),value:skill.ep+' EP',disabled:partyMembers[member].ep<skill.ep,
+  select(){
+   if(firstBattlePhase!=='command'||targetingActor()!==actor||partyMembers[member].ep<skill.ep)return;
+   selectedBattleItem=null;selectedBattleSkill=skill;closeBattleSkills();firstBattlePhase='target';
+   if(skill.target==='self')void performFirstBattleAttack(actor);
+   else{battleHint(tr('Choose a target'));paintFirstBattle();}
+  }
+ })),'No techniques learned yet.');
+}
+itemCommand.onclick=()=>{
+ if(partyBattle?.kind!=='mart'||firstBattlePhase!=='command')return;
+ const rows=[];
+ for(const [id,count] of Object.entries(inventory)){
+  const item=ITEM_CATALOG[id];
+  if(count<=0||!item||!(item.hp||item.ep||item.revive))continue;
+  rows.push({name:tr(item.name),value:'×'+count,icon:item.icon,select:()=>showCombatItemTargets(id)});
+ }
+ openBattleChoiceList('items','ITEM',rows,'No items');
 };
-const closeSkillsBeforeStyled=closeBattleSkills;closeBattleSkills=function(){closeSkillsBeforeStyled();battleSkillsList.classList.remove('styled-skills');};
-const itemsBeforeStyled=itemCommand.onclick;itemCommand.onclick=()=>{battleSkillsList.classList.remove('styled-skills');itemsBeforeStyled();};
+battleScreen.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||battleSkillsList.hidden)return;
+ event.preventDefault();
+ closeBattleSkills();
+});
+
 
 const COMBAT_EXTRA_FILES={riccardoItem:'Riccardogif/riccardo_uso_item_gesto.gif',seoyoonItem:'Seoyoon/seoyoon_uso_item_gesto.gif',hp:'Equip/Icone/item_recupero_hp_verde.gif',ep:'Equip/Icone/item_recupero_ep_rosso.gif',revive:'Equip/Icone/item_resurrezione_viola.gif',riccardoKO:'Riccardogif/file_00000000e7588209a1e9783aa7f5f01a.png',seoyoonKO:'Seoyoon/file_00000000b4ac8209a0a488f97a0d9089.png'};
 let combatExtras=null,combatExtraLoad=null;
@@ -3453,12 +3521,45 @@ const MART_SHOP={
  exitRange:65*MART_SHOP_SCALE,boxRange:76*MART_SHOP_SCALE,
  outside:{x:1345,y:2630},returnPoint:{x:1345,y:2670}
 };
-let shopImage=null,shopImageLoad=null,warehouseBusy=false;
+const MART_SHOPS={
+ 'mart-shop':MART_SHOP,
+ 'mart-station':{
+  map:'Map/07072479-e89f-41ef-9c68-071fe35effdd.png',
+  width:MART_SHOP.width,height:MART_SHOP.height,
+  spawn:shopPoint(683,1140),exit:shopPoint(683,1155),exitMarker:shopPoint(683,1103),
+  exitRange:MART_SHOP.exitRange,talk:shopPoint(713,788),clerkHead:shopPoint(904,653),
+  greeting:'Welcome! Let me know if you need anything.'
+ },
+ 'mart-hongdeon-clean':{
+  map:'Map/file_000000001f9c8209999b6caaf7c075f7_Nero_AI_Image_Upscaler_Prime.png',
+  width:MART_SHOP.width,height:MART_SHOP.height,
+  spawn:MART_SHOP.spawn,exit:MART_SHOP.exit,exitMarker:MART_SHOP.exitMarker,
+  exitRange:MART_SHOP.exitRange,talk:shopPoint(298,659),clerkHead:shopPoint(146,581),
+  greeting:'Hello! How can I help you?'
+ }
+};
+const MART_ENTRANCES={
+ city:{door:{x:307,y:1101},returnPoint:{x:307,y:1115},range:53},
+ hongdeon:{door:MART_SHOP.outside,returnPoint:MART_SHOP.returnPoint,range:110}
+};
+function isMartShop(id){return Object.hasOwn(MART_SHOPS,id);}
+function martShopForStreet(id){
+ return id==='city'?'mart-station':equipState.stage==='new'?'mart-hongdeon-clean':'mart-shop';
+}
+const shopImages=new Map();
+let warehouseBusy=false;
 function martProgress(){if(!nightState.mart)nightState.mart={heardPassage:chaosProgress().stage==='done',visited:false,storyDungeon:false,dungeon:null};return nightState.mart;}
 function storyDungeonMode(){return !!nightState?.mart?.storyDungeon;}
-function isWarehouseArea(id){return id==='mart-shop'||id==='mart-dungeon'||isMartRoom(id);}
-function loadShopImage(){return shopImageLoad||(shopImageLoad=loadDungeonImage(MART_SHOP.map).then(im=>shopImage=im).catch(e=>{shopImageLoad=null;throw e;}));}
-async function loadWarehouseArea(id){if(isMartRoom(id))await loadMartRoom(id);else if(id==='mart-shop')await loadShopImage();else await loadDungeon();}
+function isWarehouseArea(id){return isMartShop(id)||id==='mart-dungeon'||isMartRoom(id);}
+function loadShopImage(id){
+ if(!shopImages.has(id)){
+  const shop=MART_SHOPS[id];
+  shopImages.set(id,loadDungeonImage(shop.map).then(image=>{shop.image=image;return image;})
+   .catch(error=>{shopImages.delete(id);throw error;}));
+ }
+ return shopImages.get(id);
+}
+async function loadWarehouseArea(id){if(isMartRoom(id))await loadMartRoom(id);else if(isMartShop(id))await loadShopImage(id);else await loadDungeon();}
 const shopRects=[[0,0,53,1536],[970,0,54,1536],[0,0,1024,70],[0,1175,1024,361],[55,300,198,755],[180,140,225,186],[460,175,160,170],[650,140,280,220],[360,400,125,510],[616,400,129,510],[880,320,100,810],[320,946,100,100]];
 const shopProps=[{name:'Checkout',baseY:1055,polygon:rect(55,300,198,755)},{name:'Rear shelf',baseY:326,polygon:rect(180,140,225,186)},{name:'Boxes',baseY:345,polygon:rect(460,175,160,170)},{name:'Fridges',baseY:360,polygon:rect(650,140,280,220)},{name:'Snacks west',baseY:910,polygon:rect(360,400,125,510)},{name:'Snacks east',baseY:910,polygon:rect(616,400,129,510)},{name:'Wall shelves',baseY:1130,polygon:rect(880,320,100,810)}];
 const fallenDisplay=[[535,990],[720,1034],[670,1145],[510,1095]];
@@ -3479,19 +3580,37 @@ registerEditableMap({
  world:scaleMartShopWorld({collisions:[...shopRects.map(a=>rect(...a)),fallenDisplay],depth:shopProps}),
  migrateWorld:saved=>saved.version==='mart-shop-v1'?scaleMartShopWorld(saved.world):null
 });
-const showBeforeShop=showLocation;showLocation=function(id){if(id!=='mart-shop'&&!isMartRoom(id)){showBeforeShop(id);return;}if(MAP_EDITOR_REGISTRY.has(locationId))persistEditableMap();if(locationId==='hongdeon')hongWorld=world;else if(isInterior(locationId))interiorWorlds[locationId]=world;
+function registerStaffedMart(id,furniture){
+ const shop=MART_SHOPS[id];
+ const walls=[[0,0,60,1536],[966,0,58,1536],[0,0,1024,84],[0,1175,1024,361]];
+ const collisions=[...walls,...furniture.map(({bounds})=>bounds)].map(args=>rect(...args));
+ const depth=furniture.map(({name,bounds:[x,y,w,h]})=>({name,baseY:y+h,polygon:rect(x,y,w,h)}));
+ registerEditableMap({id,map:shop.map,width:shop.width,height:shop.height,version:'mart-staffed-v1',world:scaleMartShopWorld({collisions,depth})});
+}
+registerStaffedMart('mart-station',[
+ {name:'Rear fridges',bounds:[135,140,474,224]},{name:'Rear utilities',bounds:[736,140,211,236]},
+ {name:'Upper aisle',bounds:[195,421,441,185]},{name:'Middle aisle',bounds:[195,660,441,199]},
+ {name:'Lower aisle',bounds:[195,910,441,205]},{name:'Checkout',bounds:[778,415,202,663]}
+]);
+registerStaffedMart('mart-hongdeon-clean',[
+ {name:'Checkout',bounds:[60,288,198,767]},{name:'Rear shelf',bounds:[179,146,225,183]},
+ {name:'Rear cartons',bounds:[456,172,164,176]},{name:'Rear fridges',bounds:[650,140,282,218]},
+ {name:'West aisle',bounds:[468,428,123,487]},{name:'East aisle',bounds:[697,428,124,487]},
+ {name:'Wall shelves',bounds:[878,320,91,810]}
+]);
+const showBeforeShop=showLocation;showLocation=function(id){if(!isMartShop(id)&&!isMartRoom(id)){showBeforeShop(id);return;}if(MAP_EDITOR_REGISTRY.has(locationId))persistEditableMap();if(locationId==='city')cityWorld=world;else if(locationId==='hongdeon')hongWorld=world;else if(isInterior(locationId))interiorWorlds[locationId]=world;
  for(const n of npcs)n.actor.node.hidden=true;npcs.splice(0);for(const a of chaosActors)a.actor.node.hidden=true;if(seoyoonNpc)seoyoonNpc.actor.node.hidden=true;chaosCompanionVisible=false;
  clearHongDepth();clearRoomDoors();depthNodes.forEach(n=>n.remove());depthNodes=[];clearMarkers();for(const b of markerNodes.values())b.remove();markerNodes.clear();doorButton.hidden=true;portalButton.hidden=true;dungeonLayer.hidden=true;for(const b of dungeonMarkers.values())b.hidden=true;
- const room=MART_ROOMS[id];
- locationId=id;world=editableMapWorld(id);CONFIG.width=room?MART_WIDTH:MART_SHOP.width;CONFIG.height=room?MART_HEIGHT:MART_SHOP.height;
+ const room=MART_ROOMS[id],shop=MART_SHOPS[id];
+ locationId=id;world=editableMapWorld(id);CONFIG.width=room?MART_WIDTH:shop.width;CONFIG.height=room?MART_HEIGHT:shop.height;
  scene.style.width=mapImage.style.width=CONFIG.width+'px';scene.style.height=mapImage.style.height=CONFIG.height+'px';
  mapImage.style.imageRendering='pixelated';mapImage.onload=()=>{if(locationId===id)rebuildDepth();};
- mapImage.src=room?.image.src||shopImage?.src||MART_SHOP.map;
+ mapImage.src=room?(room.image?.src||room.map):(shop.image?.src||shop.map);
  if(room){buildMartObjects(id);dungeonLastPosition=null;dungeonGrace=220;document.querySelector('.eyebrow').textContent='MART';refreshNightObjective();}for(const v of vehicles)v.actor.node.hidden=true;$('trainWindow').hidden=true;storyNightLighting.hidden=true;scene.classList.remove('story-night');$('editorOpen').hidden=false;if(mapImage.complete&&mapImage.naturalWidth)rebuildDepth();preloadMartNeighbors(id);
 };
-const drawBeforeShop=drawPlayer;drawPlayer=function(){if(locationId!=='mart-shop'&&!isMartRoom(locationId))return drawBeforeShop();const height=MART_DUNGEON_VIEW.actorHeight;if(player.actor.height!==height){player.actor.height=height;player.actor.active=null;}renderBeforeScale();};
-const cameraBeforeShop=updateCamera;updateCamera=function(){if(locationId!=='mart-shop'&&!isMartRoom(locationId))return cameraBeforeShop();zoom=MART_DUNGEON_VIEW.zoom;const w=viewWidth/zoom,h=viewHeight/zoom;camera.x=CONFIG.width>w?clamp(player.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;camera.y=CONFIG.height>h?clamp(player.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';};
-const targetsBeforeShop=allTargets;allTargets=function(){return locationId==='mart-shop'||isMartRoom(locationId)?[]:targetsBeforeShop();};
+const drawBeforeShop=drawPlayer;drawPlayer=function(){if(!isMartShop(locationId)&&!isMartRoom(locationId))return drawBeforeShop();const height=MART_DUNGEON_VIEW.actorHeight;if(player.actor.height!==height){player.actor.height=height;player.actor.active=null;}renderBeforeScale();};
+const cameraBeforeShop=updateCamera;updateCamera=function(){if(!isMartShop(locationId)&&!isMartRoom(locationId))return cameraBeforeShop();zoom=MART_DUNGEON_VIEW.zoom;const w=viewWidth/zoom,h=viewHeight/zoom;camera.x=CONFIG.width>w?clamp(player.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;camera.y=CONFIG.height>h?clamp(player.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';};
+const targetsBeforeShop=allTargets;allTargets=function(){return isMartShop(locationId)||isMartRoom(locationId)?[]:targetsBeforeShop();};
 
 const COPYRIGHT_LINES=[['Seoyoon','Wait… those frying-pan spins, and then behind your back… You remind me of that guy from Final—'],['Riccardo','SHH! We don’t have the copyright!'],['Seoyoon','For the pose?'],['Riccardo','As long as it’s a frying pan, we can say I’m cooking.'],['Seoyoon','With the frying pan behind your back?'],['Riccardo','Experimental cooking. Now let’s go.']];
 translateLines(COPYRIGHT_LINES,['잠깐… 프라이팬을 돌리다가 등 뒤로 넘기는 그 자세… 파이널—에 나오는 그 사람 같은데요.','쉿! 우리 저작권 없어요!','그 자세에도요?','프라이팬이니까 요리 중이라고 하면 돼요.','프라이팬을 등 뒤에 놓고요?','실험적인 요리죠. 이제 갑시다.']);
@@ -3510,13 +3629,13 @@ const advanceBeforeWarehouseStory=advanceSpeech;advanceSpeech=function(){const q
 
 const warehousePrompt=document.createElement('section');warehousePrompt.id='martEnterPrompt';warehousePrompt.className='confirmation-overlay';warehousePrompt.hidden=true;warehousePrompt.setAttribute('role','dialog');warehousePrompt.setAttribute('aria-modal','true');warehousePrompt.innerHTML='<div class="confirmation-panel"><p id="martEnterQuestion"></p><div class="confirmation-choices"><button data-yes>YES</button><button data-no>NO</button></div></div>';game.append(warehousePrompt);
 function closeWarehousePrompt(){warehousePrompt.hidden=true;resetInput();updateInteractionUI();}
-function openWarehousePrompt(){if(locationId!=='mart-shop'||locked()||dialogue||!martNear(MART_SHOP.boxes.x,MART_SHOP.boxes.y,MART_SHOP.boxRange))return;resetInput();$('martEnterQuestion').textContent=tr('Remove the boxes and enter?');warehousePrompt.querySelector('[data-yes]').textContent=tr('YES');warehousePrompt.querySelector('[data-no]').textContent=tr('NO');warehousePrompt.hidden=false;updateInteractionUI();warehousePrompt.querySelector('[data-no]').focus();}
+function openWarehousePrompt(){if(locationId!=='mart-shop'||!martProgress().heardPassage||locked()||dialogue||!martNear(MART_SHOP.boxes.x,MART_SHOP.boxes.y,MART_SHOP.boxRange))return;resetInput();$('martEnterQuestion').textContent=tr('Remove the boxes and enter?');warehousePrompt.querySelector('[data-yes]').textContent=tr('YES');warehousePrompt.querySelector('[data-no]').textContent=tr('NO');warehousePrompt.hidden=false;updateInteractionUI();warehousePrompt.querySelector('[data-no]').focus();}
 warehousePrompt.querySelector('[data-no]').onclick=closeWarehousePrompt;warehousePrompt.querySelector('[data-yes]').onclick=()=>{warehousePrompt.hidden=true;void changeWarehouseArea('mart-a',MART_FIRST_SPAWN,'down');};
 warehousePrompt.addEventListener('keydown',e=>{if(e.key==='Escape')closeWarehousePrompt();});
 const warehouseLockBefore=locked;locked=function(){return warehouseBusy||!warehousePrompt.hidden||warehouseLockBefore();};
 async function changeWarehouseArea(to,spawn,direction){if(warehouseBusy)return;warehouseBusy=true;resetInput();const epoch=sceneEpoch,fade=$('fade'),previous={transition:fade.style.transition,zIndex:fade.style.zIndex};const fadeMs=matchMedia('(prefers-reduced-motion: reduce)').matches?100:230;
  fade.style.zIndex='45';fade.style.transition='opacity '+fadeMs+'ms ease-in-out';
- try{await Promise.all([to==='hongdeon'?loadChaosImage():loadWarehouseArea(to),loadWorkUniform()]);if(epoch!==sceneEpoch)return;fade.classList.add('black');await wait(fadeMs+20);if(epoch!==sceneEpoch)return;saveWorld();
+ try{await Promise.all([to==='hongdeon'?loadHongdeonMap():to==='city'?Promise.resolve():loadWarehouseArea(to),workUniformEnabled?loadWorkUniform():Promise.resolve()]);if(epoch!==sceneEpoch)return;fade.classList.add('black');await wait(fadeMs+20);if(epoch!==sceneEpoch)return;saveWorld();
   const progress=martProgress();if(locationId==='mart-dungeon')progress.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};progress.storyDungeon=to==='mart-dungeon'||isMartRoom(to);progress.visited=true;
   if(isMartRoom(to)&&!isMartRoom(locationId))dungeonState=restoreMartProgress(progress.dungeon);
   showLocation(to);Object.assign(player,spawn,{direction,moving:false});nearestFree(player);drawPlayer();updateCamera();await new Promise(requestAnimationFrame);fade.classList.remove('black');await wait(fadeMs+20);
@@ -3524,25 +3643,32 @@ async function changeWarehouseArea(to,spawn,direction){if(warehouseBusy)return;w
 }
 const leaveBeforeWarehouseStory=leaveDungeonTest;leaveDungeonTest=async function(){if(storyDungeonMode())return changeWarehouseArea('mart-shop',MART_SHOP.returnFromStockroom,'down');return leaveBeforeWarehouseStory();};
 const warehouseMarkers=new Map();
-function warehouseMarker(id,at,action,label){let b=warehouseMarkers.get(id);if(!b){b=document.createElement('button');b.className='marker object';b.dataset.warehouseAction=id;const im=document.createElement('img');im.src=UI_ASSETS.exclamation;im.alt='!';b.append(im);b.onclick=e=>{e.preventDefault();e.stopPropagation();if(!locked()&&!dialogue&&!editor.open)action();};$('interactions').append(b);warehouseMarkers.set(id,b);}const p=screenPosition(at);b.style.left=p.x+'px';b.style.top=p.y+'px';b.setAttribute('aria-label',tr(label));b.hidden=p.x<20||p.x>viewWidth-20||p.y<45||p.y>viewHeight-20;return b;}
+function warehouseMarker(id,at,action,label,skin='exclamation'){let b=warehouseMarkers.get(id);if(!b){b=document.createElement('button');b.className=skin==='dots'?'marker':'marker object';b.dataset.warehouseAction=id;const im=document.createElement('img');im.src=UI_ASSETS[skin];im.alt='';b.append(im);b.onclick=e=>{e.preventDefault();e.stopPropagation();if(!locked()&&!dialogue&&!editor.open)action();};$('interactions').append(b);warehouseMarkers.set(id,b);}const p=screenPosition(at);b.style.left=p.x+'px';b.style.top=p.y+'px';b.setAttribute('aria-label',tr(label));b.hidden=p.x<20||p.x>viewWidth-20||p.y<45||p.y>viewHeight-20;return b;}
 const uiBeforeWarehouseStory=updateInteractionUI;updateInteractionUI=function(){uiBeforeWarehouseStory();for(const b of warehouseMarkers.values())b.hidden=true;if(!ready||intro||dialogue||firstBattleActive||editor.open||locked()||menuOpen||chaosBusy)return;
- if(locationId==='hongdeon'&&chaosEnabled()){
-  if(['rescued','done'].includes(chaosProgress().stage)&&Math.hypot(player.x-CHAOS.victim.x,player.y-CHAOS.victim.y)<110)warehouseMarker('rescued-man',{x:CHAOS.victim.x,y:CHAOS.victim.y-72},talkRescuedMan,'Talk');
-  if(martProgress().heardPassage&&Math.hypot(player.x-MART_SHOP.outside.x,player.y-MART_SHOP.outside.y)<110)warehouseMarker('enter-mart',{x:MART_SHOP.outside.x,y:MART_SHOP.outside.y-70},()=>void changeWarehouseArea('mart-shop',MART_SHOP.spawn,'up'),'Enter MART');
- }
- if(locationId==='mart-shop'){
-  $('editorOpen').hidden=false;if(martNear(MART_SHOP.exit.x,MART_SHOP.exit.y,MART_SHOP.exitRange))warehouseMarker('exit-mart',MART_SHOP.exitMarker,()=>void changeWarehouseArea('hongdeon',MART_SHOP.returnPoint,'down'),'Exit MART');
-  if(martNear(MART_SHOP.boxes.x,MART_SHOP.boxes.y,MART_SHOP.boxRange))warehouseMarker('stockroom',MART_SHOP.boxMarker,openWarehousePrompt,'Examine boxes');
+ if(locationId==='hongdeon'&&chaosEnabled()&&['rescued','done'].includes(chaosProgress().stage)&&martNear(CHAOS.victim.x,CHAOS.victim.y,110))
+  warehouseMarker('rescued-man',{x:CHAOS.victim.x,y:CHAOS.victim.y-72},talkRescuedMan,'Talk');
+ const entrance=MART_ENTRANCES[locationId];
+ if(entrance&&martNear(entrance.door.x,entrance.door.y,entrance.range))
+  warehouseMarker('enter-mart',{x:entrance.door.x,y:entrance.door.y-58},enterMartFromStreet,'Enter MART');
+ const shop=MART_SHOPS[locationId];
+ if(shop){
+  $('editorOpen').hidden=false;
+  if(martNear(shop.exit.x,shop.exit.y,shop.exitRange))
+   warehouseMarker('exit-mart',shop.exitMarker,()=>{const outside=locationId==='mart-station'?'city':'hongdeon';void changeWarehouseArea(outside,MART_ENTRANCES[outside].returnPoint,'down');},'Exit MART');
+  if(shop.talk&&martNear(shop.talk.x,shop.talk.y,36))
+   warehouseMarker('mart-cashier',shop.clerkHead,()=>shopCashierSpeech(MART_SHOPS[locationId].greeting,'greeting'),'Talk','dots');
+  if(locationId==='mart-shop'&&martProgress().heardPassage&&martNear(shop.boxes.x,shop.boxes.y,shop.boxRange))
+   warehouseMarker('stockroom',shop.boxMarker,openWarehousePrompt,'Examine boxes');
  }
  if(locationId==='mart-dungeon'&&storyDungeonMode()){const leave=dungeonMarkers.get('leave');if(leave)leave.setAttribute('aria-label',tr('Return to MART'));}
 };
-const statusBeforeWarehouse=updateStatus;updateStatus=function(){if(isMartRoom(locationId)){$('status').textContent=tr(MART_ROOMS[locationId].name);return;}if(locationId==='mart-shop'){$('status').textContent='MART';return;}statusBeforeWarehouse();};
+const statusBeforeWarehouse=updateStatus;updateStatus=function(){if(isMartRoom(locationId)){$('status').textContent=tr(MART_ROOMS[locationId].name);return;}if(isMartShop(locationId)){$('status').textContent='MART';return;}statusBeforeWarehouse();};
 
 const fireLayer=document.createElement('div');fireLayer.id='streetFires';fireLayer.style='position:absolute;inset:0;pointer-events:none';scene.append(fireLayer);
 for(const fire of [{x:545,y:563,h:142},{x:786,y:1378,h:154},{x:302,y:2988,h:184}]){const im=document.createElement('img');im.src='Equip/Icone/fuoco_strada_loop.gif';im.alt='';im.className='street-fire';const w=fire.h*.75;Object.assign(im.style,{left:(fire.x-w/2)+'px',top:(fire.y-fire.h*.89)+'px',width:w+'px',height:fire.h+'px',zIndex:String(Math.round(fire.y*100+35))});fireLayer.append(im);}
 function syncStreetFires(){fireLayer.hidden=locationId!=='hongdeon'||!chaosEnabled();}
 const showBeforeStreetFire=showLocation;showLocation=function(id){showBeforeStreetFire(id);syncStreetFires();};
-const travelBeforeWarehouse=updateTravel;updateTravel=function(dt){travelBeforeWarehouse(dt);syncStreetFires();if(isWarehouseArea(locationId))for(const b of testShortcuts.children)b.hidden=true;if(locationId==='mart-shop'||isMartRoom(locationId))testShortcuts.hidden=true;};
+const travelBeforeWarehouse=updateTravel;updateTravel=function(dt){travelBeforeWarehouse(dt);syncStreetFires();if(isWarehouseArea(locationId))for(const b of testShortcuts.children)b.hidden=true;if(isMartShop(locationId)||isMartRoom(locationId))testShortcuts.hidden=true;};
 [['Remove the boxes and enter?','상자를 치우고 들어갈까요?'],['Enter MART','마트 들어가기'],['Exit MART','마트 나가기'],['Examine boxes','상자 살펴보기'],['Return to MART','마트로 돌아가기'],['Talk','말하기']].forEach(p=>bilingual(...p));
 window.TaraiWarehouse={shop:MART_SHOP,getState:()=>({...martProgress(),location:locationId,busy:warehouseBusy,prompt:!warehousePrompt.hidden})};
 
@@ -4012,6 +4138,160 @@ $('battleRetry').onclick=()=>{
  if(firstBattlePhase==='defeat'&&gameOverCheckpoint()){void loadGameOverSave();return;}
  retryBeforeGameOver();
 };
+
+/* The two staffed MARTs share the destination panel and inventory definitions. */
+const REST_KIT='rest_kit';
+ITEM_CATALOG[REST_KIT]={
+ name:'Rest Kit',description:'Fully restore the party’s HP and EP at a save point.',
+ icon:'icons/file_00000000544882099f17761128d1275e.png'
+};
+const MART_PRICES={
+ espresso_shot:{buy:900,sell:450},staff_meal:{buy:1500,sell:750},
+ emergency_snack:{buy:3200,sell:1600},[REST_KIT]:{buy:7000}
+};
+const MART_DOOR_THOUGHT='What would I even do in there? I can’t even say hello in Korean…';
+const MART_GOODBYE='Thank you! See you next time!';
+[
+ [MART_DOOR_THOUGHT,'들어가서 뭐 하지? 한국어로 인사도 못 하는데…'],
+ [MART_SHOPS['mart-station'].greeting,'어서 오세요! 필요한 게 있으면 말씀해 주세요.'],
+ ['Hello! How can I help you?','안녕하세요! 무엇을 도와드릴까요?'],
+ [MART_GOODBYE,'감사합니다! 또 오세요!'],
+ ['Rest Kit','휴식 키트'],[ITEM_CATALOG[REST_KIT].description,'저장 지점에서 파티 전원의 HP와 EP를 모두 회복합니다.'],
+ ['Buy','구매'],['Sell','판매'],['Exit','나가기'],['Back','뒤로'],['Balance','소지금'],
+ ['Unit price','개당 가격'],['Not enough won.','소지금이 부족합니다.'],
+ ['The party is fully rested.','파티 전원이 휴식을 취했습니다.'],
+ ['Purchased.','구매했습니다.'],['Sold.','판매했습니다.']
+].forEach(pair=>bilingual(...pair));
+
+const renderBeforeRestKit=renderInventory;
+renderInventory=function(){
+ renderBeforeRestKit();
+ const button=$('useItem'),atKit=selectedItem===REST_KIT;
+ button.disabled=atKit&&!nearMartSavePoint();
+ if(atKit)button.hidden=false;
+};
+const useButtonBeforeRestKit=$('useItem').onclick;
+$('useItem').onclick=()=>{
+ if(selectedItem!==REST_KIT)return useButtonBeforeRestKit();
+ if(!nearMartSavePoint()||!menuOpen||autoMenu||!(inventory[REST_KIT]>0))return;
+ const members=partySlots.filter(id=>id&&partyMembers[id]?.joined!==false&&partyMembers[id]);
+ if(!members.length)return;
+ inventory[REST_KIT]--;
+ for(const id of members){
+  const member=partyMembers[id];
+  updateMember(id,{hp:member.maxHp,ep:member.maxEp});
+ }
+ renderInventory();
+ $('itemDetail').textContent=tr('The party is fully rested.');
+};
+
+const martShopMenu=document.createElement('section');
+martShopMenu.id='martShopMenu';martShopMenu.hidden=true;
+martShopMenu.setAttribute('role','dialog');martShopMenu.setAttribute('aria-modal','true');martShopMenu.setAttribute('aria-labelledby','martShopTitle');
+martShopMenu.innerHTML='<div id="martShopPanel"><img id="martShopSkin" alt=""><h2 id="martShopTitle"></h2><p id="martShopBalance"></p><div id="martShopBody"></div><button id="martShopBack" type="button"></button></div>';
+game.append(martShopMenu);
+$('martShopSkin').src=$('destinationSkin').getAttribute('src');
+
+let martShopPage='main',martShopSelected=null,martShopFeedback='';
+const martMoney=amount=>new Intl.NumberFormat(language==='ko'?'ko-KR':'en-US').format(amount)+' ₩';
+function shopButton(label,action){
+ const button=document.createElement('button');button.type='button';button.textContent=tr(label);button.onclick=action;
+ return button;
+}
+function martTrade(id,mode){
+ if(martShopMenu.hidden||martShopPage!==mode||!MART_SHOPS[locationId]?.talk)return;
+ const price=MART_PRICES[id]?.[mode],quantity=inventory[id]||0;
+ if(!Number.isFinite(price))return;
+ if(mode==='buy'){
+  if(won<price||quantity>=999)return;
+  inventory[id]=quantity+1;won-=price;
+ }else{
+  if(quantity<1)return;
+  inventory[id]=quantity-1;won+=price;
+ }
+ martShopFeedback=mode==='buy'?'Purchased.':'Sold.';
+ renderMenu();renderMartShop();
+}
+function renderMartShop(){
+ const body=$('martShopBody'),back=$('martShopBack'),mode=martShopPage;
+ body.replaceChildren();back.hidden=mode==='main';back.textContent=tr('Back');
+ $('martShopTitle').textContent=mode==='main'?'MART':tr(mode==='buy'?'Buy':'Sell');
+ $('martShopBalance').textContent=tr('Balance')+' · '+martMoney(won);
+ if(mode==='main'){
+  body.className='mart-shop-choices';
+  for(const [key,label] of [['buy','Buy'],['sell','Sell']]){
+   body.append(shopButton(label,()=>{martShopPage=key;martShopSelected=null;martShopFeedback='';renderMartShop();}));
+  }
+  body.append(shopButton('Exit',()=>void exitMartShopMenu()));
+  return;
+ }
+ body.className='mart-shop-products';
+ const list=document.createElement('div'),details=document.createElement('div');
+ list.className='mart-shop-product-list';details.className='mart-shop-details';body.append(list,details);
+ const ids=Object.keys(MART_PRICES).filter(id=>mode==='buy'||(Number.isFinite(MART_PRICES[id].sell)&&inventory[id]>0));
+ if(!ids.includes(martShopSelected))martShopSelected=ids[0]||null;
+ for(const id of ids){
+  const item=ITEM_CATALOG[id],row=shopButton(tr(item.name),()=>{martShopSelected=id;martShopFeedback='';renderMartShop();});
+  const info=document.createElement('span'),name=document.createElement('strong'),price=document.createElement('small');
+  name.textContent=tr(item.name);price.textContent=martMoney(MART_PRICES[id][mode])+(mode==='sell'?' · ×'+inventory[id]:'');info.append(name,price);row.replaceChildren();
+  if(item.icon){const img=document.createElement('img');img.src=item.icon;img.alt='';row.append(img);}
+  row.append(info);row.setAttribute('aria-pressed',String(id===martShopSelected));list.append(row);
+ }
+ const id=martShopSelected;
+ if(!id){list.textContent=tr('No items');return;}
+ const item=ITEM_CATALOG[id],price=MART_PRICES[id][mode],title=document.createElement('strong'),description=document.createElement('p'),amount=document.createElement('p'),feedback=document.createElement('p');
+ title.textContent=tr(item.name);description.textContent=tr(item.description);amount.textContent=tr('Unit price')+' · '+martMoney(price);
+ const action=shopButton(mode==='buy'?'Buy':'Sell',()=>martTrade(id,mode));
+ action.disabled=mode==='buy'&&(won<price||(inventory[id]||0)>=999);
+ feedback.setAttribute('role','status');
+ feedback.textContent=tr(martShopFeedback||(mode==='buy'&&won<price?'Not enough won.':''));
+ details.append(title,description,amount,action,feedback);
+}
+$('martShopBack').onclick=()=>{martShopPage='main';martShopSelected=null;martShopFeedback='';renderMartShop();};
+const lockedBeforeMartCommerce=locked;
+locked=function(){return !martShopMenu.hidden||lockedBeforeMartCommerce();};
+
+function shopCashierSpeech(line,mode){
+ const shop=MART_SHOPS[locationId];
+ if(!shop?.clerkHead)return;
+ player.direction=facing(shop.clerkHead.x-player.x,shop.talk.y-player.y);drawPlayer();
+ // The cashier is already in the map art. Only the balloon needs an anchor.
+ const owner={mapPainted:true,x:shop.clerkHead.x,y:shop.clerkHead.y,height:0,actor:{visibleHeight:0}};
+ openSpeech([line],{type:'npc',target:{type:'npc',owner,dog:false}});
+ dialogue.martShop=mode;
+ updateInteractionUI();
+}
+async function openMartShopMenu(){
+ const origin=locationId;
+ await fadeMenuPage(()=>{
+  if(locationId!==origin||!MART_SHOPS[origin]?.talk)return;
+  martShopPage='main';martShopSelected=null;martShopFeedback='';
+  martShopMenu.hidden=false;renderMartShop();
+ });
+ if(!martShopMenu.hidden)$('martShopBody').querySelector('button')?.focus();
+}
+async function exitMartShopMenu(){
+ if(martShopMenu.hidden||menuFadeBusy)return;
+ const origin=locationId;
+ await fadeMenuPage(()=>{martShopMenu.hidden=true;});
+ if(locationId===origin)shopCashierSpeech(MART_GOODBYE,'goodbye');
+}
+martShopMenu.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){event.preventDefault();if(martShopPage==='main')void exitMartShopMenu();else $('martShopBack').click();}
+});
+const advanceBeforeMartCommerce=advanceSpeech;
+advanceSpeech=function(){
+ const mode=dialogue?.martShop;
+ if(!mode||speechPageIndex+1<speechPages.length)return advanceBeforeMartCommerce();
+ closeDialogue(false);updateInteractionUI();
+ if(mode==='greeting')void openMartShopMenu();
+};
+
+function enterMartFromStreet(){
+ if(!jobAssigned){openSpeech([MART_DOOR_THOUGHT],{type:'story'});return;}
+ const id=martShopForStreet(locationId);
+ void changeWarehouseArea(id,MART_SHOPS[id].spawn,'up');
+}
 
 </script>
 </body>
