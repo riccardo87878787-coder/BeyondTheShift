@@ -704,9 +704,14 @@ function updateTraffic(dt){
 function polygonPath(ctx,p){ctx.beginPath();p.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();}
 function makeDepth(p,baseY){
  const xs=p.map(v=>v[0]),ys=p.map(v=>v[1]),x=Math.floor(Math.min(...xs)),y=Math.floor(Math.min(...ys)),w=Math.ceil(Math.max(...xs))-x,h=Math.ceil(Math.max(...ys))-y;if(w<1||h<1)return;
- const c=document.createElement("canvas");c.className="depth-piece";c.width=w;c.height=h;
- Object.assign(c.style,{left:x+"px",top:y+"px",zIndex:Math.round(baseY*100+30)});
- const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.translate(-x,-y);polygonPath(ctx,p);ctx.clip();ctx.drawImage(mapImage,0,0,CONFIG.width,CONFIG.height);scene.appendChild(c);depthNodes.push(c);
+ const shopMap=mapImage.style.imageRendering==='auto'&&isMartShop(locationId);
+ const density=shopMap?Math.max(1,Math.min(3,window.devicePixelRatio||1)):1;
+ const c=document.createElement("canvas");c.className="depth-piece";c.width=Math.ceil(w*density);c.height=Math.ceil(h*density);
+ Object.assign(c.style,{left:x+"px",top:y+"px",width:w+"px",height:h+"px",zIndex:Math.round(baseY*100+30)});
+ if(shopMap)c.style.imageRendering='auto';
+ const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=shopMap;
+ if(shopMap)ctx.imageSmoothingQuality='high';
+ ctx.scale(c.width/w,c.height/h);ctx.translate(-x,-y);polygonPath(ctx,p);ctx.clip();ctx.drawImage(mapImage,0,0,CONFIG.width,CONFIG.height);scene.appendChild(c);depthNodes.push(c);
 }
 function rebuildDepth(){depthNodes.forEach(n=>n.remove());depthNodes=[];for(const z of world.depth)makeDepth(z.polygon,z.baseY);makeDepth(rect(0,0,1024,55),145);makeDepth(rect(328,55,20,90),145);makeDepth(rect(660,55,28,90),145);makeDepth(rect(1003,55,21,90),145);}
 function setupTrain(){
@@ -3604,7 +3609,7 @@ const showBeforeShop=showLocation;showLocation=function(id){if(!isMartShop(id)&&
  const room=MART_ROOMS[id],shop=MART_SHOPS[id];
  locationId=id;world=editableMapWorld(id);CONFIG.width=room?MART_WIDTH:shop.width;CONFIG.height=room?MART_HEIGHT:shop.height;
  scene.style.width=mapImage.style.width=CONFIG.width+'px';scene.style.height=mapImage.style.height=CONFIG.height+'px';
- mapImage.style.imageRendering='pixelated';mapImage.onload=()=>{if(locationId===id)rebuildDepth();};
+ mapImage.style.imageRendering=shop?'auto':'pixelated';mapImage.onload=()=>{if(locationId===id)rebuildDepth();};
  mapImage.src=room?(room.image?.src||room.map):(shop.image?.src||shop.map);
  if(room){buildMartObjects(id);dungeonLastPosition=null;dungeonGrace=220;document.querySelector('.eyebrow').textContent='MART';refreshNightObjective();}for(const v of vehicles)v.actor.node.hidden=true;$('trainWindow').hidden=true;storyNightLighting.hidden=true;scene.classList.remove('story-night');$('editorOpen').hidden=false;if(mapImage.complete&&mapImage.naturalWidth)rebuildDepth();preloadMartNeighbors(id);
 };
