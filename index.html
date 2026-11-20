@@ -112,7 +112,10 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 #checkpointJump{position:absolute;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:21;display:grid;justify-items:start;gap:5px}
 #checkpointJump button{min-height:36px;padding:7px 11px;font-size:11px;background:#142b38ed;color:#f5ead5;border:1px solid #b8a67b;box-shadow:none}
 #checkpointOptions{display:grid;gap:4px;padding:5px;background:#132632f5;border:1px solid #b8a67b;border-radius:8px}
-.member-card[data-member="seon_jong"]>img{width:43%;height:100%;object-fit:contain;object-position:center bottom}
+.member-card[data-member="seon_jong"]{isolation:isolate;background:radial-gradient(ellipse at 53% 40%,#f7ead6,#efdec3)}
+.member-card[data-member="seon_jong"]::before{content:"";position:absolute;z-index:-1;inset:4px;border:3px double #b99655;border-radius:7px;box-shadow:0 0 0 1px #d4b770,inset 0 0 7px #a5874f4d;pointer-events:none}
+.member-card[data-member="seon_jong"]::after{content:"";position:absolute;inset:7px auto 7px 8px;width:2.5%;border-radius:4px 0 0 4px;background:#3c7478;pointer-events:none}
+.member-card[data-member="seon_jong"]>img{position:absolute;bottom:5px;left:5%;width:38%;height:calc(100% - 11px);object-fit:contain;object-position:center bottom}
 #equipPortrait[data-member="seon_jong"]{background-size:contain;background-position:center bottom}
 .seon-TV{position:absolute;left:583px;top:612px;width:25px;height:114px;clip-path:polygon(7% 0,64% 12%,100% 89%,66% 100%,7% 89%);background:#9de6ff5c;pointer-events:none;z-index:72700}
 #rewardContinue{position:absolute;bottom:0;left:3%;right:3%;height:7.3%;display:grid;place-items:center;color:#f5ead5;font-size:3.8cqw}
@@ -1397,7 +1400,8 @@ const PORTALS=[
  {from:'quarters',to:'restaurant',x:909,y:705,r:64,label:'Go downstairs',spawn:{x:909,y:730},direction:'down'}
 ];
 function nearbyPortal(){return PORTALS.find(p=>p.from===locationId&&Math.hypot(player.x-p.x,player.y-p.y)<p.r);}
-async function useCucchiaioPortal(p){if(locked()||intro||dialogue||editor.open||p.from!==locationId)return;resetInput();transitioning=true;const epoch=sceneEpoch;$('fade').classList.add('black');try{await Promise.all([wait(780),isInterior(p.to)?loadInteriorImage(p.to):loadHongdeonMap(),loadDoorSprites()]);if(epoch!==sceneEpoch)return;saveWorld();showLocation(p.to);Object.assign(player,p.spawn,{direction:p.direction,moving:false});nearestFree(player);zoom=CONFIG.zoom;drawPlayer();updateCamera();await wait(100);}catch(e){$('status').textContent=e.message;notice(e.message);}finally{if(epoch===sceneEpoch){$('fade').classList.remove('black');await wait(780);transitioning=false;}}}
+async function useCucchiaioPortal(p){
+ const returning=p.from==='hongdeon'&&p.to==='restaurant'&&partyMembers.seon_jong.joined&&!nightState.cucchiaioReturnSeen;if(locked()||intro||dialogue||editor.open||p.from!==locationId)return;resetInput();transitioning=true;const epoch=sceneEpoch;$('fade').classList.add('black');try{await Promise.all([wait(780),isInterior(p.to)?loadInteriorImage(p.to):loadHongdeonMap(),loadDoorSprites(),returning?loadCucchiaioReturnAssets():null]);if(epoch!==sceneEpoch)return;saveWorld();showLocation(p.to);Object.assign(player,p.spawn,{direction:p.direction,moving:false});nearestFree(player);zoom=CONFIG.zoom;if(returning)stageCucchiaioReturn();drawPlayer();updateCamera();await wait(100);}catch(e){clearCucchiaioReturn();$('status').textContent=e.message;notice(e.message);}finally{if(epoch===sceneEpoch){$('fade').classList.remove('black');await wait(780);transitioning=false;if(returning&&cucchiaioReturn)void startCucchiaioReturn();}}}
 const portalButton=document.createElement('button'),portalIcon=document.createElement('img');portalButton.className='marker object';portalButton.hidden=true;portalIcon.src=UI_ASSETS.exclamation;portalIcon.alt='!';portalButton.appendChild(portalIcon);$('interactions').appendChild(portalButton);portalButton.onclick=e=>{e.stopPropagation();const p=nearbyPortal();if(p)useCucchiaioPortal(p);};
 const uiBeforeCucchiaio=updateInteractionUI;updateInteractionUI=function(){uiBeforeCucchiaio();if(isInterior(locationId))doorButton.hidden=true;const p=nearbyPortal();const hidden=!p||!ready||intro||!!dialogue||editor.open||locked();if(portalButton.hidden!==hidden)portalButton.hidden=hidden;if(!portalButton.hidden){const pos=screenPosition({x:p.x,y:p.y-65});portalButton.style.left=clamp(pos.x,24,viewWidth-24)+'px';portalButton.style.top=clamp(pos.y,52,viewHeight-25)+'px';if(portalButton.getAttribute('aria-label')!==p.label)portalButton.setAttribute('aria-label',p.label);}};
 const travelBeforeCucchiaio=updateTravel;updateTravel=function(dt){travelBeforeCucchiaio(dt);if(isInterior(locationId))testHongButton.hidden=true;updateRoomDoors(dt);};
@@ -1539,6 +1543,7 @@ function splitBalloonText(text,limit=120){
 }
 function currentSpeaker(){
  if(!dialogue)return '';
+ if(dialogue.cucchiaioReturn)return dialogue.cucchiaioReturn.speaker;
  const q=dialogue.seoyoonScene;
  if(q){const who=SEOYOON_SCENES[q.part][q.index][0];return who==='narration'?'':who==='thought'?'Guy':who;}
  if(dialogue.officeStory&&officeSequence){const who=OFFICE_STORY[officeSequence.index]?.speaker;if(who==='narration')return '';if(who!=='npc')return 'Guy';}
@@ -1548,11 +1553,11 @@ function currentSpeaker(){
 }
 function paintBalloonPage(){
  const node=$('speechText');node.replaceChildren();
- const candidate=speechSpeaker||currentSpeaker(),shownSpeaker=['Guy','Girl 1','Stranger','Girl 2','TV'].includes(candidate)?candidate:'';if(shownSpeaker){const name=document.createElement('strong');name.className='speech-speaker';name.textContent=shownSpeaker;node.appendChild(name);}
+ const candidate=speechSpeaker||currentSpeaker(),shownSpeaker=['Guy','Girl 1','Stranger','Girl 2','TV','Guy 2'].includes(candidate)?candidate:'';if(shownSpeaker){const name=document.createElement('strong');name.className='speech-speaker';name.textContent=shownSpeaker;node.appendChild(name);}
  const text=document.createElement('span');text.className='speech-body';text.textContent=speechPages[speechPageIndex]||'';node.appendChild(text);
 }
 function setSpeechText(value){
- let text=String(value??''),name='';const explicit=text.match(/^(Guy|Girl 1|Stranger|Girl 2|TV):\s*/);
+ let text=String(value??''),name='';const explicit=text.match(/^(Guy|Girl 1|Stranger|Girl 2|TV|Guy 2):\s*/);
  if(explicit){name=explicit[1];text=text.slice(explicit[0].length);}else name=currentSpeaker();
  speechSpeaker=name;speechPages=splitBalloonText(text);speechPageIndex=0;paintBalloonPage();
 }
@@ -2366,7 +2371,7 @@ function tr(value){const text=String(value??''),source=EN_TEXT.get(text)||text;i
 const LANGUAGE_PREF_KEY='cucchiaio-language-v1';
 function savedLanguage(){try{const l=localStorage.getItem(LANGUAGE_PREF_KEY);return ['en','ko'].includes(l)?l:null;}catch(_){return null;}}
 function rememberLanguage(){try{localStorage.setItem(LANGUAGE_PREF_KEY,language);}catch(_){}}
-const localizeSpeech=setSpeechText;let rawSpeech='';setSpeechText=function(value){rawSpeech=String(value??'');if(!languageUnlocked){localizeSpeech(rawSpeech);return;}const m=rawSpeech.match(/^(Guy|Girl 1|Stranger|Girl 2|TV):\s*/);localizeSpeech(m?m[1]+': '+tr(rawSpeech.slice(m[0].length)):tr(rawSpeech));};
+const localizeSpeech=setSpeechText;let rawSpeech='';setSpeechText=function(value){rawSpeech=String(value??'');if(!languageUnlocked){localizeSpeech(rawSpeech);return;}const m=rawSpeech.match(/^(Guy|Girl 1|Stranger|Girl 2|TV|Guy 2):\s*/);localizeSpeech(m?m[1]+': '+tr(rawSpeech.slice(m[0].length)):tr(rawSpeech));};
 const paintNames=paintBalloonPage;paintBalloonPage=function(){paintNames();const name=$('speechText').querySelector('.speech-speaker');if(name)name.textContent=languageUnlocked&&language==='ko'?({"Guy":'Guy',"Girl 1":'Girl 1',Stranger:'낯선 사람','Girl 2':'Girl 2'}[name.textContent]||name.textContent):name.textContent;};
 // Translate just visible text nodes, preserving controls, listeners and source data.
 const localizedNodes=new WeakMap();
@@ -2919,7 +2924,10 @@ window.addEventListener('pointerup',e=>{if(e.target?.closest?.('#testDungeonButt
 async function enterDungeonTest(saved=null,beforeRestore=null,checkpoint='dungeon'){
  if(dungeonJumping||(firstBattleActive&&!beforeRestore))return false;dungeonJumping=true;resetInput();paintTestShortcuts();
  try{
- const roomId=isMartRoom(saved?.location)?saved.location:checkpoint==='boss'?'mart-e':'mart-a';await Promise.all([loadMartRoom(roomId),loadWorkUniform(),loadSeoyoon()]);const fade=$('fade');fade.style.zIndex='40';fade.style.transition='opacity 400ms linear';fade.classList.add('black');await wait(430);
+ const afterRecruitment=checkpoint==='hongdeon-recruited';
+ const roomId=afterRecruitment?'hongdeon':isMartRoom(saved?.location)?saved.location:checkpoint==='boss'?'mart-e':'mart-a';
+ const areaLoad=afterRecruitment?Promise.all([loadHongdeonMap(),loadChaosImage(),loadChaosActors()]):loadMartRoom(roomId);
+ await Promise.all([areaLoad,loadWorkUniform(),loadSeoyoon()]);const fade=$('fade');fade.style.zIndex='40';fade.style.transition='opacity 400ms linear';fade.classList.add('black');await wait(430);
  beforeRestore?.();
  sceneEpoch++;storyEpoch++;nightEpoch++;morningEpoch++;chaosEpoch++;trainRun++;for(const m of morningMotions.values())m.resolve(false);morningMotions.clear();morningMotion=null;morningRunner=null;morningBusy=false;
  closeDialogue(false);reactionTime=0;intro=false;film.phase='play';ending=false;menuOpen=false;autoMenu=false;transitioning=false;destinationOpen=false;officeSequence=null;travelScene=null;nightTransition=false;chaosBusy=false;chaosCamera=null;chaosCompanionVisible=false;civilianBalloon.hidden=true;
@@ -2929,7 +2937,16 @@ async function enterDungeonTest(saved=null,beforeRestore=null,checkpoint='dungeo
  for(const id of ['riccardo','seoyoon']){const m=partyMembers[id];m.joined=true;if(saved?.members?.[id]){const s=saved.members[id];Object.assign(m,{level:clamp(Math.trunc(s.level)||3,1,50),exp:Math.max(0,Number(s.exp)||0),hp:Math.max(0,Number(s.hp)||0),ep:Math.max(0,Number(s.ep)||0)});syncMemberProgression(id);}else{m.exp=id==='riccardo'?260:200;m.level=3;syncMemberProgression(id,{refill:true});}}
  won=clamp(Number(saved?.won??50000),0,LIMITS.won);inventory=saved?{}:{staff_meal:5,espresso_shot:3,emergency_snack:1};if(saved)for(const[id,n]of Object.entries(saved.inventory||{}))if(ITEM_CATALOG[id]&&Number.isInteger(n)&&n>0)inventory[id]=Math.min(999,n);
  dungeonState=restoreMartProgress(saved?.dungeon);
- showLocation(roomId);const spawn=checkpoint==='boss'?{x:768,y:418,direction:'down'}:martRoomEntry(roomId),position=saved?.location===roomId?saved.player:null;Object.assign(player,spawn,position,{direction:Object.hasOwn(VECTORS,position?.direction)?position.direction:spawn.direction,moving:false});if(!nearestFree(player))Object.assign(player,spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;drawPlayer();updateCamera();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';
+ if(afterRecruitment){
+  partyMembers.seon_jong.joined=true;
+  partySlots[2]='seon_jong';
+  dungeonState.managerDefeated=true;
+  nightState.chaos.poseSeen=true;
+  nightState.mart.storyDungeon=false;
+  nightState.mart.dungeon={...dungeonState,opened:[...dungeonState.opened]};
+  void loadCucchiaioReturnAssets().catch(()=>{});
+ }
+ showLocation(roomId);const spawn=afterRecruitment?{x:1360,y:1925,direction:'up'}:checkpoint==='boss'?{x:768,y:418,direction:'down'}:martRoomEntry(roomId),position=saved?.location===roomId?saved.player:null;Object.assign(player,spawn,position,{direction:Object.hasOwn(VECTORS,position?.direction)?position.direction:spawn.direction,moving:false});if(!nearestFree(player))Object.assign(player,spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;drawPlayer();updateCamera();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';
  }catch(e){console.error(e);notice(e.message);$('fade').classList.remove('black');$('fade').style.zIndex='';$('fade').style.transition='';return false;}
  finally{dungeonJumping=false;paintTestShortcuts();updateInteractionUI();}
  return true;
@@ -3683,10 +3700,10 @@ function loadShopImage(id){
 }
 const YEONNAM={
  id:'yeonnam',map:'Map/ca5adee5-6351-48a4-b33c-1a3b2a551288.png',width:1536,height:1024,
- spawn:{x:224,y:918},houseDoor:{x:1260,y:311},zoom:.85
+ spawn:{x:224,y:918},houseDoor:{x:1260,y:311},zoom:1.2
 };
 const SEON_HOUSE={
- id:'seon-house',width:1448,height:1086,zoom:1.05,
+ id:'seon-house',width:1448,height:1086,zoom:.72,
  spawn:{x:725,y:911},door:{x:725,y:994},host:{x:775,y:792},
  map:'Map/file_0000000050708209bcdbdd6fe7d845ce.png',
  cat:'SeonJong/file_000000006b6482098dd9c780246a5f1e.gif',
@@ -3795,7 +3812,8 @@ const showBeforeShop=showLocation;showLocation=function(id){
 };
 function warehouseActorHeight(){
  const view=MART_DUNGEON_VIEW;
- return locationId===YEONNAM.id?view.actorHeight*view.zoom/YEONNAM.zoom:view.actorHeight;
+ const zoom=locationId===YEONNAM.id?YEONNAM.zoom:locationId===SEON_HOUSE.id?SEON_HOUSE.zoom:view.zoom;
+ return view.actorHeight*view.zoom/zoom;
 }
 const drawBeforeShop=drawPlayer;drawPlayer=function(){if(!isYeonnamArea(locationId)&&!isMartShop(locationId)&&!isMartRoom(locationId))return drawBeforeShop();const height=warehouseActorHeight();if(player.actor.height!==height){player.actor.height=height;player.actor.active=null;}renderBeforeScale();};
 const cameraBeforeShop=updateCamera;updateCamera=function(){if(!isYeonnamArea(locationId)&&!isMartShop(locationId)&&!isMartRoom(locationId))return cameraBeforeShop();zoom=locationId===YEONNAM.id?YEONNAM.zoom:locationId===SEON_HOUSE.id?SEON_HOUSE.zoom:MART_DUNGEON_VIEW.zoom;const w=viewWidth/zoom,h=viewHeight/zoom;camera.x=CONFIG.width>w?clamp(player.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;camera.y=CONFIG.height>h?clamp(player.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';};
@@ -3837,7 +3855,7 @@ const warehouseMarkers=new Map(),visibleWarehouseMarkers=new Set();
 function warehouseMarker(id,at,action,label,skin='exclamation'){let b=warehouseMarkers.get(id);if(!b){b=document.createElement('button');b.className=skin==='dots'?'marker':'marker object';b.dataset.warehouseAction=id;const im=document.createElement('img');im.src=UI_ASSETS[skin];im.alt='';b.append(im);b.onclick=e=>{e.preventDefault();e.stopPropagation();if(!locked()&&!dialogue&&!editor.open)action();};$('interactions').append(b);warehouseMarkers.set(id,b);}const p=screenPosition(at);b.style.left=p.x+'px';b.style.top=p.y+'px';const name=tr(label);if(b.getAttribute('aria-label')!==name)b.setAttribute('aria-label',name);const hidden=p.x<20||p.x>viewWidth-20||p.y<45||p.y>viewHeight-20;if(b.hidden!==hidden)b.hidden=hidden;visibleWarehouseMarkers.add(id);return b;}
 function paintWarehouseMarkers(){
  if(!ready||intro||dialogue||firstBattleActive||editor.open||locked()||menuOpen||chaosBusy)return;
- if(locationId==='hongdeon'&&chaosEnabled()&&['rescued','done'].includes(chaosProgress().stage)&&martNear(CHAOS.victim.x,CHAOS.victim.y,110))
+ if(locationId==='hongdeon'&&!partyMembers.seon_jong.joined&&chaosEnabled()&&['rescued','done'].includes(chaosProgress().stage)&&martNear(CHAOS.victim.x,CHAOS.victim.y,110))
   warehouseMarker('rescued-man',{x:CHAOS.victim.x,y:CHAOS.victim.y-72},talkRescuedMan,'Talk');
  if(locationId===YEONNAM.id&&martNear(YEONNAM.houseDoor.x,YEONNAM.houseDoor.y,45)){
   const {x,y}=YEONNAM.houseDoor;
@@ -3953,10 +3971,11 @@ loadMartRoom=function(id){
  const room=loadMartRoomBeforeManager(id);
  return id==='mart-e'?Promise.all([room,loadManagerMap()]).then(([image])=>image):room;
 };
-async function prepareManagerKnives(blob){
+function prepareManagerKnives(blob){return retimeBattleGif(blob,1/3.5,true);}
+async function retimeBattleGif(blob,factor,once=false){
  const data=new Uint8Array(await blob.arrayBuffer());
  const decoder=new TextDecoder();
- if(data.length<14||!['GIF87a','GIF89a'].includes(decoder.decode(data.subarray(0,6))))throw Error('Invalid knife animation');
+ if(data.length<14||!['GIF87a','GIF89a'].includes(decoder.decode(data.subarray(0,6))))throw Error('Invalid GIF animation');
  const paletteSize=packed=>packed&0x80?3*(2<<(packed&7)):0;
  function endOfSubBlocks(offset){
   while(offset<data.length){
@@ -3964,7 +3983,7 @@ async function prepareManagerKnives(blob){
    if(size===0)return offset;
    offset+=size;
   }
-  throw Error('Incomplete knife animation');
+  throw Error('Incomplete GIF animation');
  }
  const headerSize=13+paletteSize(data[10]);
  let offset=headerSize,originalTime=0,duration=0,cut=0;
@@ -3980,11 +3999,11 @@ async function prepareManagerKnives(blob){
    continue;
   }
   if(marker===0x2c){
-   if(offset+9>=data.length)throw Error('Incomplete knife frame');
+   if(offset+9>=data.length)throw Error('Incomplete GIF frame');
    offset=endOfSubBlocks(offset+10+paletteSize(data[offset+8]));
    continue;
   }
-  if(marker!==0x21)throw Error('Invalid knife animation block');
+  if(marker!==0x21)throw Error('Invalid GIF animation block');
   const label=data[offset++];
   const first=offset;
   offset=endOfSubBlocks(offset);
@@ -3992,16 +4011,16 @@ async function prepareManagerKnives(blob){
    const delay=first+2;
    originalTime+=(data[delay]|data[delay+1]<<8)||10;
    // GIF delays are centiseconds. Delays below 20 ms are clamped by some browsers.
-   const shortened=Math.max(2,Math.round(originalTime/3.5)-duration);
-   duration+=shortened;
-   data[delay]=shortened&255;data[delay+1]=shortened>>8;
-  }else if(label===0xff&&data[first]===11&&
+   const frameDelay=clamp(Math.round(originalTime*factor)-duration,2,65535);
+   duration+=frameDelay;
+   data[delay]=frameDelay&255;data[delay+1]=frameDelay>>8;
+  }else if(once&&label===0xff&&data[first]===11&&
      ['NETSCAPE2.0','ANIMEXTS1.0'].includes(decoder.decode(data.subarray(first+1,first+12)))){
    // Run each copy once. The action plays three copies explicitly.
    output.push(data.subarray(cut,start));cut=offset;
   }
  }
- if(!duration)throw Error('Knife animation has no frame delays');
+ if(!duration)throw Error('GIF animation has no frame delays');
  output.push(data.subarray(cut));
  return {blob:new Blob(output,{type:'image/gif'}),duration:duration*10};
 }
@@ -4620,6 +4639,7 @@ const SEON_BATTLE_FILES={
  cast:'SeonJong/seon_jong_skill_a_sip-1.gif',
  cleanse:'icons/cleansing_infusion_spirale.gif'
 };
+const SEON_CAST_SLOWDOWN=1.15;
 const PROTECTIVE_BLEND_ICON='icons/protective_blend_scudo.png';
 const FIRM_PAN_TIMING={impact:1630,duration:1910};
 let firmPanStrikeLoad=null,seonBattleLoad=null,seonCleanseAsset=null;
@@ -4633,7 +4653,7 @@ function loadFirmPanStrike(){
 }
 function loadSeonBattle(){
  if(!seonBattleLoad){
-  seonBattleLoad=Promise.all(Object.entries(SEON_BATTLE_FILES).map(async ([pose,path])=>[pose,await battleAsset(path)]))
+  seonBattleLoad=Promise.all(Object.entries(SEON_BATTLE_FILES).map(async ([pose,path])=>[pose,await battleAsset(path,pose==='cast'?blob=>retimeBattleGif(blob,SEON_CAST_SLOWDOWN):null)]))
    .then(entries=>{
     const {cleanse,...poses}=Object.fromEntries(entries);
     seonCleanseAsset=cleanse;
@@ -4707,7 +4727,7 @@ async function playSeonCleanse(target,skill,epoch){
 async function playSeonTechnique(user,target,skill,epoch){
  const targets=skill.target==='all-allies'?partyHeroes():[target];
  await drawBattlePose(user,'cast',true);
- if(!await battlePause(520,epoch))return;
+ if(!await battlePause(Math.round(520*SEON_CAST_SLOWDOWN),epoch))return;
  const healPower=Math.max(1,Math.floor(partyStats(user).technique*(skill.power||1)));
  const visuals=targets.map(async ally=>{
   const alive=ally.hp()>0,maxHp=partyStats(ally).maxHp;
@@ -4748,7 +4768,7 @@ async function playSeonTechnique(user,target,skill,epoch){
   }
  });
  paintFirstBattle();
- await Promise.allSettled([battlePause(670,epoch),...visuals]);
+ await Promise.allSettled([battlePause(Math.round(670*SEON_CAST_SLOWDOWN),epoch),...visuals]);
  if(!battleAlive(epoch))return;
  await drawBattlePose(user,'idle',true);
 }
@@ -4769,6 +4789,8 @@ function loadSeonHouseNpc(){
 const drawBeforeSeon=drawNpc;
 drawNpc=function(n){
  if(n!==seonHouseNpc)return drawBeforeSeon(n);
+ const height=warehouseActorHeight();
+ if(n.actor.height!==height){n.height=n.actor.height=height;n.actor.active=null;}
  setAsset(n.actor,n.idleAssets[n.direction]||n.idleAssets.down);
  place(n.actor,n.x,n.y);
 };
@@ -4864,7 +4886,7 @@ translateLines(SEON_HOUSE_DECISION,[
 const SEON_JOIN_NOTICE='Girl 2 joined the party!';
 [
  [SEON_JOIN_NOTICE,'Girl 2가 파티에 합류했습니다!'],['Meow!','야옹!'],['Return to Cucchiaio.','쿠키아이오로 돌아가세요.'],
- ['Test','테스트'],['Hongdeon · Start','홍대 · 시작'],['MART dungeon','마트 지하 던전'],['Before the MART boss','마트 보스 앞']
+ ['Test','테스트'],['Hongdeon · Start','홍대 · 시작'],['Hongdeon · After recruiting Girl 2','홍대 · Girl 2 합류 후'],['MART dungeon','마트 지하 던전'],['Before the MART boss','마트 보스 앞']
 ].forEach(pair=>bilingual(...pair));
 
 const houseCat=document.createElement('img');
@@ -5000,7 +5022,7 @@ $('partyNoticeOk').onclick=function(){
 
 testShortcuts.remove();
 const checkpointMenu=document.createElement('div');checkpointMenu.id='checkpointJump';checkpointMenu.hidden=true;
-checkpointMenu.innerHTML='<div id="checkpointOptions" hidden><button type="button" data-checkpoint="hongdeon">Hongdeon · Start</button><button type="button" data-checkpoint="dungeon">MART dungeon</button><button type="button" data-checkpoint="boss">Before the MART boss</button></div><button type="button" id="checkpointToggle" aria-expanded="false" aria-controls="checkpointOptions">Test</button>';
+checkpointMenu.innerHTML='<div id="checkpointOptions" hidden><button type="button" data-checkpoint="hongdeon">Hongdeon · Start</button><button type="button" data-checkpoint="hongdeon-recruited">Hongdeon · After recruiting Girl 2</button><button type="button" data-checkpoint="dungeon">MART dungeon</button><button type="button" data-checkpoint="boss">Before the MART boss</button></div><button type="button" id="checkpointToggle" aria-expanded="false" aria-controls="checkpointOptions">Test</button>';
 game.append(checkpointMenu);
 const checkpointToggle=$('checkpointToggle'),checkpointOptions=$('checkpointOptions');
 function setCheckpointOptions(open){
@@ -5035,6 +5057,363 @@ beginIntro=function(){
  setCheckpointOptions(false);
  return houseResetBefore();
 };
+
+/* Return to Cucchiaio after the third party member joins. */
+const CUCCHIAIO_RETURN_FILES={
+ blueWalk:'Enemy/uomo-blu-cammina-sud.gif',blueSearch:'Enemy/uomo-blu-rovista-sud.gif',
+ glassesWalk:'Enemy/uomo-occhiali-cammina-sud.gif',glassesSearch:'Enemy/uomo-occhiali-rovista-nord.gif',
+ michael:'Michael/file_00000000c3208209b2bc6764ca05b9a2.png'
+};
+const RETURN_ENTRANCE=[
+ ['Guy','Finally, we made it. I’ll get my passport and we can go.'],
+ ['Girl 1','Let’s hope everything is still where we left it.'],
+ ['Girl 2','I don’t think anyone’s here.'],
+ ['Girl 1','Wait… did you hear that?'],
+ ['Guy','Yeah. It came from the kitchen.'],
+ ['Girl 2','Let’s go see.']
+];
+translateLines(RETURN_ENTRANCE,[
+ '드디어 도착했네요. 여권만 챙기고 나가요.','적어도 우리가 두고 간 그대로였으면 좋겠네요.','아무도 없는 것 같은데요.',
+ '잠깐… 들었어요?','네. 주방에서 났어요.','가서 확인해 봐요.'
+]);
+const RETURN_INTRUDERS=[
+ ['Guy','Hey! What the hell are you doing here?!'],
+ ['Girl 1','Who are you?!'],
+ ['Girl 2','Watch out!'],
+ ['Guy','Hey! Stop!'],
+ ['Guy','What the hell…'],
+ ['Girl 1','They ran without saying a word.'],
+ ['Girl 2','They seemed to know exactly what they were looking for.'],
+ ['Guy','Well, they sure weren’t here to eat.']
+];
+translateLines(RETURN_INTRUDERS,[
+ '이봐요! 여기서 대체 뭐 하는 거예요?!','당신들 누구예요?!','조심해요!','이봐! 멈춰!',
+ '대체 뭐야…','아무 말도 안 하고 도망쳤어요.','뭘 찾는지 정확히 알고 있는 것 같았어요.','적어도 밥 먹으러 온 건 아니네요.'
+]);
+const RETURN_MUFFLED=[
+ ['','Mmmh! Mmmmh!'],
+ ['Girl 1','Wait… did you hear that?'],
+ ['','MMMH! MMMH!'],
+ ['Girl 2','Someone’s here!'],
+ ['Guy','It’s coming from over there!']
+];
+translateLines(RETURN_MUFFLED,['으음! 으으음!','잠깐… 들었어요?','으음! 으음!','누가 있어요!','저쪽에서 들려요!']);
+const RETURN_MICHAEL=[
+ ['Guy','GUY 2?!'],
+ ['Girl 1','Oh my God!'],
+ ['Guy 2','Finally! I thought no one was coming!'],
+ ['Guy','What the hell happened?!'],
+ ['Guy 2','Those bastards came in and started asking about the deliveries. When I asked who they were, they tied me up.'],
+ ['Girl 1','Did they hurt you?'],
+ ['Guy 2','I’m fine. Apart from being trussed up like a salami.'],
+ ['Guy','Welcome to the shitty day club.'],
+ ['Girl 2','Do you know what they were looking for?'],
+ ['Guy 2','No idea. They kept going through invoices and paperwork.'],
+ ['Girl 1','That’s exactly what they were doing when we got here.'],
+ ['Guy 2','What are you three doing here, anyway?'],
+ ['Guy','I came back for my passport.'],
+ ['Guy 2','Your passport?! With everything that’s happening out there?!'],
+ ['Guy','Yeah, I know. Next time I’ll try to forget something less important.'],
+ ['Guy 2','Anyway… thanks. I don’t know how long I’d have been stuck back there.']
+];
+translateLines(RETURN_MICHAEL,[
+ 'GUY 2?!','세상에!','드디어! 아무도 안 오는 줄 알았어요!','대체 무슨 일이 있었어요?!',
+ '그 자식들이 들어와서 납품 얘길 묻기 시작했어요. 누군지 물었더니 저를 묶어 버렸어요.','다친 데는 없어요?',
+ '괜찮아요. 소시지처럼 꽁꽁 묶인 것만 빼면요.','빌어먹을 하루를 보내는 모임에 어서 와요.',
+ '뭘 찾고 있었는지 알아요?','모르겠어요. 계속 송장이랑 서류를 뒤지더라고요.','우리가 왔을 때도 딱 그러고 있었어요.',
+ '그런데 세 분은 여기 어쩐 일이에요?','여권 가지러 왔어요.','여권이요?! 밖이 저 난리인데요?!',
+ '그러게요. 다음에는 좀 덜 중요한 걸 두고 다녀야겠어요.','아무튼… 고마워요. 거기 얼마나 더 묶여 있었을지 모르겠어요.'
+]);
+const RETURN_DOCUMENTS=[
+ ['Girl 1','Wait. Let’s look at what they were going through.'],
+ ['Guy','Invoices, orders, deliveries… all restaurant paperwork.'],
+ ['Guy 2','They turned half the office upside down.'],
+ ['Girl 2','If they came all the way here, they must have been looking for something specific.'],
+ ['Girl 1','What’s this?'],
+ ['','It’s a list of restaurants. Almost all the names are crossed out. Only Cucchiaio and one other restaurant are left.'],
+ ['Guy 2','This isn’t ours.'],
+ ['Guy','Then why did they leave it here?'],
+ ['Girl 1','Maybe they dropped it in the rush to get out.']
+];
+translateLines(RETURN_DOCUMENTS,[
+ '잠깐. 그 사람들이 뒤지던 걸 좀 봐요.','송장, 주문서, 납품 기록… 전부 식당 서류네요.','사무실을 반쯤 뒤집어 놨어요.',
+ '여기까지 찾아온 걸 보면 뭔가 딱 정해 놓고 찾았겠죠.','이건 뭐죠?',
+ '식당 목록이다. 거의 모든 이름에 줄이 그어져 있다. 쿠키아이오와 다른 식당 하나만 남아 있다.',
+ '이건 우리 서류가 아닌데요.','그럼 왜 여기에 두고 갔죠?','급하게 도망치다가 떨어뜨렸나 봐요.'
+]);
+let cucchiaioReturn=null,cucchiaioReturnLoad=null,cucchiaioReturnAssets=null,cucchiaioAudio=null;
+let cucchiaioMichael=null;
+const returnStyle=document.createElement('style');
+returnStyle.textContent='#scene.cucchiaio-return #map{filter:brightness(.60) saturate(.8)}';
+document.head.append(returnStyle);
+
+function loadCucchiaioReturnAssets(){
+ if(cucchiaioReturnLoad)return cucchiaioReturnLoad;
+ const {michael,...files}=CUCCHIAIO_RETURN_FILES;
+ const agents=Promise.all(Object.entries(files).map(async ([key,path])=>{
+  const asset=await loadAsset(path);
+  if(!asset){cache.delete(path+'|false|false');throw Error('Unable to load '+path);}
+  return [key,asset];
+ }));
+ const michaelViews=loadDungeonImage(michael).then(async sheet=>{
+  // Split at the transparent gutters in the supplied south, west, north, east strip.
+  const edges=[0,344,614,927,1224].map(x=>Math.round(x/1224*sheet.naturalWidth));
+  return Object.fromEntries(await Promise.all(['down','left','up','right'].map(async (dir,i)=>{
+   const tile=document.createElement('canvas');
+   tile.width=edges[i+1]-edges[i];tile.height=sheet.naturalHeight;
+   tile.getContext('2d').drawImage(sheet,edges[i],0,tile.width,tile.height,0,0,tile.width,tile.height);
+   const asset=await loadAsset(tile.toDataURL());
+   if(!asset)throw Error('Unable to read Guy 2’s sprite');
+   return [dir,asset];
+  })));
+ });
+ cucchiaioReturnLoad=Promise.all([agents,michaelViews,loadSeoyoon(),loadSeonHouseNpc()])
+  .then(([entries,views])=>{cucchiaioReturnAssets={...Object.fromEntries(entries),michael:views};})
+  .catch(error=>{cucchiaioReturnLoad=null;throw error;});
+ return cucchiaioReturnLoad;
+}
+function returnActor(x,y,height,asset,paused=false){
+ const n={x,y,height,actor:createActor(height)};
+ setAsset(n.actor,asset,paused);place(n.actor,x,y);
+ return n;
+}
+function drawReturnActor(n,asset,paused=false){
+ setAsset(n.actor,asset,paused);
+ place(n.actor,n.x,n.y);
+}
+function stageCucchiaioReturn(){
+ const a=cucchiaioReturnAssets;
+ const companionHeight=player.actor.height===100?125:player.actor.height;
+ const blue=returnActor(480,532,companionHeight,a.blueSearch);
+ const glasses=returnActor(315,379,companionHeight,a.glassesSearch);
+ Object.assign(seoyoonNpc,{x:455,y:1225,height:companionHeight,direction:'up',moving:false});
+ Object.assign(seonHouseNpc,{x:565,y:1225,height:companionHeight,direction:'up',moving:false});
+ seoyoonNpc.actor.height=seonHouseNpc.actor.height=companionHeight;
+ const papers=document.createElement('div');
+ papers.setAttribute('aria-hidden','true');
+ papers.style='position:absolute;left:454px;top:330px;width:27px;height:15px;background:#e7d4ae;border:1px solid #6c5640;box-shadow:3px 2px #bca784;z-index:38530;transform:rotate(-9deg);pointer-events:none';
+ scene.append(papers);
+ cucchiaioReturn={blue,glasses,papers,focus:{x:413,y:405},phase:'opening',index:0,movingPlayer:false,epoch:sceneEpoch};
+ scene.classList.add('cucchiaio-return');
+ drawReturnCompanions();
+}
+function drawReturnCompanions(){
+ npcBeforeScale(seoyoonNpc);
+ setAsset(seonHouseNpc.actor,seonHouseNpc.idleAssets[seonHouseNpc.direction]||seonHouseNpc.idleAssets.down);
+ place(seonHouseNpc.actor,seonHouseNpc.x,seonHouseNpc.y);
+}
+const cameraBeforeReturn=updateCamera;
+updateCamera=function(){
+ if(locationId!=='restaurant'||!cucchiaioReturn)return cameraBeforeReturn();
+ const target=cucchiaioReturn.focus;
+ zoom=Math.max(1,viewWidth/750,viewHeight/825);
+ const w=viewWidth/zoom,h=viewHeight/zoom;
+ camera.x=clamp(target.x-w/2,0,CONFIG.width-w);
+ camera.y=clamp(target.y-h/2,0,CONFIG.height-h);
+ scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';
+};
+const playerBeforeReturn=drawPlayer;
+drawPlayer=function(){
+ if(cucchiaioReturn?.movingPlayer&&locationId==='restaurant')player.moving=true;
+ return playerBeforeReturn();
+};
+const lockBeforeReturn=locked;
+locked=function(){return !!cucchiaioReturn||lockBeforeReturn();};
+
+function returnSceneCurrent(state){return !!state&&cucchiaioReturn===state&&state.epoch===sceneEpoch&&locationId==='restaurant';}
+function returnTween(state,duration,draw){
+ return new Promise(resolve=>{
+  const start=performance.now();
+  function frame(now){
+   if(!returnSceneCurrent(state)){resolve(false);return;}
+   const t=clamp((now-start)/duration,0,1);
+   draw(t);
+   if(t<1)requestAnimationFrame(frame);else resolve(true);
+  }
+  requestAnimationFrame(frame);
+ });
+}
+function panCucchiaioReturn(state,to,duration){
+ const from={...state.focus};
+ return returnTween(state,duration,t=>{
+  const u=smooth(t);state.focus={x:from.x+(to.x-from.x)*u,y:from.y+(to.y-from.y)*u};
+  updateCamera();
+ });
+}
+async function returnWalk(state,n,path,speed,redraw,face=true){
+ if(n===player)state.movingPlayer=true;else if(n===seoyoonNpc)n.moving=true;
+ try{
+  for(const [x,y] of path){
+   const from={x:n.x,y:n.y},dx=x-from.x,dy=y-from.y;
+   if(face)n.direction=facing(dx,dy);
+   if(!await returnTween(state,Math.max(1,Math.hypot(dx,dy)*1000/speed),t=>{
+    n.x=from.x+dx*t;n.y=from.y+dy*t;redraw();
+   }))return false;
+  }
+  return true;
+ }finally{
+  if(n===player){state.movingPlayer=false;player.moving=false;}
+  if(n===seoyoonNpc)n.moving=false;
+  if(returnSceneCurrent(state))redraw();
+ }
+}
+function playReturnClink(){
+ try{
+  const Context=window.AudioContext||window.webkitAudioContext;
+  if(!Context)return;
+  cucchiaioAudio ||= new Context();
+  void cucchiaioAudio.resume().catch(()=>{});
+  const now=cucchiaioAudio.currentTime;
+  for(const [frequency,volume,end] of [[720,.025,.3],[1640,.032,.21],[2520,.015,.14]]){
+   const tone=cucchiaioAudio.createOscillator(),gain=cucchiaioAudio.createGain();
+   tone.frequency.value=frequency;
+   gain.gain.setValueAtTime(volume,now);
+   gain.gain.exponentialRampToValueAtTime(.0001,now+end);
+   tone.connect(gain).connect(cucchiaioAudio.destination);tone.start();tone.stop(now+end);
+  }
+ }catch(_){}
+}
+const returnPhases={
+ entrance:RETURN_ENTRANCE,intruders:RETURN_INTRUDERS,muffled:RETURN_MUFFLED,
+ michael:RETURN_MICHAEL,documents:RETURN_DOCUMENTS
+};
+function paintReturnLine(state,phase,index=0){
+ if(!returnSceneCurrent(state))return;
+ state.phase=phase;state.index=index;
+ const [speaker,words]=returnPhases[phase][index];
+ const hiddenVoice={x:785,y:379,height:24,actor:{visibleHeight:24},mapPainted:true};
+ const owner=phase==='muffled'&&!speaker?hiddenVoice:
+  {'Girl 1':seoyoonNpc,'Girl 2':seonHouseNpc,'Guy 2':state.michael}[speaker];
+ if(!dialogue)openSpeech([''],{type:'story'});
+ Object.assign(dialogue,{cucchiaioReturn:{speaker},type:owner?'npc':'story',target:owner?{type:'npc',owner}:null});
+ setSpeechText(speaker?speaker+': '+words:words);
+ pop($('speech'));updateInteractionUI();
+}
+async function guardedCucchiaioReturn(state,run){
+ try{await run();}catch(error){
+  console.error(error);
+  if(returnSceneCurrent(state)){closeDialogue(false);clearCucchiaioReturn();notice(tr('Unable to start the scene. Please try again.'));}
+ }
+}
+async function startCucchiaioReturn(){
+ const state=cucchiaioReturn;
+ await guardedCucchiaioReturn(state,async()=>{
+  await wait(840);
+  if(!returnSceneCurrent(state))return;
+  if(!await panCucchiaioReturn(state,{x:510,y:1160},2100))return;
+  const speed=140;
+  await Promise.all([
+   returnWalk(state,player,[[510,1168]],speed,drawPlayer),
+   returnWalk(state,seoyoonNpc,[[455,1190]],speed,drawReturnCompanions),
+   returnWalk(state,seonHouseNpc,[[565,1190]],speed,drawReturnCompanions)
+  ]);
+  paintReturnLine(state,'entrance');
+ });
+}
+async function approachCucchiaioIntruders(state){
+ await Promise.all([
+  panCucchiaioReturn(state,{x:425,y:480},3100),
+  returnWalk(state,player,[[510,552]],240,drawPlayer),
+  returnWalk(state,seoyoonNpc,[[454,575]],235,drawReturnCompanions),
+  returnWalk(state,seonHouseNpc,[[560,579]],235,drawReturnCompanions)
+ ]);
+ if(!returnSceneCurrent(state))return;
+ drawReturnActor(state.blue,cucchiaioReturnAssets.blueWalk,true);
+ drawReturnActor(state.glasses,cucchiaioReturnAssets.glassesSearch,true);
+ paintReturnLine(state,'intruders');
+}
+async function fleeCucchiaio(state){
+ const a=cucchiaioReturnAssets;
+ await Promise.all([
+  panCucchiaioReturn(state,{x:505,y:1128},1600),
+  returnWalk(state,state.blue,[[495,560],[485,830],[495,1215],[510,1320]],540,()=>drawReturnActor(state.blue,a.blueWalk),false)
+   .then(()=>{state.blue.actor.node.hidden=true;}),
+  returnWalk(state,state.glasses,[[183,379],[183,503],[545,512],[547,827],[541,1190],[518,1320]],565,()=>drawReturnActor(state.glasses,a.glassesWalk),false)
+   .then(()=>{state.glasses.actor.node.hidden=true;})
+ ]);
+ if(returnSceneCurrent(state))await panCucchiaioReturn(state,{x:515,y:467},1050);
+}
+async function approachMichaelAtCucchiaio(state){
+ await Promise.all([
+  panCucchiaioReturn(state,{x:687,y:395},630),
+  returnWalk(state,player,[[520,511],[730,511]],280,drawPlayer),
+  returnWalk(state,seoyoonNpc,[[454,520],[670,520]],280,drawReturnCompanions),
+  returnWalk(state,seonHouseNpc,[[562,538],[777,527]],280,drawReturnCompanions)
+ ]);
+ paintReturnLine(state,'michael');
+}
+async function freeMichaelAtCucchiaio(state){
+ await wait(380);
+ if(!returnSceneCurrent(state))return;
+ state.michael=returnActor(785,380,125,cucchiaioReturnAssets.michael.down);
+}
+async function inspectCucchiaioPaperwork(state){
+ if(!await panCucchiaioReturn(state,{x:512,y:416},900))return;
+ await Promise.all([
+  returnWalk(state,player,[[510,520]],245,drawPlayer),
+  returnWalk(state,seoyoonNpc,[[585,515]],220,drawReturnCompanions),
+  returnWalk(state,seonHouseNpc,[[650,532]],225,drawReturnCompanions),
+  returnWalk(state,state.michael,[[651,380]],190,()=>drawReturnActor(state.michael,cucchiaioReturnAssets.michael[state.michael.direction]||cucchiaioReturnAssets.michael.down))
+ ]);
+ paintReturnLine(state,'documents');
+}
+function clearCucchiaioReturn(keepMichael=false){
+ if(!cucchiaioReturn)return;
+ const state=cucchiaioReturn;cucchiaioReturn=null;
+ state.blue.actor.node.remove();state.glasses.actor.node.remove();state.papers.remove();
+ if(state.michael){
+  if(keepMichael)cucchiaioMichael=state.michael;
+  else state.michael.actor.node.remove();
+ }
+ if(seoyoonNpc)seoyoonNpc.actor.node.hidden=true;
+ if(seonHouseNpc)seonHouseNpc.actor.node.hidden=true;
+ scene.classList.remove('cucchiaio-return');
+ resetInput();updateCamera();updateInteractionUI();
+}
+const speechBeforeCucchiaioReturn=advanceSpeech;
+advanceSpeech=function(){
+ if(!dialogue?.cucchiaioReturn||speechPageIndex+1<speechPages.length)return speechBeforeCucchiaioReturn();
+ const state=cucchiaioReturn,{phase,index}=state;
+ const next=index+1;
+ const action=phase==='entrance'&&index===2?async()=>{playReturnClink();await wait(390);paintReturnLine(state,phase,next);}:
+  phase==='entrance'&&next===RETURN_ENTRANCE.length?()=>approachCucchiaioIntruders(state):
+  phase==='intruders'&&index===0?async()=>{
+   drawReturnActor(state.glasses,cucchiaioReturnAssets.glassesWalk,true);
+   await wait(320);paintReturnLine(state,phase,next);
+  }:
+  phase==='intruders'&&index===3?async()=>{await fleeCucchiaio(state);await wait(320);paintReturnLine(state,phase,next);}:
+  phase==='intruders'&&next===RETURN_INTRUDERS.length?()=>paintReturnLine(state,'muffled'):
+  phase==='muffled'&&next===RETURN_MUFFLED.length?()=>approachMichaelAtCucchiaio(state):
+  phase==='michael'&&index===1?async()=>{await freeMichaelAtCucchiaio(state);paintReturnLine(state,phase,next);}:
+  phase==='michael'&&next===RETURN_MICHAEL.length?()=>inspectCucchiaioPaperwork(state):
+  phase==='documents'&&next===RETURN_DOCUMENTS.length?async()=>{
+   await wait(420);if(!returnSceneCurrent(state))return;
+   nightState.cucchiaioReturnSeen=true;clearCucchiaioReturn(true);refreshNightObjective();
+  }:null;
+ if(!action){paintReturnLine(state,phase,next);return;}
+ closeDialogue(false);
+ void guardedCucchiaioReturn(state,action);
+};
+const locationBeforeCucchiaioReturn=showLocation;
+showLocation=function(id){
+ if(cucchiaioReturn)clearCucchiaioReturn();
+ if(cucchiaioMichael){cucchiaioMichael.actor.node.remove();cucchiaioMichael=null;}
+ locationBeforeCucchiaioReturn(id);
+};
+const objectiveBeforeCucchiaioReturn=refreshNightObjective;
+refreshNightObjective=function(){
+ if(partyMembers.seon_jong.joined&&nightState.cucchiaioReturnSeen&&locationId==='restaurant'){
+  setTextIfChanged('objective','');return;
+ }
+ objectiveBeforeCucchiaioReturn();
+};
+const resetBeforeCucchiaioReturn=beginIntro;
+beginIntro=function(){
+ if(cucchiaioReturn){closeDialogue(false);clearCucchiaioReturn();}
+ if(cucchiaioMichael){cucchiaioMichael.actor.node.remove();cucchiaioMichael=null;}
+ return resetBeforeCucchiaioReturn();
+};
+
 
 pendingNightSave=readRpgSave();
 
