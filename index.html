@@ -443,6 +443,7 @@ const CONFIG={
   car:{width:115,groundY:700,speedMin:115,speedMax:145,waitMin:2.5,waitMax:7,hitHeight:13},
   train:{file:"Vetturegif/Treno_arrivo_sosta_partenza.gif",x:0,y:51,width:1024,height:82}
 };
+const CITY_PLAY_ZOOM=1.05;
 // Nuova versione: applica una volta le nuove coordinate ufficiali.
 const WORLD_VERSION="seoul-dialogues-2026-11-05-05",STORAGE_KEY="tarai-rpg-world-v3";
 const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -942,7 +943,7 @@ function tick(now){
   if(intro)updateIntro(dt);
   else{
    const x=player.x,y=player.y;player.moving=false;
-   if(!dialogue&&!locked()){const d=currentDirection();if(d){player.direction=d;const v=VECTORS[d];moveEntity(player,v.x*CONFIG.speed*dt,v.y*CONFIG.speed*dt);}}
+   if(!dialogue&&!locked()){const d=currentDirection();if(d){player.direction=d;const v=VECTORS[d],step=PLAYER_WALK_SCREEN_SPEED*dt/zoom;moveEntity(player,v.x*step,v.y*step);}}
    player.moving=Math.hypot(player.x-x,player.y-y)>.0001;
   }
   updateOfficeSequence(dt);updateTravel(dt);if(!locked()){updateNpcs(dt);if(locationId==="city")updateTraffic(dt);}drawPlayer();updateCamera();updateInteractionUI();updateStatus();
@@ -1227,7 +1228,9 @@ $('menuOpen').onclick=()=>openMenu();$('menuClose').onclick=()=>closeMenu();
 
 
 /* HONGDEON · MAPPA UNICA, COLLISIONI E PROFONDITÀ */
-const HONGDEON={map:'Map/hongdeon_hd.jpg',width:2048,height:3072,playerHeight:CONFIG.spriteHeight*1.5625,zoom:CONFIG.zoom,start:{x:900,y:2800}};
+const HONGDEON={map:'Map/hongdeon_hd.jpg',width:2048,height:3072,playerHeight:CONFIG.spriteHeight*1.5625,zoom:CONFIG.zoom,playZoom:CONFIG.minZoom/1.25,start:{x:900,y:2800}};
+const HONGDEON_PLAYER_HEIGHT=HONGDEON.playerHeight*1.25;
+const PLAYER_WALK_SCREEN_SPEED=CONFIG.speed*HONGDEON.playZoom;
 const HONG_WORLD_VERSION='hongdeon-courtyard-map-2026-11-08-v2',HONG_WORLD_KEY='hongdeon-courtyard-collisions-depth';
 const hongPoly=p=>p.map(([x,y])=>[x*2,y*2]);
 const hongRect=(x,y,w,h)=>hongPoly(rect(x,y,w,h));
@@ -1419,7 +1422,7 @@ updateCamera=function(){
   }else if(locationId==='office'){
    zoom=Math.max(viewWidth/CONFIG.width,viewHeight/CONFIG.height);
   }else{
-   zoom=locationId==='hongdeon'?CONFIG.minZoom/1.25:CONFIG.minZoom;
+   zoom=locationId==='hongdeon'?HONGDEON.playZoom:locationId==='city'?CITY_PLAY_ZOOM:CONFIG.minZoom;
   }
  }
  cameraBeforeFixedZoom();
@@ -2422,7 +2425,7 @@ translateLines(MORNING_LINES,[
 const morningLockBefore=locked;locked=function(){return morningBusy||!partyNotice.hidden||morningLockBefore();};
 function bedAvailable(){return ['go-to-bed','morning','morning-complete'].includes(nightState.phase);}
 openSleepPrompt=function(){if(!bedAvailable()||!nearFirstBed()||dialogue||locked()||intro||editor.open)return;resetInput();clearMarkers();bedMarker.hidden=true;doorButton.hidden=true;portalButton.hidden=true;sleepPrompt.hidden=false;$('sleepPanel').style.borderImageSource='none';$('sleepQuestion').textContent=tr('Would you like to sleep?');localizeUI();$('sleepNo').focus();};
-const renderBeforeScale=drawPlayer;drawPlayer=function(){const height=locationId==='restaurant'?125:locationId==='hongdeon'?HONGDEON.playerHeight*1.25:isInterior(locationId)?100:locationId==='office'?OFFICE_VIEW.playerHeight:CONFIG.spriteHeight;if(player.actor.height!==height){player.actor.height=height;player.actor.active=null;}if(morningMotions.has(player))player.moving=true;renderBeforeScale();};
+const renderBeforeScale=drawPlayer;drawPlayer=function(){const height=locationId==='restaurant'?125:locationId==='hongdeon'?HONGDEON_PLAYER_HEIGHT:isInterior(locationId)?100:locationId==='office'?OFFICE_VIEW.playerHeight:locationId==='city'&&!intro?HONGDEON_PLAYER_HEIGHT*HONGDEON.playZoom/CITY_PLAY_ZOOM:CONFIG.spriteHeight;if(player.actor.height!==height){player.actor.height=height;player.actor.active=null;}if(morningMotions.has(player))player.moving=true;renderBeforeScale();};
 const npcBeforeScale=drawNpc;drawNpc=function(n){if(n.id==='seoyoon'){if(partyMembers.seoyoon.joined&&!morningBusy){n.actor.node.hidden=true;return;}const height=locationId==='restaurant'?125:locationId==='hongdeon'?HONGDEON.playerHeight*1.25:100;if(n.height!==height||n.actor.height!==height){n.height=height;n.actor.height=height;n.actor.active=null;}}npcBeforeScale(n);};
 const syncBeforeMorning=syncNightSeoyoon;syncNightSeoyoon=function(){if(partyMembers.seoyoon.joined){const index=npcs.indexOf(seoyoonNpc);if(index>=0)npcs.splice(index,1);if(seoyoonNpc)seoyoonNpc.actor.node.hidden=true;return;}if(morningBusy)return;syncBeforeMorning();};
 const targetsBeforeMorning=allTargets;allTargets=function(){return targetsBeforeMorning().filter(t=>!(partyMembers.seoyoon.joined&&t.owner?.id==='seoyoon'));};
@@ -3715,7 +3718,7 @@ const YEONNAM={
  spawn:{x:224,y:918},houseDoor:{x:1260,y:311},zoom:1.2
 };
 const SEON_HOUSE={
- id:'seon-house',width:1448,height:1086,zoom:.72,
+ id:'seon-house',width:1448,height:1086,zoom:.54,
  spawn:{x:725,y:911},door:{x:725,y:994},host:{x:775,y:792},
  map:'Map/file_0000000050708209bcdbdd6fe7d845ce.png',
  cat:'SeonJong/file_000000006b6482098dd9c780246a5f1e.gif',
