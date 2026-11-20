@@ -1040,15 +1040,15 @@ const originalUI=updateInteractionUI;updateInteractionUI=function(){originalUI()
 /* 24 · DIALOGO PRINCIPALE, PENSIERO E CONSEGNA */
 UI_ASSETS.thought='icons/file_000000006f608209b1c6d6380111193e.png';
 const OFFICE_STORY=[
- {speaker:'npc',text:'리카르도 씨 맞으시죠? 보내 주신 이력서와 경력 사항은 미리 검토해 두었습니다.'},
- {speaker:'npc',text:'마침 리카르도 씨의 경력과 희망 조건에 상당히 부합하는 구인 공고가 있어서 소개해 드리려고 합니다.'},
+ {speaker:'npc',text:'Guy 씨 맞으시죠? 보내 주신 이력서와 경력 사항은 미리 검토해 두었습니다.'},
+ {speaker:'npc',text:'마침 Guy 씨의 경력과 희망 조건에 상당히 부합하는 구인 공고가 있어서 소개해 드리려고 합니다.'},
  {speaker:'npc',text:'여기서 그리 멀지 않은 식당인데요, 주방에서 조리를 담당해 주실 경력직 요리사를 채용하고 있습니다.'},
  {speaker:'npc',text:'세부적인 근무 조건은 면접 시 협의하시면 되고요. 괜찮으시면 담당자에게 연락해서 면접 일정을 잡아 드릴까요?'},
  {speaker:'question'}, {speaker:'player',text:'Sorry… I don’t speak Korean very well.'},
  {speaker:'npc',text:'네? 한국어를 못하신다고요? 아니, 여긴 비디오 게임이잖아요!'},
  {speaker:'npc',text:'이런 건 금방 해결할 수 있어요. 휴대폰 좀 줘 보세요.'},
  {speaker:'thought',text:'I didn’t understand a word… but I think she wants my phone.'},
- {speaker:'narration',text:'Riccardo hands his phone to the woman behind the counter.'}
+ {speaker:'narration',text:'Guy hands his phone to the woman behind the counter.'}
 ];
 function startOfficeStory(target){resetInput();target.owner.talking=true;player.direction='up';officeSequence={index:0,target,pause:0};showOfficePage();}
 function showOfficePage(){const q=officeSequence;if(!q)return;const page=OFFICE_STORY[q.index];if(!page){officeSequence=null;dialogue=null;runAutomaticMenu();return;}if(page.speaker==='question'){dialogue=null;$('speech').hidden=true;reactionTime=1.5;q.pause=1.5;return;}openSpeech([page.text],{type:page.speaker==='npc'?'npc':'story',target:q.target});dialogue.officeStory=true;$('speech').classList.toggle('thought',page.speaker==='thought');$('speech').classList.toggle('narration',page.speaker==='narration');setSpeechText(page.text);}
@@ -1057,15 +1057,15 @@ const originalAdvance=advanceSpeech;advanceSpeech=function(){if(dialogue?.office
 const originalSpeech=openSpeech;openSpeech=function(lines,options={}){$('speech').classList.remove('thought','narration');originalSpeech(lines,options);};
 /* 25 · DATI PERSONAGGI INDIPENDENTI DALLE QUATTRO POSIZIONI */
 const LIMITS={level:50,hp:9999,ep:5000,won:999999999};
-const partyMembers={riccardo:{name:{ko:'리카르도',en:'Riccardo'},level:1,hp:250,maxHp:250,ep:12,maxEp:12,card:'Menu/file_000000002b388209a33ce587676f6016.png'}};
-partyMembers.seoyoon={name:{ko:'서윤',en:'Seoyoon'},level:1,hp:160,maxHp:160,ep:18,maxEp:18,hpLimit:9999,epLimit:5800,joined:false,card:'Seoyoon/file_00000000db8c8209b2a8fc318cab46ef.png'};
+const partyMembers={riccardo:{name:{ko:'Guy',en:'Guy'},level:1,hp:250,maxHp:250,ep:12,maxEp:12,card:'Menu/file_000000002b388209a33ce587676f6016.png'}};
+partyMembers.seoyoon={name:{ko:'Girl 1',en:'Girl 1'},level:1,hp:160,maxHp:160,ep:18,maxEp:18,hpLimit:9999,epLimit:5800,joined:false,card:'Seoyoon/file_00000000db8c8209b2a8fc318cab46ef.png'};
 const SEON_MAP_SPRITES={
  down:'SeonJong/file_000000002630821183f796752874c507.png',
  left:'SeonJong/file_000000006bb48209b2573a08a1c90738.png',
  right:'SeonJong/file_00000000845c8209a444529f593e5fef.png',
  up:'SeonJong/file_00000000e1748209ad1a02cb5aeff250.png'
 };
-partyMembers.seon_jong={name:{ko:'선종',en:'Seon Jong'},level:1,hp:180,maxHp:180,ep:20,maxEp:20,joined:false,card:'SeonJong/file_0000000090588209a75519f8058fa6f1.png'};
+partyMembers.seon_jong={name:{ko:'Girl 2',en:'Girl 2'},level:1,hp:180,maxHp:180,ep:20,maxEp:20,joined:false,card:'SeonJong/file_0000000090588209a75519f8058fa6f1.png'};
 const partySlots=['riccardo',null,null,null];let won=50000,language='ko',languageUnlocked=false;
 function updateMember(id,patch){const member=partyMembers[id];if(!member)return;Object.assign(member,patch);member.level=clamp(Math.trunc(member.level)||1,1,LIMITS.level);member.maxHp=clamp(Math.trunc(member.maxHp)||1,1,LIMITS.hp);member.maxEp=clamp(Math.trunc(member.maxEp)||0,0,member.epLimit||LIMITS.ep);member.hp=clamp(Math.trunc(member.hp)||0,0,member.maxHp);member.ep=clamp(Math.trunc(member.ep)||0,0,member.maxEp);renderMenu();}
 function assignMember(slot,id){if(slot<0||slot>3||id!==null&&(!partyMembers[id]||partyMembers[id].joined===false))return;const old=partySlots.indexOf(id);if(id&&old>=0)partySlots[old]=null;partySlots[slot]=id;renderMenu();}
@@ -1413,7 +1413,7 @@ for(const id of ['zoomIn','zoomOut']){$(id).hidden=true;$(id).style.display='non
 let seoyoonNpc=null,seoyoonLoading=null;
 function loadSeoyoon(){
  if(seoyoonLoading)return seoyoonLoading;
- const n={id:'seoyoon',name:'Seoyoon',x:535,y:525,direction:'down',height:100,radius:10,moving:false,talking:false,idleAssets:{},walkAssets:{},actor:createActor(100)};
+ const n={id:'seoyoon',name:'Girl 1',x:535,y:525,direction:'down',height:100,radius:10,moving:false,talking:false,idleAssets:{},walkAssets:{},actor:createActor(100)};
  n.actor.node.hidden=true;seoyoonNpc=n;
  seoyoonLoading=Promise.all(Object.keys(IT).flatMap(d=>[
   loadAsset('Seoyoon/seoyoon_ferma_'+({up:'alto',down:'basso',left:'sinistra',right:'destra'})[d]+'.png').then(a=>n.idleAssets[d]=a),
@@ -1489,41 +1489,41 @@ const menuBeforeEquip=renderMenu;renderMenu=function(){menuBeforeEquip();const b
 const closeMenuBeforeEquip=closeMenu;closeMenu=function(){if(equipTutorial)return;equipPage.hidden=true;closeMenuBeforeEquip();};
 const SEOYOON_SCENES={
  before:[
- ['Seoyoon','Hi! Are you Riccardo? The Job Center called about you.'],
- ['Riccardo',"That’s me. I’m here about the job."],
- ['Seoyoon',"I’m Seoyoon. I work here as a waitress. Have you worked in a kitchen before?"],
- ['Riccardo',"Yes. Kitchens are probably the one place where I know what I’m doing."],
- ['Seoyoon',"Then you’ll be fine. They’re expecting you to start today. We still have some time before the dinner service, so I can show you around."],
- ['Riccardo','Straight into it, then. All right.'],
- ['Seoyoon','Here are your work clothes.'],
- ['narration','Seoyoon hands you a bandana, a white T-shirt, black trousers and a pair of kitchen clogs. There’s a chipped frying pan, too.'],
- ['Riccardo','Thanks. Where can I get changed?'],
- ['Seoyoon','Just open the menu, go to Equip, and select your work clothes.'],
- ['Riccardo','…Equip?'],
- ['Seoyoon','Yes. Put them on from there.'],
+ ['Girl 1','Hi! Are you Guy? The Job Center called about you.'],
+ ['Guy',"That’s me. I’m here about the job."],
+ ['Girl 1',"I’m Girl 1. I work here as a waitress. Have you worked in a kitchen before?"],
+ ['Guy',"Yes. Kitchens are probably the one place where I know what I’m doing."],
+ ['Girl 1',"Then you’ll be fine. They’re expecting you to start today. We still have some time before the dinner service, so I can show you around."],
+ ['Guy','Straight into it, then. All right.'],
+ ['Girl 1','Here are your work clothes.'],
+ ['narration','Girl 1 hands you a bandana, a white T-shirt, black trousers and a pair of kitchen clogs. There’s a chipped frying pan, too.'],
+ ['Guy','Thanks. Where can I get changed?'],
+ ['Girl 1','Just open the menu, go to Equip, and select your work clothes.'],
+ ['Guy','…Equip?'],
+ ['Girl 1','Yes. Put them on from there.'],
  ['thought','Right. This is a video game. Why was I expecting a changing room?']
  ],
  after:[
- ['Riccardo','That’s it? I’m changed?'],['Seoyoon','You are. The bandana suits you.'],
- ['Riccardo','Thanks. I think it belonged to three other people first.'],['Seoyoon','Then it has more experience than both of us.'],['Riccardo','Good. Maybe it can do my shift.'],
- ['Seoyoon','Come on. Dinner service starts soon.'],['Riccardo','Does it usually get busy?'],
- ['Seoyoon','Lately? Every night. Apparently, we changed suppliers and started using some special ingredients. People keep coming back.'],
- ['Riccardo','Special how?'],['Seoyoon','No idea. I carry the plates. You’re the one who gets to find out what’s in them.'],['Riccardo','Anything else I should know?'],
- ['Seoyoon','Some of the customers can be a little strange.'],['Riccardo','Strange?'],['Seoyoon','Yesterday, a man asked for another portion before I’d even put his first one down.'],['Riccardo','Efficient.'],
- ['Seoyoon','And one woman tried to order from a coat rack. But she apologised to it afterwards, so… probably just tired.'],['Riccardo','Nothing to worry about, then?'],['Seoyoon','Nothing we can’t handle. Just keep the food coming.'],
- ['Seoyoon','Oh, one more thing. Have you found a place to stay?'],['Riccardo','Not yet. Finding a job was the first problem on my list.'],
- ['Seoyoon','Well, the restaurant has rooms upstairs for the staff. Two are empty. You can take one.'],['Riccardo','A job and a room? That’s a surprisingly generous starter pack.'],
- ['Seoyoon','Wait until you see the room. There’s a bed, a wardrobe… and plenty of room for your imagination.'],['Riccardo','Luxury. Do you live upstairs too?'],
- ['Seoyoon','Yes. I’ll show you around after the shift. For now, those pans aren’t going to wash themselves.'],['Riccardo','Fine. But I’m expecting EXP for this.'],['Seoyoon','You can have a clean kitchen.'],['Riccardo','Tough game.']
+ ['Guy','That’s it? I’m changed?'],['Girl 1','You are. The bandana suits you.'],
+ ['Guy','Thanks. I think it belonged to three other people first.'],['Girl 1','Then it has more experience than both of us.'],['Guy','Good. Maybe it can do my shift.'],
+ ['Girl 1','Come on. Dinner service starts soon.'],['Guy','Does it usually get busy?'],
+ ['Girl 1','Lately? Every night. Apparently, we changed suppliers and started using some special ingredients. People keep coming back.'],
+ ['Guy','Special how?'],['Girl 1','No idea. I carry the plates. You’re the one who gets to find out what’s in them.'],['Guy','Anything else I should know?'],
+ ['Girl 1','Some of the customers can be a little strange.'],['Guy','Strange?'],['Girl 1','Yesterday, a man asked for another portion before I’d even put his first one down.'],['Guy','Efficient.'],
+ ['Girl 1','And one woman tried to order from a coat rack. But she apologised to it afterwards, so… probably just tired.'],['Guy','Nothing to worry about, then?'],['Girl 1','Nothing we can’t handle. Just keep the food coming.'],
+ ['Girl 1','Oh, one more thing. Have you found a place to stay?'],['Guy','Not yet. Finding a job was the first problem on my list.'],
+ ['Girl 1','Well, the restaurant has rooms upstairs for the staff. Two are empty. You can take one.'],['Guy','A job and a room? That’s a surprisingly generous starter pack.'],
+ ['Girl 1','Wait until you see the room. There’s a bed, a wardrobe… and plenty of room for your imagination.'],['Guy','Luxury. Do you live upstairs too?'],
+ ['Girl 1','Yes. I’ll show you around after the shift. For now, those pans aren’t going to wash themselves.'],['Guy','Fine. But I’m expecting EXP for this.'],['Girl 1','You can have a clean kitchen.'],['Guy','Tough game.']
  ]
 };
-function showSeoyoonPage(){const q=dialogue?.seoyoonScene;if(!q)return;const [speaker,text]=SEOYOON_SCENES[q.part][q.index];dialogue.type=speaker==='Seoyoon'&&dialogue.target?'npc':'story';$('speech').classList.toggle('thought',speaker==='thought');$('speech').classList.toggle('narration',speaker==='narration');setSpeechText((speaker==='Riccardo'||speaker==='Seoyoon'?speaker+': ':'')+text);pop($('speech'));updateInteractionUI();}
+function showSeoyoonPage(){const q=dialogue?.seoyoonScene;if(!q)return;const [speaker,text]=SEOYOON_SCENES[q.part][q.index];dialogue.type=speaker==='Girl 1'&&dialogue.target?'npc':'story';$('speech').classList.toggle('thought',speaker==='thought');$('speech').classList.toggle('narration',speaker==='narration');setSpeechText((speaker==='Guy'||speaker==='Girl 1'?speaker+': ':'')+text);pop($('speech'));updateInteractionUI();}
 function startSeoyoonPages(part){const n=seoyoonNpc;const target=n?{type:'npc',key:n.id,owner:n,dog:false}:null;if(n){n.previousDirection=n.direction;n.direction=facing(player.x-n.x,player.y-n.y);n.talking=true;drawNpc(n);}resetInput();menuOpen=false;openSpeech([''],{type:'story',target});dialogue.seoyoonScene={part,index:0};showSeoyoonPage();}
 function grantWorkClothes(){for(const id of Object.keys(EQUIP_ITEMS))equipState.owned[id]=Math.max(1,equipState.owned[id]||0);equipmentFor('riccardo').weapon='chipped_pan';equipState.stage='equip';openEquip(true);}
 const advanceBeforeSeoyoonStory=advanceSpeech;advanceSpeech=function(){const q=dialogue?.seoyoonScene;if(!q)return advanceBeforeSeoyoonStory();if(q.index+1<SEOYOON_SCENES[q.part].length){q.index++;showSeoyoonPage();return;}const part=q.part;closeDialogue(false);$('speech').classList.remove('thought','narration');if(part==='before'){grantWorkClothes();}else{equipState.stage='done';$('objective').textContent='Ready for your first shift';resetInput();updateInteractionUI();}};
 const interactBeforeSeoyoonStory=interact;interact=function(t){if(t?.owner?.id!=='seoyoon')return interactBeforeSeoyoonStory(t);if(!ready||intro||dialogue||editor.open||locked()||!nearTarget(t))return;
  player.direction=facing(t.owner.x-player.x,t.owner.y-player.y);drawPlayer();
- if(equipState.stage==='done'){openSpeech(['Seoyoon: Ready for your first shift? We’ll talk again once the kitchen is ready.'],{type:'npc',target:t});return;}
+ if(equipState.stage==='done'){openSpeech(['Girl 1: Ready for your first shift? We’ll talk again once the kitchen is ready.'],{type:'npc',target:t});return;}
  if(equipState.stage==='equip'){if(EQUIP_SLOTS.slice(1).every(s=>equipmentFor('riccardo')[s])){equipState.stage='after';startSeoyoonPages('after');}else openEquip(true);return;}
  startSeoyoonPages(equipState.stage==='after'?'after':'before');
 };
@@ -1540,19 +1540,19 @@ function splitBalloonText(text,limit=120){
 function currentSpeaker(){
  if(!dialogue)return '';
  const q=dialogue.seoyoonScene;
- if(q){const who=SEOYOON_SCENES[q.part][q.index][0];return who==='narration'?'':who==='thought'?'Riccardo':who;}
- if(dialogue.officeStory&&officeSequence){const who=OFFICE_STORY[officeSequence.index]?.speaker;if(who==='narration')return '';if(who!=='npc')return 'Riccardo';}
- if(dialogue.englishScene){const who=ENGLISH_SCENE[dialogue.index]?.[0];if(who==='narration')return '';if(who!=='npc')return 'Riccardo';}
- if(dialogue.type==='npc')return dialogue.target?.owner?.id==='seoyoon'?'Seoyoon':'';
- return dialogue.type==='narration'?'':'Riccardo';
+ if(q){const who=SEOYOON_SCENES[q.part][q.index][0];return who==='narration'?'':who==='thought'?'Guy':who;}
+ if(dialogue.officeStory&&officeSequence){const who=OFFICE_STORY[officeSequence.index]?.speaker;if(who==='narration')return '';if(who!=='npc')return 'Guy';}
+ if(dialogue.englishScene){const who=ENGLISH_SCENE[dialogue.index]?.[0];if(who==='narration')return '';if(who!=='npc')return 'Guy';}
+ if(dialogue.type==='npc')return dialogue.target?.owner?.id==='seoyoon'?'Girl 1':'';
+ return dialogue.type==='narration'?'':'Guy';
 }
 function paintBalloonPage(){
  const node=$('speechText');node.replaceChildren();
- const candidate=speechSpeaker||currentSpeaker(),shownSpeaker=['Riccardo','Seoyoon','Stranger','Seon Jong','TV'].includes(candidate)?candidate:'';if(shownSpeaker){const name=document.createElement('strong');name.className='speech-speaker';name.textContent=shownSpeaker;node.appendChild(name);}
+ const candidate=speechSpeaker||currentSpeaker(),shownSpeaker=['Guy','Girl 1','Stranger','Girl 2','TV'].includes(candidate)?candidate:'';if(shownSpeaker){const name=document.createElement('strong');name.className='speech-speaker';name.textContent=shownSpeaker;node.appendChild(name);}
  const text=document.createElement('span');text.className='speech-body';text.textContent=speechPages[speechPageIndex]||'';node.appendChild(text);
 }
 function setSpeechText(value){
- let text=String(value??''),name='';const explicit=text.match(/^(Riccardo|Seoyoon|Stranger|Seon Jong|TV):\s*/);
+ let text=String(value??''),name='';const explicit=text.match(/^(Guy|Girl 1|Stranger|Girl 2|TV):\s*/);
  if(explicit){name=explicit[1];text=text.slice(explicit[0].length);}else name=currentSpeaker();
  speechSpeaker=name;speechPages=splitBalloonText(text);speechPageIndex=0;paintBalloonPage();
 }
@@ -1621,7 +1621,7 @@ function paintFirstBattle(){
  $('battleHpValue').textContent=m.hp+'/'+m.maxHp;$('battleEpValue').textContent=m.ep+'/'+m.maxEp;
  const choosing=firstBattlePhase==='target',enabled=firstBattlePhase==='command'||choosing;
  battleScreen.classList.toggle('choosing-target',choosing);battleAttackButton.disabled=!enabled;battleAttackButton.classList.toggle('available',enabled);battleAttackButton.classList.toggle('cancel-target',choosing);battleAttackButton.textContent=choosing?'CANCEL':'ATK';
- for(const f of firstBattleFighters){f.node.disabled=!choosing||f.hp()<=0;f.node.setAttribute('aria-label',(f.kind==='enemy'?'Hungry stranger':'Riccardo')+(choosing?' · select target':''));}
+ for(const f of firstBattleFighters){f.node.disabled=!choosing||f.hp()<=0;f.node.setAttribute('aria-label',(f.kind==='enemy'?'Hungry stranger':'Guy')+(choosing?' · select target':''));}
 }
 function battleHint(text){$('battleHint').textContent=text;}
 function positionBattleFighter(f,x=f.home.x,y=f.home.y){f.x=x;f.y=y;f.node.style.left=x+'%';f.node.style.top=y+'%';}
@@ -1741,11 +1741,11 @@ async function victoryFirstBattle(epoch){
  if(!await battlePause(FIRST_BATTLE.timing.victory,epoch))return;
  showBattleResult('VICTORY','You won your first battle.');
 }
-function defeatFirstBattle(){firstBattlePhase='defeat';paintFirstBattle();battleHint('Riccardo is defeated.');showBattleResult('DEFEAT','Try the battle again.',true);}
+function defeatFirstBattle(){firstBattlePhase='defeat';paintFirstBattle();battleHint('Guy is defeated.');showBattleResult('DEFEAT','Try the battle again.',true);}
 async function performFirstBattleAttack(target){
  if(firstBattlePhase!=='target'||target.hp()<=0)return;
  const epoch=firstBattleEpoch,hero=firstBattleFighters.find(f=>f.kind==='riccardo'),self=target===hero,t=FIRST_BATTLE.timing;
- firstBattlePhase='acting';paintFirstBattle();battleHint(language==='ko'?'리카르도 · ATK 사용':'Riccardo uses ATK');
+ firstBattlePhase='acting';paintFirstBattle();battleHint(language==='ko'?'Guy · ATK 사용':'Guy uses ATK');
  if(!self)positionBattleFighter(hero,target.home.x+23,target.home.y);
  await drawBattlePose(hero,'attack',true);if(!battleAlive(epoch))return;
  if(!await battlePause(t.impact,epoch))return;
@@ -1806,27 +1806,27 @@ const WORK_PLAYER_FILES={idle:{up:'Riccardogif/riccardo_lavoro_fermo_su.png',dow
 const DINNER_IMAGES=['Map/file_00000000246482118d011b06d06e4fe6.png','Map/file_00000000938881f8b9cad259bf0d6619.png','Map/file_00000000cf1c82099669fc75e7db2d80.png','Map/file_0000000017f482118a8e0070689fed6f.png'];
 const HUNGRY_WALK_FILE='Enemy/nemico_camminata_destra.gif';
 const POST_SERVICE_LINES=[
- ['Seoyoon','You survived your first shift.'],
- ['Riccardo','Barely. Do people always eat this much here?'],
- ['Seoyoon','I told you they keep coming back.'],
- ['Riccardo','One table ordered three dinners. There were two people.'],
- ['Seoyoon','Maybe they skipped lunch.'],['Riccardo','For a week?'],
- ['Seoyoon','Anyway, we’re done. Just one last thing.'],['Riccardo','That’s never a good sentence.'],
- ['Seoyoon','Take that old frying pan out to the bins, will you? The rim’s chipped.'],
- ['Riccardo','We’ve been through a lot together.'],['Seoyoon','You’ve known it for four hours.'],
- ['Riccardo','It was an intense relationship.'],
- ['Seoyoon','The bins are outside. Then I’ll show you your room.'],
- ['Riccardo','A bed. Finally, a quest reward I can use.']
+ ['Girl 1','You survived your first shift.'],
+ ['Guy','Barely. Do people always eat this much here?'],
+ ['Girl 1','I told you they keep coming back.'],
+ ['Guy','One table ordered three dinners. There were two people.'],
+ ['Girl 1','Maybe they skipped lunch.'],['Guy','For a week?'],
+ ['Girl 1','Anyway, we’re done. Just one last thing.'],['Guy','That’s never a good sentence.'],
+ ['Girl 1','Take that old frying pan out to the bins, will you? The rim’s chipped.'],
+ ['Guy','We’ve been through a lot together.'],['Girl 1','You’ve known it for four hours.'],
+ ['Guy','It was an intense relationship.'],
+ ['Girl 1','The bins are outside. Then I’ll show you your room.'],
+ ['Guy','A bed. Finally, a quest reward I can use.']
 ];
 const HUNGRY_LINES=[
  ['Stranger','Hungry…',300],
- ['Riccardo','Oh. Sorry, we’re closed. Come back tomorrow.',300],
+ ['Guy','Oh. Sorry, we’re closed. Come back tomorrow.',300],
  ['Stranger','Still… hungry…',220],
- ['Riccardo','Right. There’s a convenience store down the street.',170],
- ['Riccardo','You… don’t look so good. Do you need help?',130],
+ ['Guy','Right. There’s a convenience store down the street.',170],
+ ['Guy','You… don’t look so good. Do you need help?',130],
  ['Stranger','More…',95],
- ['Riccardo','Okay. That’s close enough.',60],
- ['Riccardo','I said—stay back!',28]
+ ['Guy','Okay. That’s close enough.',60],
+ ['Guy','I said—stay back!',28]
 ];
 const STORY_TIMING={shot:3000,fade:450,equipFade:450,call:1100,pan:1000,steps:96,approachSpeed:55,lungeSpeed:160};
 const workPlayerAssets={idle:{},walk:{}};
@@ -1907,7 +1907,7 @@ function storyLines(){return dialogue?.dinnerStory?.kind==='post-service'?POST_S
 function showStoryConversationPage(){
  const q=dialogue?.dinnerStory;if(!q)return;const line=storyLines()[q.index];if(!line)return;const [speaker,text,gap]=line;
  if(q.kind==='encounter'&&storyEncounter)storyEncounter.gap=24+Math.max(0,storyEncounter.startGap-24)*clamp((gap-24)/276,0,1);
- dialogue.type=speaker==='Seoyoon'||speaker==='Stranger'?'npc':'story';dialogue.target=speaker==='Seoyoon'&&seoyoonNpc?{type:'npc',key:'seoyoon',owner:seoyoonNpc}:speaker==='Stranger'&&storyEnemy?{type:'npc',key:storyEnemy.id,owner:storyEnemy}:null;
+ dialogue.type=speaker==='Girl 1'||speaker==='Stranger'?'npc':'story';dialogue.target=speaker==='Girl 1'&&seoyoonNpc?{type:'npc',key:'seoyoon',owner:seoyoonNpc}:speaker==='Stranger'&&storyEnemy?{type:'npc',key:storyEnemy.id,owner:storyEnemy}:null;
  faceConversation(q.kind==='post-service'?seoyoonNpc:storyEnemy);
  setSpeechText(speaker+': '+text);updateInteractionUI();
 }
@@ -1930,7 +1930,7 @@ const interactBeforeDinner=interact;
 interact=function(t){
  if(t?.owner?.id==='seoyoon'&&!intro&&!locked()&&!dialogue&&nearTarget(t)){
   if(storyPhase==='before-service'&&equipState.stage==='done'){if(hasWorkClothes())enableWorkUniform();startSeoyoonPages('after');return;}
-  if(storyPhase==='outside-ready'){openSpeech(['Seoyoon: The bins are outside. Then I’ll show you your room.'],{type:'npc',target:t});return;}
+  if(storyPhase==='outside-ready'){openSpeech(['Girl 1: The bins are outside. Then I’ll show you your room.'],{type:'npc',target:t});return;}
  }return interactBeforeDinner(t);
 };
 function hungrySpriteHalfWidth(asset=hungryWalkAsset){return asset?HONGDEON.playerHeight*1.5625*asset.b.w/asset.b.h/2:HONGDEON.playerHeight*1.5625*.4;}
@@ -2175,7 +2175,7 @@ const damageBeforeGuard=battleDamage;battleDamage=function(attack,defense){const
 const attackBeforeSkills=performFirstBattleAttack;performFirstBattleAttack=async function(target){
  const skill=selectedBattleSkill;if(!skill)return attackBeforeSkills(target);
  if(!['command','target'].includes(firstBattlePhase)||!target||target.hp()<=0||battleMember().ep<skill.ep||!learnedTechniques('riccardo').some(t=>t.id===skill.id))return;
- const epoch=firstBattleEpoch,hero=firstBattleFighters.find(f=>f.kind==='riccardo'),self=target===hero,t=FIRST_BATTLE.timing;firstBattlePhase='acting';closeBattleSkills();selectedBattleSkill=null;updateMember('riccardo',{ep:battleMember().ep-skill.ep});battleHint(language==='ko'?'리카르도 · '+tr(skill.name)+' 사용':'Riccardo uses '+tr(skill.name));paintFirstBattle();
+ const epoch=firstBattleEpoch,hero=firstBattleFighters.find(f=>f.kind==='riccardo'),self=target===hero,t=FIRST_BATTLE.timing;firstBattlePhase='acting';closeBattleSkills();selectedBattleSkill=null;updateMember('riccardo',{ep:battleMember().ep-skill.ep});battleHint(language==='ko'?'Guy · '+tr(skill.name)+' 사용':'Guy uses '+tr(skill.name));paintFirstBattle();
  if(skill.type==='guard'){
   battleGuard=true;await drawBattlePose(hero,'idle',true);if(!await battlePause(350,epoch))return;await enemyFirstBattleTurn(epoch);return;
  }
@@ -2198,22 +2198,22 @@ const closeBattleBeforeSkills=closeFirstBattle;closeFirstBattle=function(){selec
 const FIRST_NIGHT_TIMING={dialogueFade:650,sleepFade:1500,black:3000};
 const FIRST_NIGHT_ROOM={bed:{x:170,y:350,radius:85},wake:{x:190,y:350,direction:'left'},seoyoon:{x:700,y:420,direction:'down'}};
 const RETURN_NIGHT_LINES=[
- ['Seoyoon','You’re supposed to throw that away.'],
- ['Riccardo','Someone attacked me outside.'],
- ['Seoyoon','What? Are you hurt?'],
- ['Riccardo','A few scratches. He kept saying he was hungry. I told him we were closed, but he just came at me.'],
- ['Seoyoon','Probably drunk. Or on something.'],
- ['Riccardo','You didn’t see him. There was something wrong with his face.'],
- ['Seoyoon','Did he follow you?'],
- ['Riccardo','I don’t think so.'],
- ['Seoyoon','Okay. I’ll lock the door. If he comes back, we’ll call the police.'],
- ['Riccardo','You’re taking this surprisingly well.'],
- ['Seoyoon','I’ve worked late shifts here for three years. You meet strange people.'],
- ['Riccardo','I had to hit him with a frying pan.'],
- ['Seoyoon','Then I’m glad you hadn’t thrown it away yet.'],
- ['Riccardo','That’s not really the point.'],
- ['Seoyoon','Come on. Let’s get some sleep. If you’re still worried, we’ll talk about it tomorrow.'],
- ['Riccardo','Right. Tomorrow.']
+ ['Girl 1','You’re supposed to throw that away.'],
+ ['Guy','Someone attacked me outside.'],
+ ['Girl 1','What? Are you hurt?'],
+ ['Guy','A few scratches. He kept saying he was hungry. I told him we were closed, but he just came at me.'],
+ ['Girl 1','Probably drunk. Or on something.'],
+ ['Guy','You didn’t see him. There was something wrong with his face.'],
+ ['Girl 1','Did he follow you?'],
+ ['Guy','I don’t think so.'],
+ ['Girl 1','Okay. I’ll lock the door. If he comes back, we’ll call the police.'],
+ ['Guy','You’re taking this surprisingly well.'],
+ ['Girl 1','I’ve worked late shifts here for three years. You meet strange people.'],
+ ['Guy','I had to hit him with a frying pan.'],
+ ['Girl 1','Then I’m glad you hadn’t thrown it away yet.'],
+ ['Guy','That’s not really the point.'],
+ ['Girl 1','Come on. Let’s get some sleep. If you’re still worried, we’ll talk about it tomorrow.'],
+ ['Guy','Right. Tomorrow.']
 ];
 let nightState={phase:'before-victory',firstVictoryReward:false},nightEpoch=0,nightTransition=false,bedDismissed=false;
 const sleepPrompt=document.createElement('section');sleepPrompt.id='sleepPrompt';sleepPrompt.hidden=true;sleepPrompt.setAttribute('role','dialog');sleepPrompt.setAttribute('aria-modal','true');sleepPrompt.setAttribute('aria-labelledby','sleepQuestion');sleepPrompt.innerHTML='<div id="sleepPanel"><p id="sleepQuestion">Would you like to sleep?</p><div class="sleep-choices"><button id="sleepYes">YES</button><button id="sleepNo">NO</button></div></div>';game.appendChild(sleepPrompt);
@@ -2225,13 +2225,13 @@ function syncNightSeoyoon(){
  if(upstairs){const index=npcs.indexOf(seoyoonNpc);if(locationId==='quarters'){if(index<0)npcs.push(seoyoonNpc);Object.assign(seoyoonNpc,FIRST_NIGHT_ROOM.seoyoon,{height:80,moving:false,talking:false});seoyoonNpc.actor.height=80;seoyoonNpc.actor.active=null;drawNpc(seoyoonNpc);}else{if(index>=0)npcs.splice(index,1);seoyoonNpc.actor.node.hidden=true;}}
  else if(locationId==='restaurant'){Object.assign(seoyoonNpc,{x:535,y:525,height:100});seoyoonNpc.actor.height=100;if(!npcs.includes(seoyoonNpc))npcs.push(seoyoonNpc);drawNpc(seoyoonNpc);}
 }
-function nightObjective(){if(nightState.phase==='return-inside')return locationId==='restaurant'?'Talk to Seoyoon':'Return to Cucchiaio';if(nightState.phase==='go-to-bed')return locationId==='quarters'?'Find your bed · Room on the upper left':'Go upstairs and get some sleep';if(nightState.phase==='morning')return 'Morning · Staff quarters';return null;}
+function nightObjective(){if(nightState.phase==='return-inside')return locationId==='restaurant'?'Talk to Girl 1':'Return to Cucchiaio';if(nightState.phase==='go-to-bed')return locationId==='quarters'?'Find your bed · Room on the upper left':'Go upstairs and get some sleep';if(nightState.phase==='morning')return 'Morning · Staff quarters';return null;}
 function refreshNightObjective(){const text=nightObjective();if(text)setTextIfChanged('objective',tr(text));}
 const showBeforeNight=showLocation;showLocation=function(id){showBeforeNight(id);syncNightSeoyoon();refreshNightObjective();};
 const targetsBeforeNight=allTargets;allTargets=function(){const list=targetsBeforeNight();if(locationId==='quarters'&&['go-to-bed','morning'].includes(nightState.phase)&&seoyoonNpc&&!list.some(t=>t.owner===seoyoonNpc))list.push({type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false});return list;};
-function showReturnNightPage(){const q=dialogue?.firstNight;if(!q)return;const [speaker,text]=RETURN_NIGHT_LINES[q.index];faceConversation(seoyoonNpc);dialogue.type=speaker==='Seoyoon'?'npc':'story';dialogue.target=speaker==='Seoyoon'?{type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false}:null;setSpeechText(speaker+': '+text);updateInteractionUI();}
+function showReturnNightPage(){const q=dialogue?.firstNight;if(!q)return;const [speaker,text]=RETURN_NIGHT_LINES[q.index];faceConversation(seoyoonNpc);dialogue.type=speaker==='Girl 1'?'npc':'story';dialogue.target=speaker==='Girl 1'?{type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false}:null;setSpeechText(speaker+': '+text);updateInteractionUI();}
 function startReturnNightConversation(){if(!seoyoonNpc||nightTransition||dialogue||locationId!=='restaurant'||nightState.phase!=='return-inside')return;nightState.phase='after-battle-dialogue';resetInput();seoyoonNpc.previousDirection=seoyoonNpc.direction;seoyoonNpc.direction=facing(player.x-seoyoonNpc.x,player.y-seoyoonNpc.y);seoyoonNpc.talking=true;player.direction=facing(seoyoonNpc.x-player.x,seoyoonNpc.y-player.y);drawPlayer();drawNpc(seoyoonNpc);openSpeech([''],{type:'story'});dialogue.firstNight={index:0};showReturnNightPage();}
-const interactBeforeNight=interact;interact=function(t){if(t?.owner?.id==='seoyoon'&&!intro&&!dialogue&&!locked()&&nearTarget(t)){if(nightState.phase==='return-inside'&&locationId==='restaurant'){startReturnNightConversation();return;}if(locationId==='quarters'&&nightState.phase==='go-to-bed'){openSpeech(['Seoyoon: Your room is on the upper left. Get some sleep.'],{type:'npc',target:t});return;}if(nightState.phase==='morning'){openSpeech(['Seoyoon: Good morning.'],{type:'npc',target:t});return;}}return interactBeforeNight(t);};
+const interactBeforeNight=interact;interact=function(t){if(t?.owner?.id==='seoyoon'&&!intro&&!dialogue&&!locked()&&nearTarget(t)){if(nightState.phase==='return-inside'&&locationId==='restaurant'){startReturnNightConversation();return;}if(locationId==='quarters'&&nightState.phase==='go-to-bed'){openSpeech(['Girl 1: Your room is on the upper left. Get some sleep.'],{type:'npc',target:t});return;}if(nightState.phase==='morning'){openSpeech(['Girl 1: Good morning.'],{type:'npc',target:t});return;}}return interactBeforeNight(t);};
 async function nightWait(ms,epoch){await wait(ms);return epoch===nightEpoch;}
 async function finishReturnNightConversation(){
  const epoch=++nightEpoch,fade=$('fade'),previous={transition:fade.style.transition,zIndex:fade.style.zIndex};nightTransition=true;resetInput();closeDialogue(false);if(seoyoonNpc)seoyoonNpc.talking=false;
@@ -2262,7 +2262,7 @@ async function sleepUntilMorning(){
 $('sleepYes').onclick=()=>void sleepUntilMorning();
 sleepPrompt.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeSleepPrompt();}if(e.key==='Tab'){e.preventDefault();(document.activeElement===$('sleepYes')?$('sleepNo'):$('sleepYes')).focus();}});
 const portalBeforeNight=useCucchiaioPortal;useCucchiaioPortal=async function(p){await portalBeforeNight(p);syncNightSeoyoon();refreshNightObjective();};
-const victoryBeforeNight=victoryFirstBattle;victoryFirstBattle=async function(epoch){await victoryBeforeNight(epoch);if(!battleAlive(epoch)||firstBattlePhase!=='victory'||nightState.firstVictoryReward)return;nightState.firstVictoryReward=true;const reports=awardExperience(60,['riccardo']);const extra=reports.flatMap(r=>[r.level>r.oldLevel?'Riccardo reached Lv '+r.level+'.':'',...r.learned.map(n=>'Learned '+n+'!')]).filter(Boolean);showBattleResult('VICTORY','60 EXP earned.'+(extra.length?' '+extra.join(' '):''));};
+const victoryBeforeNight=victoryFirstBattle;victoryFirstBattle=async function(epoch){await victoryBeforeNight(epoch);if(!battleAlive(epoch)||firstBattlePhase!=='victory'||nightState.firstVictoryReward)return;nightState.firstVictoryReward=true;const reports=awardExperience(60,['riccardo']);const extra=reports.flatMap(r=>[r.level>r.oldLevel?'Guy reached Lv '+r.level+'.':'',...r.learned.map(n=>'Learned '+n+'!')]).filter(Boolean);showBattleResult('VICTORY','60 EXP earned.'+(extra.length?' '+extra.join(' '):''));};
 const continueBeforeNight=$('battleContinue').onclick;$('battleContinue').onclick=()=>{const won=firstBattlePhase==='victory';continueBeforeNight();if(won&&nightState.phase==='before-victory'){nightState.phase='return-inside';storyPhase='complete';storyCamera=null;refreshNightObjective();}};
 const uiBeforeNight=updateInteractionUI;updateInteractionUI=function(){uiBeforeNight();if(nightTransition||!sleepPrompt.hidden){clearMarkers();portalButton.hidden=true;doorButton.hidden=true;}refreshNightObjective();};
 const travelBeforeNight=updateTravel;updateTravel=function(dt){travelBeforeNight(dt);resumeNightButton.hidden=!(ready&&intro&&pendingNightSave&&!nightTransition);if(nightState.phase==='go-to-bed'&&locationId==='quarters'){if(!nearFirstBed())bedDismissed=false;}};
@@ -2308,16 +2308,16 @@ for(const [id,en] of Object.entries(NPC_EN))if(NPC_LINES[id])bilingual(en,NPC_LI
 translateLines(ENGLISH_SCENE,[
  '됐어요. 그럼 아까 말씀드린 요리사 자리 말인데요…','잠깐… 이제 말이 알아들려요!','네. 언어 설정을 바꿨거든요.','그러니까… 그것만 하면 되는 거였어요?','네. 이제 일자리 얘기로 돌아가도 될까요?','비행 내내 한국어 공부했는데…','네, 죄송해요! 요리사를 구하는 식당이 있다고 하셨죠?','홍대온에 있는 쿠키아이오라는 식당이에요. 이력서를 보니 잘 맞으실 것 같아요.','면접을 잡아 뒀어요. 서울역 밖 안내 지도 옆 정류장에서 버스를 타세요.','홍대온, 버스 정류장, 면접. 알겠습니다!','길 잃지 않게 조심하세요. 그건 언어를 바꿔도 해결이 안 되니까요.','장담은 못 하지만… 도와주셔서 감사합니다!']);
 translateLines(SEOYOON_SCENES.before,[
- '안녕하세요! 리카르도 씨죠? 고용센터에서 연락받았어요.','네, 맞아요. 일자리 때문에 왔어요.','저는 서윤이에요. 여기서 홀 서빙을 해요. 주방 일은 해 보셨어요?','네. 주방은 제가 뭘 해야 하는지 아는 몇 안 되는 곳이죠.','그럼 괜찮겠네요. 오늘부터 일하실 거예요. 저녁 영업까지 시간이 좀 있으니 안내해 드릴게요.','바로 시작이군요. 좋아요.','여기 작업복이에요.','서윤이 두건, 흰 티셔츠, 검은 바지와 주방화를 건넨다. 이가 나간 프라이팬도 있다.','고마워요. 어디서 갈아입으면 되죠?','메뉴를 열고 장비로 들어가서 작업복을 선택하세요.','…장비요?','네. 거기서 입으면 돼요.','맞다. 여긴 게임이지. 탈의실을 기대한 내가 바보네.']);
+ '안녕하세요! Guy 씨죠? 고용센터에서 연락받았어요.','네, 맞아요. 일자리 때문에 왔어요.','저는 Girl 1이에요. 여기서 홀 서빙을 해요. 주방 일은 해 보셨어요?','네. 주방은 제가 뭘 해야 하는지 아는 몇 안 되는 곳이죠.','그럼 괜찮겠네요. 오늘부터 일하실 거예요. 저녁 영업까지 시간이 좀 있으니 안내해 드릴게요.','바로 시작이군요. 좋아요.','여기 작업복이에요.','Girl 1이 두건, 흰 티셔츠, 검은 바지와 주방화를 건넨다. 이가 나간 프라이팬도 있다.','고마워요. 어디서 갈아입으면 되죠?','메뉴를 열고 장비로 들어가서 작업복을 선택하세요.','…장비요?','네. 거기서 입으면 돼요.','맞다. 여긴 게임이지. 탈의실을 기대한 내가 바보네.']);
 translateLines(SEOYOON_SCENES.after,[
- '끝이에요? 벌써 갈아입은 거예요?','네. 두건 잘 어울리네요.','고마워요. 저보다 먼저 세 명은 쓴 것 같지만요.','그럼 우리 둘보다 경력이 많겠네요.','좋네요. 제 대신 일도 해 주면 좋겠는데.','자, 곧 저녁 영업 시작이에요.','여기 원래 바빠요?','요즘은 매일요. 거래처를 바꾸고 특별한 식재료를 쓰기 시작했대요. 손님들이 계속 다시 와요.','어떻게 특별한데요?','몰라요. 저는 접시를 나르잖아요. 뭐가 들었는지는 리카르도 씨가 알아보겠죠.','또 알아 둘 게 있어요?','조금 이상한 손님도 있어요.','이상하다고요?','어제는 첫 접시를 내려놓기도 전에 한 그릇 더 달라는 분이 있었어요.','효율적이네요.','어떤 분은 옷걸이에 주문하려고 했어요. 나중에 옷걸이에 사과하긴 했으니… 그냥 피곤했겠죠.','그럼 걱정할 건 없겠네요?','우리가 감당 못 할 정도는 아니에요. 음식만 계속 내주시면 돼요.','아, 하나 더. 지낼 곳은 구했어요?','아직요. 일자리부터 구해야 했거든요.','위층에 직원용 방이 있어요. 두 개 비어 있으니 하나 쓰세요.','일자리에 방까지? 시작 보상이 꽤 후한데요.','방을 보고 말해요. 침대랑 옷장이 있고… 나머지는 상상으로 채우면 돼요.','호화롭네요. 서윤 씨도 위층에 살아요?','네. 일 끝나고 보여 드릴게요. 일단 저 프라이팬들은 저절로 닦이지 않으니까요.','알겠어요. 대신 경험치는 주세요.','깨끗한 주방을 드릴게요.','게임 참 빡세네.']);
+ '끝이에요? 벌써 갈아입은 거예요?','네. 두건 잘 어울리네요.','고마워요. 저보다 먼저 세 명은 쓴 것 같지만요.','그럼 우리 둘보다 경력이 많겠네요.','좋네요. 제 대신 일도 해 주면 좋겠는데.','자, 곧 저녁 영업 시작이에요.','여기 원래 바빠요?','요즘은 매일요. 거래처를 바꾸고 특별한 식재료를 쓰기 시작했대요. 손님들이 계속 다시 와요.','어떻게 특별한데요?','몰라요. 저는 접시를 나르잖아요. 뭐가 들었는지는 Guy 씨가 알아보겠죠.','또 알아 둘 게 있어요?','조금 이상한 손님도 있어요.','이상하다고요?','어제는 첫 접시를 내려놓기도 전에 한 그릇 더 달라는 분이 있었어요.','효율적이네요.','어떤 분은 옷걸이에 주문하려고 했어요. 나중에 옷걸이에 사과하긴 했으니… 그냥 피곤했겠죠.','그럼 걱정할 건 없겠네요?','우리가 감당 못 할 정도는 아니에요. 음식만 계속 내주시면 돼요.','아, 하나 더. 지낼 곳은 구했어요?','아직요. 일자리부터 구해야 했거든요.','위층에 직원용 방이 있어요. 두 개 비어 있으니 하나 쓰세요.','일자리에 방까지? 시작 보상이 꽤 후한데요.','방을 보고 말해요. 침대랑 옷장이 있고… 나머지는 상상으로 채우면 돼요.','호화롭네요. Girl 1 씨도 위층에 살아요?','네. 일 끝나고 보여 드릴게요. 일단 저 프라이팬들은 저절로 닦이지 않으니까요.','알겠어요. 대신 경험치는 주세요.','깨끗한 주방을 드릴게요.','게임 참 빡세네.']);
 translateLines(POST_SERVICE_LINES,[
  '첫 근무를 무사히 버텼네요.','간신히요. 여기 사람들은 원래 이렇게 많이 먹어요?','계속 다시 온다고 했잖아요.','어떤 테이블은 저녁을 세 번 주문했어요. 두 명이었는데.','점심을 걸렀나 보죠.','일주일 동안요?','아무튼 끝났어요. 마지막으로 하나만 더요.','그 말은 늘 불길하던데.','저 낡은 프라이팬 좀 밖에 버려 줄래요? 가장자리가 깨졌어요.','벌써 정이 많이 들었는데요.','만난 지 네 시간밖에 안 됐잖아요.','짧고 강렬한 사이였죠.','쓰레기통은 밖에 있어요. 다녀오면 방 보여 드릴게요.','침대라. 드디어 쓸모 있는 퀘스트 보상이네.']);
 translateLines(HUNGRY_LINES,['배고파…','아, 죄송해요. 영업 끝났어요. 내일 다시 오세요.','아직… 배고파…','저쪽 길 아래에 편의점이 있어요.','저기… 안색이 안 좋은데, 도와드릴까요?','더…','알겠으니까 거기서 멈춰요.','오지 말라고요!']);
 translateLines(RETURN_NIGHT_LINES,[
  '그거 버리러 간 거 아니었어요?','밖에서 누가 절 공격했어요.','뭐라고요? 다쳤어요?','조금 긁혔어요. 계속 배고프다고 하더니, 문 닫았다고 해도 덤벼들더라고요.','술에 취했겠죠. 아니면 약을 했거나.','직접 봤으면 그런 말 못 해요. 얼굴부터 뭔가 이상했어요.','여기까지 따라왔어요?','그런 것 같진 않아요.','알겠어요. 문 잠글게요. 다시 오면 경찰에 신고하죠.','생각보다 침착하네요.','여기서 삼 년째 마감해요. 별별 사람을 다 만나죠.','프라이팬으로 때려야 했다고요.','그럼 아직 안 버리길 잘했네요.','제 말은 그게 아니라…','일단 자요. 내일도 걱정되면 그때 다시 얘기해요.','네. 내일요.']);
 const OFFICE_EN=[
- 'You must be Riccardo. I have already reviewed your résumé and work experience.',
+ 'You must be Guy. I have already reviewed your résumé and work experience.',
  'There is a vacancy that matches your experience and the conditions you are looking for.',
  'A restaurant nearby is looking for an experienced cook to work in the kitchen.',
  'You can discuss the details at the interview. Shall I contact them to arrange one?',
@@ -2327,20 +2327,20 @@ const OFFICE_EN=[
  null,null];
 OFFICE_STORY.forEach((line,i)=>{if(OFFICE_EN[i])bilingual(OFFICE_EN[i],line.text);});
 bilingual('I didn’t understand a word… but I think she wants my phone.','한마디도 못 알아들었지만… 내 휴대폰을 달라는 것 같은데.');
-bilingual('Riccardo hands his phone to the woman behind the counter.','리카르도가 창구 직원에게 휴대폰을 건넨다.');
+bilingual('Guy hands his phone to the woman behind the counter.','Guy가 창구 직원에게 휴대폰을 건넨다.');
 [
  ['I can’t make sense of any of this…','하나도 모르겠네…'],['Woof! Woof!','멍멍!'],['Hello!','안녕하세요!'],
  ['Cucchiaio is in Hongdeon. Take the bus from the stop outside Seoul Station, next to the map board. Good luck with your interview!','쿠키아이오는 홍대온에 있어요. 서울역 밖 안내 지도 옆 정류장에서 버스를 타세요. 면접 잘 보세요!'],
  ['Hongdeon… Now, let’s find Cucchiaio.','홍대온… 이제 쿠키아이오를 찾아보자.'],
  ['Ready for your first shift? We’ll talk again once the kitchen is ready.','첫 근무 준비됐어요? 주방 준비가 끝나면 다시 얘기해요.'],
- ['Your room is on the upper left. Get some sleep.','왼쪽 위 방이 리카르도 씨 방이에요. 푹 자요.'],['Good morning.','좋은 아침이에요.'],
- ['Would you like to sleep?','잠을 자겠습니까?'],['Seo Yoon joined the party!','서윤이 파티에 합류했습니다!'],
+ ['Your room is on the upper left. Get some sleep.','왼쪽 위 방이 Guy 씨 방이에요. 푹 자요.'],['Good morning.','좋은 아침이에요.'],
+ ['Would you like to sleep?','잠을 자겠습니까?'],['Girl 1 joined the party!','Girl 1이 파티에 합류했습니다!'],
  ['YES','예'],['NO','아니요'],['OK','확인'],['RESUME','이어하기'],['RETRY','다시 시도'],['Retry','다시 시도'],['CONTINUE','계속'],['CANCEL','취소'],['BACK','뒤로'],['Back','뒤로'],['Close','닫기'],
  ['ATK','공격'],['SKILLS','스킬'],['ITEM','아이템'],['DEFENSE','방어'],['RUN','도주'],['VICTORY','승리'],['DEFEAT','패배'],
  ['STATUS','상태'],['INVENTORY','소지품'],['EQUIP','장비'],['EQUIPPED','장착 중'],['AVAILABLE','장착 가능'],['Equipped','장착 중'],['Empty','비어 있음'],['Empty slot','빈 슬롯'],['Weapon','무기'],['Head','머리'],['Body','몸'],['Legs','다리'],['Shoes','신발'],
  ['No compatible equipment.','장착 가능한 장비가 없습니다.'],['Select a slot to see compatible equipment.','슬롯을 선택하면 장착 가능한 장비가 표시됩니다.'],
  ['No items','아이템 없음'],['Your inventory is empty.','소지품이 없습니다.'],['Use','사용'],['This item would have no effect.','사용해도 효과가 없습니다.'],['No techniques learned yet.','아직 습득한 기술이 없습니다.'],['Fire · Ice · Lightning: normal resistance','불 · 얼음 · 번개: 기본 내성'],
- ['PROLOGUE · SEOUL','프롤로그 · 서울'],['Find the Job Center','고용센터 찾기'],['Speak to the receptionist','안내 직원과 대화하기'],['Take the bus to Hongdeon','홍대온행 버스 타기'],['Find Cucchiaio','쿠키아이오 찾기'],['Explore Cucchiaio','쿠키아이오 둘러보기'],['Staff quarters','직원 숙소'],['Small quarters','직원 숙소'],['Ready for your first shift','첫 근무 준비 완료'],['Take the old frying pan outside','낡은 프라이팬을 밖으로 가져가기'],['Take the frying pan to the bins','프라이팬을 쓰레기통으로 가져가기'],['First battle complete','첫 전투 완료'],['Return to Cucchiaio','쿠키아이오로 돌아가기'],['Talk to Seoyoon','서윤과 대화하기'],['Find your bed · Room on the upper left','침대 찾기 · 왼쪽 위 방'],['Go upstairs and get some sleep','위층으로 올라가 잠자기'],['Morning · Staff quarters','아침 · 직원 숙소'],['Reach the bus stop.','버스 정류장으로 가기'],['The evening service goes smoothly…','저녁 영업은 큰 문제 없이 이어진다…'],
+ ['PROLOGUE · SEOUL','프롤로그 · 서울'],['Find the Job Center','고용센터 찾기'],['Speak to the receptionist','안내 직원과 대화하기'],['Take the bus to Hongdeon','홍대온행 버스 타기'],['Find Cucchiaio','쿠키아이오 찾기'],['Explore Cucchiaio','쿠키아이오 둘러보기'],['Staff quarters','직원 숙소'],['Small quarters','직원 숙소'],['Ready for your first shift','첫 근무 준비 완료'],['Take the old frying pan outside','낡은 프라이팬을 밖으로 가져가기'],['Take the frying pan to the bins','프라이팬을 쓰레기통으로 가져가기'],['First battle complete','첫 전투 완료'],['Return to Cucchiaio','쿠키아이오로 돌아가기'],['Talk to Girl 1','Girl 1과 대화하기'],['Find your bed · Room on the upper left','침대 찾기 · 왼쪽 위 방'],['Go upstairs and get some sleep','위층으로 올라가 잠자기'],['Morning · Staff quarters','아침 · 직원 숙소'],['Reach the bus stop.','버스 정류장으로 가기'],['The evening service goes smoothly…','저녁 영업은 큰 문제 없이 이어진다…'],
  ['Enter Cucchiaio','쿠키아이오 입장'],['Exit Cucchiaio','쿠키아이오 나가기'],['Go upstairs','위층으로'],['Go downstairs','아래층으로'],['DESTINATIONS','목적지'],['Hongdeon','홍대온'],['Cucchiaio','쿠키아이오'],['Loading Seoul…','서울 불러오는 중…'],['Please wait.','잠시만 기다려 주세요.'],['Arriving in Seoul…','서울에 도착하는 중…'],['Map test · no battles','지도 탐색'],['60 EXP earned.','경험치 60 획득.'],
  ['Chipped Frying Pan','이가 나간 프라이팬'],['Secondhand Bandana','중고 두건'],['Secondhand T-Shirt','중고 티셔츠'],['Secondhand Trousers','중고 바지'],['Secondhand Shoes','중고 주방화'],['Serving Tray','서빙 쟁반'],['Burgundy Hair Clip','버건디 머리핀'],['Waitress Shirt','서빙 셔츠'],['Waitress Trousers','서빙 바지'],['Simple Shoes','기본 신발'],['Staff Meal','직원 식사'],['Espresso Shot','에스프레소 샷'],['Emergency Snack','비상 간식']
 ].forEach(p=>bilingual(...p));
@@ -2354,20 +2354,20 @@ const EQUIP_DESCRIPTIONS_KO=['이가 나간 프라이팬. 요리에는 아직 �
 Object.values(EQUIP_ITEMS).forEach((item,i)=>{if(EQUIP_DESCRIPTIONS_KO[i])bilingual(item.description,EQUIP_DESCRIPTIONS_KO[i]);});
 const ITEM_KO=['의식 있는 아군 하나의 HP를 100 회복합니다.','의식 있는 아군 하나의 EP를 10 회복합니다.','쓰러진 아군 하나를 최대 HP의 25%로 부활시킵니다.'];Object.values(ITEM_CATALOG).forEach((item,i)=>{if(ITEM_KO[i])bilingual(item.description,ITEM_KO[i]);});
 [
- ['Riccardo','리카르도'],['Seoyoon','서윤'],['Seo Yoon','서윤'],['Seon Jong','선종'],['Stranger','낯선 사람'],
- ['Choose an action.','행동을 선택하세요.'],['Tap a target — including yourself.','자신을 포함해 대상을 터치하세요.'],['Tap a target.','대상을 터치하세요.'],['Victory!','승리!'],['You won your first battle.','첫 전투에서 승리했습니다.'],['Riccardo is defeated.','리카르도가 쓰러졌습니다.'],['Try the battle again.','전투를 다시 시도하세요.'],['Riccardo attacks himself!','리카르도가 자신을 공격합니다!'],['Riccardo attacks!','리카르도의 공격!'],['The stranger attacks!','낯선 사람의 공격!'],['LOAD ERROR','불러오기 오류'],['Check the asset path, then retry.','이미지 경로를 확인하고 다시 시도하세요.'],['Unable to start the scene. Please try again.','장면을 시작할 수 없습니다. 다시 시도해 주세요.'],['This item would have no effect on this character.','이 캐릭터에게는 효과가 없습니다.'],['Job Center','고용센터'],['Cucchiaio · Restaurant','쿠키아이오 · 식당']
+ ['Guy','Guy'],['Girl 1','Girl 1'],['Girl 1','Girl 1'],['Girl 2','Girl 2'],['Stranger','낯선 사람'],
+ ['Choose an action.','행동을 선택하세요.'],['Tap a target — including yourself.','자신을 포함해 대상을 터치하세요.'],['Tap a target.','대상을 터치하세요.'],['Victory!','승리!'],['You won your first battle.','첫 전투에서 승리했습니다.'],['Guy is defeated.','Guy가 쓰러졌습니다.'],['Try the battle again.','전투를 다시 시도하세요.'],['Guy attacks himself!','Guy가 자신을 공격합니다!'],['Guy attacks!','Guy의 공격!'],['The stranger attacks!','낯선 사람의 공격!'],['LOAD ERROR','불러오기 오류'],['Check the asset path, then retry.','이미지 경로를 확인하고 다시 시도하세요.'],['Unable to start the scene. Please try again.','장면을 시작할 수 없습니다. 다시 시도해 주세요.'],['This item would have no effect on this character.','이 캐릭터에게는 효과가 없습니다.'],['Job Center','고용센터'],['Cucchiaio · Restaurant','쿠키아이오 · 식당']
 ].forEach(p=>bilingual(...p));
 function tr(value){const text=String(value??''),source=EN_TEXT.get(text)||text;if(language!=='ko')return source;if(KO_TEXT.has(source))return KO_TEXT.get(source);
  const work=source.match(/^Work clothes: (\d)\/4 · Select (\w+) and press EQUIP\.$/);if(work)return '작업복: '+work[1]+'/4 · '+tr(work[2])+' 선택 후 장비 버튼을 누르세요.';
  const base=source.match(/^Base (\d+%?) \+ Equip (\d+%?)$/);if(base)return '기본 '+base[1]+' + 장비 '+base[2];
  const chunks=source.split(/( · | ×| — |\n)/);if(chunks.length>1)return chunks.map(s=>KO_TEXT.get(s)||s.replace(/^Next /,'다음 레벨까지 ').replace(/^Lv /,'레벨 ')).join('');
- return source.replace(/^Lv (\d+)/,'레벨 $1').replace(/^Riccardo reached Lv (\d+)\.$/,'리카르도가 레벨 $1이 되었습니다.').replace(/^Learned (.+)!$/,(_,name)=>tr(name)+' 습득!');
+ return source.replace(/^Lv (\d+)/,'레벨 $1').replace(/^Guy reached Lv (\d+)\.$/,'Guy가 레벨 $1이 되었습니다.').replace(/^Learned (.+)!$/,(_,name)=>tr(name)+' 습득!');
 }
 const LANGUAGE_PREF_KEY='cucchiaio-language-v1';
 function savedLanguage(){try{const l=localStorage.getItem(LANGUAGE_PREF_KEY);return ['en','ko'].includes(l)?l:null;}catch(_){return null;}}
 function rememberLanguage(){try{localStorage.setItem(LANGUAGE_PREF_KEY,language);}catch(_){}}
-const localizeSpeech=setSpeechText;let rawSpeech='';setSpeechText=function(value){rawSpeech=String(value??'');if(!languageUnlocked){localizeSpeech(rawSpeech);return;}const m=rawSpeech.match(/^(Riccardo|Seoyoon|Stranger|Seon Jong|TV):\s*/);localizeSpeech(m?m[1]+': '+tr(rawSpeech.slice(m[0].length)):tr(rawSpeech));};
-const paintNames=paintBalloonPage;paintBalloonPage=function(){paintNames();const name=$('speechText').querySelector('.speech-speaker');if(name)name.textContent=languageUnlocked&&language==='ko'?({Riccardo:'리카르도',Seoyoon:'서윤',Stranger:'낯선 사람','Seon Jong':'선종'}[name.textContent]||name.textContent):name.textContent;};
+const localizeSpeech=setSpeechText;let rawSpeech='';setSpeechText=function(value){rawSpeech=String(value??'');if(!languageUnlocked){localizeSpeech(rawSpeech);return;}const m=rawSpeech.match(/^(Guy|Girl 1|Stranger|Girl 2|TV):\s*/);localizeSpeech(m?m[1]+': '+tr(rawSpeech.slice(m[0].length)):tr(rawSpeech));};
+const paintNames=paintBalloonPage;paintBalloonPage=function(){paintNames();const name=$('speechText').querySelector('.speech-speaker');if(name)name.textContent=languageUnlocked&&language==='ko'?({"Guy":'Guy',"Girl 1":'Girl 1',Stranger:'낯선 사람','Girl 2':'Girl 2'}[name.textContent]||name.textContent):name.textContent;};
 // Translate just visible text nodes, preserving controls, listeners and source data.
 const localizedNodes=new WeakMap();
 function localizeUI(root=game){const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){
@@ -2384,22 +2384,22 @@ window.TaraiLanguage={set:setGameLanguage,get:()=>language,translate:tr};
 const NEW_UI={panel:'Menu/file_00000000c8588209ad0407e6948e7423.png',button:'Menu/file_00000000f79082099a2ceff0d3e544d6.png',leftBalloon:'icons/file_00000000825082098fdff07ebdd54b71.png'};
 Object.values(NEW_UI).forEach(src=>{const image=new Image();image.src=src;});
 const bedMarker=document.createElement('button');bedMarker.id='bedMarker';bedMarker.className='marker object';bedMarker.hidden=true;const bedIcon=document.createElement('img');bedIcon.src=UI_ASSETS.exclamation;bedIcon.alt='!';bedMarker.appendChild(bedIcon);$('interactions').appendChild(bedMarker);bedMarker.onclick=e=>{e.stopPropagation();openSleepPrompt();};
-const partyNotice=document.createElement('section');partyNotice.id='partyNotice';partyNotice.className='confirmation-overlay';partyNotice.hidden=true;partyNotice.setAttribute('role','dialog');partyNotice.setAttribute('aria-modal','true');partyNotice.setAttribute('aria-labelledby','partyNoticeText');partyNotice.innerHTML='<div class="confirmation-panel"><p id="partyNoticeText">Seo Yoon joined the party!</p><div class="confirmation-choices"><button id="partyNoticeOk">OK</button></div></div>';game.appendChild(partyNotice);
+const partyNotice=document.createElement('section');partyNotice.id='partyNotice';partyNotice.className='confirmation-overlay';partyNotice.hidden=true;partyNotice.setAttribute('role','dialog');partyNotice.setAttribute('aria-modal','true');partyNotice.setAttribute('aria-labelledby','partyNoticeText');partyNotice.innerHTML='<div class="confirmation-panel"><p id="partyNoticeText">Girl 1 joined the party!</p><div class="confirmation-choices"><button id="partyNoticeOk">OK</button></div></div>';game.appendChild(partyNotice);
 let morningEpoch=0,morningBusy=false,morningMotion=null,morningRunner=null,morningMotions=new Map();
 const MORNING_TIMING={walk:175,look:1000};
 const MORNING_WINDOW={riccardo:{x:450,y:1240},seoyoon:{x:530,y:1240},backRiccardo:{x:450,y:1190},backSeoyoon:{x:530,y:1190}};
 const MORNING_LINES=[
- ['Seoyoon','Riccardo, are you awake?'],['Riccardo','Yeah… What’s going on?'],['Seoyoon','Come and look.','window'],
- ['Riccardo','What the… Why is everyone running?'],['Seoyoon','Look over by the intersection.'],['Riccardo','Is that man biting him?!'],['Seoyoon','Step away from the window!','step-back'],
- ['Riccardo','That man last night… He tried to jump me like that, too.'],['Seoyoon','…And I told you he was just drunk.'],['Riccardo','You couldn’t have known. But what do we do now?'],
- ['Seoyoon','I’ll try calling Seon Jong. She lives in another area… Let’s see if she’s okay.'],['Riccardo','Who’s that?'],['Seoyoon','The bartender at Cucchiaio. You were supposed to meet her today.'],
- ['Seoyoon','Come on, pick up…'],['Seon Jong','Hello?'],['Seoyoon','Seon Jong! Are you okay?'],['Seon Jong','Yeah, I just woke up. Why?'],['Seoyoon','People are attacking each other outside the restaurant. A man just bit someone.'],['Seon Jong','Wait… What? Are you serious?'],['Seoyoon','We can see them from the window. What’s happening where you are?'],['Seon Jong','Hang on, let me check…','phone-pause'],['Seon Jong','Everything seems normal here. There are people waiting at the bus stop.'],
- ['Seoyoon','Can we come over? Riccardo, the new cook, is here with me.'],['Seon Jong','Of course. Come over. I’ll be here.'],['Seoyoon','Okay. Stay inside for now, please.'],['Seon Jong','All right. Be careful.'],
- ['Seoyoon','It seems quiet over there. The bus stop isn’t far from here.'],['Riccardo','Do we really have to go out? Shouldn’t we wait for someone?'],['Seoyoon','We could wait… But if it gets worse, how will we get out?'],['Riccardo','…All right. We’ll go together.'],['Seoyoon','You’re bringing that?'],['Riccardo','It came in handy yesterday.'],['Seoyoon','Then keep it close.'],
- ['Seoyoon','Let’s go.','approach'],['Riccardo','Hey, what are you doing?'],['Seoyoon','The game engine only supports one controllable character on the map. I have to overlap my sprite with yours.'],['Riccardo','…Am I supposed to understand that?'],['Seoyoon','Just walk.','join']
+ ['Girl 1','Guy, are you awake?'],['Guy','Yeah… What’s going on?'],['Girl 1','Come and look.','window'],
+ ['Guy','What the… Why is everyone running?'],['Girl 1','Look over by the intersection.'],['Guy','Is that man biting him?!'],['Girl 1','Step away from the window!','step-back'],
+ ['Guy','That man last night… He tried to jump me like that, too.'],['Girl 1','…And I told you he was just drunk.'],['Guy','You couldn’t have known. But what do we do now?'],
+ ['Girl 1','I’ll try calling Girl 2. She lives in another area… Let’s see if she’s okay.'],['Guy','Who’s that?'],['Girl 1','The bartender at Cucchiaio. You were supposed to meet her today.'],
+ ['Girl 1','Come on, pick up…'],['Girl 2','Hello?'],['Girl 1','Girl 2! Are you okay?'],['Girl 2','Yeah, I just woke up. Why?'],['Girl 1','People are attacking each other outside the restaurant. A man just bit someone.'],['Girl 2','Wait… What? Are you serious?'],['Girl 1','We can see them from the window. What’s happening where you are?'],['Girl 2','Hang on, let me check…','phone-pause'],['Girl 2','Everything seems normal here. There are people waiting at the bus stop.'],
+ ['Girl 1','Can we come over? Guy, the new cook, is here with me.'],['Girl 2','Of course. Come over. I’ll be here.'],['Girl 1','Okay. Stay inside for now, please.'],['Girl 2','All right. Be careful.'],
+ ['Girl 1','It seems quiet over there. The bus stop isn’t far from here.'],['Guy','Do we really have to go out? Shouldn’t we wait for someone?'],['Girl 1','We could wait… But if it gets worse, how will we get out?'],['Guy','…All right. We’ll go together.'],['Girl 1','You’re bringing that?'],['Guy','It came in handy yesterday.'],['Girl 1','Then keep it close.'],
+ ['Girl 1','Let’s go.','approach'],['Guy','Hey, what are you doing?'],['Girl 1','The game engine only supports one controllable character on the map. I have to overlap my sprite with yours.'],['Guy','…Am I supposed to understand that?'],['Girl 1','Just walk.','join']
 ];
 translateLines(MORNING_LINES,[
- '리카르도 씨, 일어났어요?','네… 무슨 일이에요?','와서 좀 봐요.','뭐야… 사람들이 왜 다 뛰어가죠?','저기 교차로 쪽을 봐요.','저 사람이 다른 사람을 물고 있는 거예요?!','창문에서 떨어져요!','어젯밤 그 사람도… 저렇게 덤벼들었어요.','…저는 그냥 취한 거라고 했죠.','알 수 없었잖아요. 그런데 이제 어떡하죠?','선종이한테 전화해 볼게요. 다른 동네에 사는데… 괜찮은지 봐야겠어요.','누구예요?','쿠키아이오 바텐더예요. 오늘 만나기로 했었는데.','제발, 받아…','여보세요?','선종아! 괜찮아?','응, 방금 일어났어. 왜?','식당 앞에서 사람들이 서로 공격하고 있어. 방금 어떤 남자가 다른 사람을 물었어.','잠깐… 뭐라고? 진짜야?','창문에서 보고 있어. 너희 동네는 어때?','잠깐만, 확인해 볼게…','여긴 평소랑 똑같은데. 정류장에서 버스 기다리는 사람들도 있어.','우리 너희 집에 가도 돼? 새로 온 요리사 리카르도 씨도 같이 있어.','당연하지. 이리 와. 집에서 기다릴게.','알겠어. 일단 밖에 나가지 말고 집에 있어.','응. 조심해서 와.','그쪽은 조용한가 봐요. 정류장도 여기서 멀지 않아요.','꼭 나가야 할까요? 누가 올 때까지 기다리는 게 낫지 않아요?','기다릴 수는 있죠… 그런데 더 심해지면 그때는 어떻게 나가요?','…알겠어요. 같이 가요.','그것도 가져가려고요?','어제 도움이 됐거든요.','그럼 바로 쓸 수 있게 챙겨요.','가요.','잠깐, 뭐 하는 거예요?','이 게임 엔진은 맵에서 조작 가능한 캐릭터를 한 명만 지원해요. 제 스프라이트를 리카르도 씨 스프라이트에 겹쳐야 해요.','…제가 알아들어야 하는 말이에요?','그냥 걸어요.']);
+ 'Guy 씨, 일어났어요?','네… 무슨 일이에요?','와서 좀 봐요.','뭐야… 사람들이 왜 다 뛰어가죠?','저기 교차로 쪽을 봐요.','저 사람이 다른 사람을 물고 있는 거예요?!','창문에서 떨어져요!','어젯밤 그 사람도… 저렇게 덤벼들었어요.','…저는 그냥 취한 거라고 했죠.','알 수 없었잖아요. 그런데 이제 어떡하죠?','Girl 2한테 전화해 볼게요. 다른 동네에 사는데… 괜찮은지 봐야겠어요.','누구예요?','쿠키아이오 바텐더예요. 오늘 만나기로 했었는데.','제발, 받아…','여보세요?','Girl 2야! 괜찮아?','응, 방금 일어났어. 왜?','식당 앞에서 사람들이 서로 공격하고 있어. 방금 어떤 남자가 다른 사람을 물었어.','잠깐… 뭐라고? 진짜야?','창문에서 보고 있어. 너희 동네는 어때?','잠깐만, 확인해 볼게…','여긴 평소랑 똑같은데. 정류장에서 버스 기다리는 사람들도 있어.','우리 너희 집에 가도 돼? 새로 온 요리사 Guy 씨도 같이 있어.','당연하지. 이리 와. 집에서 기다릴게.','알겠어. 일단 밖에 나가지 말고 집에 있어.','응. 조심해서 와.','그쪽은 조용한가 봐요. 정류장도 여기서 멀지 않아요.','꼭 나가야 할까요? 누가 올 때까지 기다리는 게 낫지 않아요?','기다릴 수는 있죠… 그런데 더 심해지면 그때는 어떻게 나가요?','…알겠어요. 같이 가요.','그것도 가져가려고요?','어제 도움이 됐거든요.','그럼 바로 쓸 수 있게 챙겨요.','가요.','잠깐, 뭐 하는 거예요?','이 게임 엔진은 맵에서 조작 가능한 캐릭터를 한 명만 지원해요. 제 스프라이트를 Guy 씨 스프라이트에 겹쳐야 해요.','…제가 알아들어야 하는 말이에요?','그냥 걸어요.']);
 const morningLockBefore=locked;locked=function(){return morningBusy||!partyNotice.hidden||morningLockBefore();};
 function bedAvailable(){return ['go-to-bed','morning','morning-complete'].includes(nightState.phase);}
 openSleepPrompt=function(){if(!bedAvailable()||!nearFirstBed()||dialogue||locked()||intro||editor.open)return;resetInput();clearMarkers();bedMarker.hidden=true;doorButton.hidden=true;portalButton.hidden=true;sleepPrompt.hidden=false;$('sleepPanel').style.borderImageSource='none';$('sleepQuestion').textContent=tr('Would you like to sleep?');localizeUI();$('sleepNo').focus();};
@@ -2437,7 +2437,7 @@ function updateMorningMotion(dt){for(const motion of [...morningMotions.values()
  const finished=motion.index>=motion.route.length;n.moving=!finished;if(finished)morningMotions.delete(n);if(n===player)drawPlayer();else drawNpc(n);if(finished)motion.resolve(true);
  }morningMotion=morningMotions.values().next().value||null;
 }
-function showMorningPage(){const q=dialogue?.morning;if(!q)return;const [who,text]=MORNING_LINES[q.index];if(who==='Riccardo'||who==='Seoyoon'&&!(q.index>=13&&q.index<=25))faceConversation(seoyoonNpc);dialogue.type=who==='Riccardo'?'story':'npc';dialogue.target=who==='Riccardo'?null:{type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false};setSpeechText(who+': '+text);updateInteractionUI();}
+function showMorningPage(){const q=dialogue?.morning;if(!q)return;const [who,text]=MORNING_LINES[q.index];if(who==='Guy'||who==='Girl 1'&&!(q.index>=13&&q.index<=25))faceConversation(seoyoonNpc);dialogue.type=who==='Guy'?'story':'npc';dialogue.target=who==='Guy'?null:{type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false};setSpeechText(who+': '+text);updateInteractionUI();}
 async function morningAction(action,epoch){if(!action)return true;morningBusy=true;resetInput();closeDialogue(false);if(action==='window'){
  await Promise.all([moveMorning(player,MORNING_WINDOW.riccardo,epoch),moveMorning(seoyoonNpc,MORNING_WINDOW.seoyoon,epoch)]);if(epoch!==morningEpoch)return false;faceConversation(seoyoonNpc);
  }else if(action==='step-back'){await Promise.all([moveMorning(player,MORNING_WINDOW.backRiccardo,epoch),moveMorning(seoyoonNpc,MORNING_WINDOW.backSeoyoon,epoch)]);if(epoch!==morningEpoch)return false;faceConversation(seoyoonNpc);}
@@ -2599,10 +2599,10 @@ const CHAOS={map:'Map/bca7ef0e-ebef-464c-9313-4596c14176b0.png',victim:{file:'Np
 let chaosBusy=false,chaosCamera=null,chaosEpoch=0,chaosActors=[],chaosLoading=null,chaosImage=null,chaosImagePromise=null,resumingChaos=false,chaosBubbleTime=0,chaosCivilianIndex=0,chaosBooting=false,chaosExitTime=0,chaosCompanionVisible=false;
 function chaosProgress(){return nightState.chaos||(nightState.chaos={stage:'new',revealed:false});}
 function chaosEnabled(){return nightState.phase==='morning-complete'&&partyMembers.seoyoon.joined;}
-const CHAOS_EXIT=[['Seoyoon','We have to get out of here. Let’s head to the bus stop.']];
+const CHAOS_EXIT=[['Girl 1','We have to get out of here. Let’s head to the bus stop.']];
 const CHAOS_CRY=[['Stranger','Leave me alone! Help!']];
-const CHAOS_APPROACH=[['Riccardo','Hey, you! Leave him alone!']];
-const CHAOS_THANKS=[['Stranger','Thank you… I thought I was done for.'],['Seoyoon','Can you get up?'],['Stranger','Yes… I think so. Where are you going?'],['Riccardo','The bus stop. We need to get out of this neighbourhood.'],['Stranger','Forget it. The buses have stopped, and the roads are blocked.'],['Seoyoon','Then how can we get out?'],['Stranger','I used to deliver to the MART. There’s an access to the old service corridors in the stockroom. They might lead you past the blockade.'],['Riccardo','Might?'],['Stranger','I’ve never followed them all the way through. But I wouldn’t stay out here.']];
+const CHAOS_APPROACH=[['Guy','Hey, you! Leave him alone!']];
+const CHAOS_THANKS=[['Stranger','Thank you… I thought I was done for.'],['Girl 1','Can you get up?'],['Stranger','Yes… I think so. Where are you going?'],['Guy','The bus stop. We need to get out of this neighbourhood.'],['Stranger','Forget it. The buses have stopped, and the roads are blocked.'],['Girl 1','Then how can we get out?'],['Stranger','I used to deliver to the MART. There’s an access to the old service corridors in the stockroom. They might lead you past the blockade.'],['Guy','Might?'],['Stranger','I’ve never followed them all the way through. But I wouldn’t stay out here.']];
 translateLines(CHAOS_EXIT,['여기서 나가야 해요. 버스 정류장으로 가요.']);translateLines(CHAOS_CRY,['저리 가! 살려 주세요!']);translateLines(CHAOS_APPROACH,['이봐! 그 사람한테서 떨어져!']);translateLines(CHAOS_THANKS,['고마워요… 이제 끝인 줄 알았어요.','일어날 수 있겠어요?','네… 그럴 것 같아요. 어디로 가시려고요?','버스 정류장이요. 이 동네를 벗어나야 해요.','소용없어요. 버스도 멈췄고 도로도 막혔어요.','그럼 어디로 나가죠?','전에 마트에 물건을 배달했어요. 창고에 옛 관리 통로로 들어가는 입구가 있어요. 봉쇄된 곳 너머로 이어질지도 몰라요.','모른다고요?','끝까지 가 본 적은 없어요. 하지만 저라면 여기 밖에 있진 않겠어요.']);
 [['Run!','도망쳐요!'],['Stay away from them!','저 사람들한테서 떨어져요!'],['He bit someone!','저 사람이 누군가를 물었어요!'],['What is happening?!','대체 무슨 일이야?!'],['Leave me alone! Help!','저리 가! 살려 주세요!'],['Find the passage inside the MART.','마트 창고 안의 통로를 찾으세요.'],['The passage should be inside the stockroom.','통로는 창고 안에 있을 거예요.'],['The MART stockroom is our next destination.','다음 목적지는 마트 창고예요.']].forEach(p=>bilingual(...p));
 const chaosLockBefore=locked;locked=function(){return chaosBusy||chaosLockBefore();};
@@ -2624,7 +2624,7 @@ async function chaosMove(n,to,epoch,speed=200,direction=null){const from={x:n.x,
 async function showChaosCompanion(epoch,direction=null){await loadSeoyoon();if(epoch!==chaosEpoch)return false;chaosCompanionVisible=true;Object.assign(seoyoonNpc,{x:player.x,y:player.y,direction:'down',moving:true});let to={x:player.x+90,y:player.y+10};if(!staticFree(to.x,to.y,10))to={x:player.x-90,y:player.y+10};await chaosMove(seoyoonNpc,to,epoch,200,direction);return epoch===chaosEpoch;}
 async function hideChaosCompanion(epoch){if(!chaosCompanionVisible)return;await chaosMove(seoyoonNpc,{x:player.x,y:player.y},epoch);if(epoch!==chaosEpoch)return;chaosCompanionVisible=false;seoyoonNpc.actor.node.hidden=true;}
 function chaosLines(lines,kind){const[who,text]=lines[0];openSpeech([''],{type:'story'});dialogue.chaos={kind,index:0};paintChaosPage();}
-function paintChaosPage(){const q=dialogue?.chaos;if(!q)return;const lines=q.kind==='exit'?CHAOS_EXIT:q.kind==='cry'?CHAOS_CRY:q.kind==='approach'?CHAOS_APPROACH:CHAOS_THANKS,[who,text]=lines[q.index],owner=who==='Seoyoon'?seoyoonNpc:who==='Stranger'?chaosActor('rescued-man'):null;dialogue.type=owner?'npc':'story';dialogue.target=owner?{type:'npc',key:owner.id,owner,dog:false}:null;
+function paintChaosPage(){const q=dialogue?.chaos;if(!q)return;const lines=q.kind==='exit'?CHAOS_EXIT:q.kind==='cry'?CHAOS_CRY:q.kind==='approach'?CHAOS_APPROACH:CHAOS_THANKS,[who,text]=lines[q.index],owner=who==='Girl 1'?seoyoonNpc:who==='Stranger'?chaosActor('rescued-man'):null;dialogue.type=owner?'npc':'story';dialogue.target=owner?{type:'npc',key:owner.id,owner,dog:false}:null;
  if(q.kind==='exit')faceConversation(seoyoonNpc);else if(q.kind==='thanks')faceConversation(chaosActor('rescued-man'));else if(q.kind==='approach')faceConversation(chaosActor('rescue-enemy'));
  setSpeechText(who+': '+text);updateInteractionUI();}
 async function startChaosExit(){if(chaosBusy||!chaosEnabled())return;const epoch=++chaosEpoch;chaosBusy=true;resetInput();try{await loadChaosActors();syncChaosActors();if(!await showChaosCompanion(epoch))return;player.direction=facing(seoyoonNpc.x-player.x,seoyoonNpc.y-player.y);drawPlayer();chaosLines(CHAOS_EXIT,'exit');}catch(e){chaosBusy=false;notice(e.message);}}
@@ -2662,7 +2662,7 @@ TaraiNight.resume=resumeNightGame;
 
 /* Temporary companion shortcut beside TEST HONGDEON. */
 let chaosTestJumping=false;
-const chaosTestButton=document.createElement('button');chaosTestButton.id='testChaosExitButton';chaosTestButton.textContent='TEST USCITA';chaosTestButton.type='button';chaosTestButton.hidden=true;chaosTestButton.disabled=true;chaosTestButton.setAttribute('aria-label','Salta all’uscita di Riccardo e Seo Yoon dal ristorante');
+const chaosTestButton=document.createElement('button');chaosTestButton.id='testChaosExitButton';chaosTestButton.textContent='TEST USCITA';chaosTestButton.type='button';chaosTestButton.hidden=true;chaosTestButton.disabled=true;chaosTestButton.setAttribute('aria-label','Salta all’uscita di Guy e Girl 1 dal ristorante');
 const testShortcuts=document.createElement('div');testShortcuts.id='testShortcuts';game.append(testShortcuts);testShortcuts.append(testHongButton,chaosTestButton);Object.assign(testHongButton.style,{position:'static',left:'auto',bottom:'auto'});
 const beforeShortcutLock=locked;locked=function(){return chaosTestJumping||beforeShortcutLock();};
 function paintTestShortcuts(){chaosTestButton.hidden=!ENABLE_HONGDEON_TEST||testHongButton.hidden||firstBattleActive;chaosTestButton.disabled=!ready||transitioning||nightTransition||morningBusy||storyBusy||equipTransition||chaosBusy||chaosTestJumping||firstBattleActive;testShortcuts.hidden=testHongButton.hidden&&chaosTestButton.hidden;}
@@ -3077,7 +3077,7 @@ function paintPartyRoster(){const ids=battlePartyIds();for(const[id,row]of roste
  }
 }
 let actionEpoch=-1,actionMessage='',effectMessage='',effectTimer=0;
-function fighterDisplayName(f){if(!f)return partyMembers.riccardo.name[language]||'Riccardo';if(f.kind==='enemy')return tr(f.stats?.name||'Hungry stranger');const m=partyMembers[f.member||f.kind];return m?(m.name[language]||m.name.en):partyName(f);}
+function fighterDisplayName(f){if(!f)return partyMembers.riccardo.name[language]||'Guy';if(f.kind==='enemy')return tr(f.stats?.name||'Hungry stranger');const m=partyMembers[f.member||f.kind];return m?(m.name[language]||m.name.en):partyName(f);}
 function actionSentence(f,move){const name=fighterDisplayName(f);return language==='ko'?name+' · '+tr(move)+' 사용':name+' uses '+tr(move);}
 function resetActionMessages(){actionEpoch=firstBattleEpoch;actionMessage='';effectMessage='';clearTimeout(effectTimer);}
 function paintActionBanner(){
@@ -3424,11 +3424,11 @@ for(const [id,room] of Object.entries(MART_ROOMS))
 
 Object.assign(EQUIP_ITEMS,{
  mart_iron_pan:{name:'Cast-Iron Pan',description:'A heavy pan with a reinforced handle.',owner:'riccardo',slot:'weapon',attack:9,icon:EQUIP_ITEMS.chipped_pan.icon},
- mart_bar_spoon:{name:'Steel Bar Spoon',description:'A long steel bar spoon for Seon Jong.',owner:'seon_jong',slot:'weapon',attack:4,technique:5,icon:EQUIP_ITEMS.serving_tray.icon}
+ mart_bar_spoon:{name:'Steel Bar Spoon',description:'A long steel bar spoon for Girl 2.',owner:'seon_jong',slot:'weapon',attack:4,technique:5,icon:EQUIP_ITEMS.serving_tray.icon}
 });
 [
  ['Cast-Iron Pan','무쇠 프라이팬'],['A heavy pan with a reinforced handle.','손잡이를 보강한 무거운 프라이팬입니다.'],
- ['Steel Bar Spoon','스틸 바 스푼'],['A long steel bar spoon for Seon Jong.','선종이 쓰는 긴 스틸 바 스푼입니다.'],
+ ['Steel Bar Spoon','스틸 바 스푼'],['A long steel bar spoon for Girl 2.','Girl 2가 쓰는 긴 스틸 바 스푼입니다.'],
  ['Storage Key','창고 열쇠'],['Opens the locked storeroom.','잠긴 창고를 열 수 있습니다.'],
  ['MART Backrooms','마트 작업실'],['Underground Storage','지하 창고'],['Service Corridors','정비 통로'],
  ['Underground Gallery','지하 통로'],['Boss Chamber','보스 방'],['Explore the MART basement.','마트 지하를 탐색하세요.'],
@@ -3788,7 +3788,7 @@ const showBeforeShop=showLocation;showLocation=function(id){
  mapImage.src=area.image?.src||area.map;
  if(id===SEON_HOUSE.id&&seonHouseNpc&&!partyMembers.seon_jong.joined){npcs.push(seonHouseNpc);drawNpc(seonHouseNpc);}
  if(isYeonnamArea(id)){
-  document.querySelector('.eyebrow').textContent=tr(district?'Yeonnam-dong':'Seon Jong’s house');
+  document.querySelector('.eyebrow').textContent=tr(district?'Yeonnam-dong':'Girl 2’s house');
   refreshNightObjective();
  }
  if(room){buildMartObjects(id);dungeonLastPosition=null;dungeonGrace=220;document.querySelector('.eyebrow').textContent='MART';refreshNightObjective();}for(const v of vehicles)v.actor.node.hidden=true;$('trainWindow').hidden=true;storyNightLighting.hidden=true;scene.classList.remove('story-night');$('editorOpen').hidden=false;if(mapImage.complete&&mapImage.naturalWidth)rebuildDepth();preloadMartNeighbors(id);
@@ -3801,9 +3801,9 @@ const drawBeforeShop=drawPlayer;drawPlayer=function(){if(!isYeonnamArea(location
 const cameraBeforeShop=updateCamera;updateCamera=function(){if(!isYeonnamArea(locationId)&&!isMartShop(locationId)&&!isMartRoom(locationId))return cameraBeforeShop();zoom=locationId===YEONNAM.id?YEONNAM.zoom:locationId===SEON_HOUSE.id?SEON_HOUSE.zoom:MART_DUNGEON_VIEW.zoom;const w=viewWidth/zoom,h=viewHeight/zoom;camera.x=CONFIG.width>w?clamp(player.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;camera.y=CONFIG.height>h?clamp(player.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';};
 const targetsBeforeShop=allTargets;allTargets=function(){return isMartShop(locationId)||isMartRoom(locationId)?[]:targetsBeforeShop();};
 
-const COPYRIGHT_LINES=[['Seoyoon','Wait… those frying-pan spins, and then behind your back… You remind me of that guy from Final—'],['Riccardo','SHH! We don’t have the copyright!'],['Seoyoon','For the pose?'],['Riccardo','As long as it’s a frying pan, we can say I’m cooking.'],['Seoyoon','With the frying pan behind your back?'],['Riccardo','Experimental cooking. Now let’s go.']];
+const COPYRIGHT_LINES=[['Girl 1','Wait… those frying-pan spins, and then behind your back… You remind me of that guy from Final—'],['Guy','SHH! We don’t have the copyright!'],['Girl 1','For the pose?'],['Guy','As long as it’s a frying pan, we can say I’m cooking.'],['Girl 1','With the frying pan behind your back?'],['Guy','Experimental cooking. Now let’s go.']];
 translateLines(COPYRIGHT_LINES,['잠깐… 프라이팬을 돌리다가 등 뒤로 넘기는 그 자세… 파이널—에 나오는 그 사람 같은데요.','쉿! 우리 저작권 없어요!','그 자세에도요?','프라이팬이니까 요리 중이라고 하면 돼요.','프라이팬을 등 뒤에 놓고요?','실험적인 요리죠. 이제 갑시다.']);
-const paintChaosBeforeCopyright=paintChaosPage;paintChaosPage=function(){const q=dialogue?.chaos;if(q?.kind!=='copyright')return paintChaosBeforeCopyright();const [who,text]=COPYRIGHT_LINES[q.index];faceConversation(seoyoonNpc);dialogue.type=who==='Seoyoon'?'npc':'story';dialogue.target=who==='Seoyoon'?{type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false}:null;setSpeechText(who+': '+text);updateInteractionUI();};
+const paintChaosBeforeCopyright=paintChaosPage;paintChaosPage=function(){const q=dialogue?.chaos;if(q?.kind!=='copyright')return paintChaosBeforeCopyright();const [who,text]=COPYRIGHT_LINES[q.index];faceConversation(seoyoonNpc);dialogue.type=who==='Girl 1'?'npc':'story';dialogue.target=who==='Girl 1'?{type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false}:null;setSpeechText(who+': '+text);updateInteractionUI();};
 finishRescueBattle=async function(){if(chaosBusy||locationId!=='hongdeon')return;const progress=chaosProgress();if(progress.poseSeen)return;progress.stage='rescued';syncChaosActors();const epoch=++chaosEpoch;chaosBusy=true;resetInput();chaosCamera={x:player.x,y:player.y};updateCamera();if(!await showChaosCompanion(epoch))return;
  seoyoonNpc.direction=facing(player.x-seoyoonNpc.x,player.y-seoyoonNpc.y);player.direction=facing(seoyoonNpc.x-player.x,seoyoonNpc.y-player.y);drawNpc(seoyoonNpc);drawPlayer();chaosLines(COPYRIGHT_LINES,'copyright');
 };
@@ -3841,7 +3841,7 @@ function paintWarehouseMarkers(){
   warehouseMarker('rescued-man',{x:CHAOS.victim.x,y:CHAOS.victim.y-72},talkRescuedMan,'Talk');
  if(locationId===YEONNAM.id&&martNear(YEONNAM.houseDoor.x,YEONNAM.houseDoor.y,45)){
   const {x,y}=YEONNAM.houseDoor;
-  warehouseMarker('enter-seon-house',{x,y:y-58},()=>void enterSeonHouse(),'Enter Seon Jong’s house');
+  warehouseMarker('enter-seon-house',{x,y:y-58},()=>void enterSeonHouse(),'Enter Girl 2’s house');
  }
  if(locationId===SEON_HOUSE.id&&nearHouseCat()){
   const {x,y}=SEON_HOUSE.catPosition;
@@ -3876,7 +3876,7 @@ const uiBeforeWarehouseStory=updateInteractionUI;updateInteractionUI=function(){
  paintWarehouseMarkers();
  for(const [id,b] of warehouseMarkers)if(!visibleWarehouseMarkers.has(id)&&!b.hidden)b.hidden=true;
 };
-const statusBeforeWarehouse=updateStatus;updateStatus=function(){if(isMartRoom(locationId)){$('status').textContent=tr(MART_ROOMS[locationId].name);return;}if(isMartShop(locationId)){$('status').textContent='MART';return;}if(isYeonnamArea(locationId)){setTextIfChanged('status',tr(locationId===YEONNAM.id?'Yeonnam-dong':'Seon Jong’s house'));return;}statusBeforeWarehouse();};
+const statusBeforeWarehouse=updateStatus;updateStatus=function(){if(isMartRoom(locationId)){$('status').textContent=tr(MART_ROOMS[locationId].name);return;}if(isMartShop(locationId)){$('status').textContent='MART';return;}if(isYeonnamArea(locationId)){setTextIfChanged('status',tr(locationId===YEONNAM.id?'Yeonnam-dong':'Girl 2’s house'));return;}statusBeforeWarehouse();};
 
 const fireLayer=document.createElement('div');fireLayer.id='streetFires';fireLayer.style='position:absolute;inset:0;pointer-events:none';scene.append(fireLayer);
 for(const fire of [{x:545,y:563,h:142},{x:786,y:1378,h:154},{x:302,y:2988,h:184}]){const im=document.createElement('img');im.src='Equip/Icone/fuoco_strada_loop.gif';im.alt='';im.className='street-fire';const w=fire.h*.75;Object.assign(im.style,{left:(fire.x-w/2)+'px',top:(fire.y-fire.h*.89)+'px',width:w+'px',height:fire.h+'px',zIndex:String(Math.round(fire.y*100+35))});fireLayer.append(im);}
@@ -3889,8 +3889,8 @@ window.TaraiWarehouse={shop:MART_SHOP,getState:()=>({...martProgress(),location:
 /* A local schematic, deliberately without objectives, route guidance or destinations. */
 const beforeMartObjective=refreshNightObjective;
 refreshNightObjective=function(){
- if(locationId===YEONNAM.id){setTextIfChanged('objective',tr(partyMembers.seon_jong.joined?'Return to Cucchiaio.':'Find Seon Jong’s house.'));return;}
- if(locationId===SEON_HOUSE.id){setTextIfChanged('objective',partyMembers.seon_jong.joined?'':tr('Talk to Seon Jong.'));return;}
+ if(locationId===YEONNAM.id){setTextIfChanged('objective',tr(partyMembers.seon_jong.joined?'Return to Cucchiaio.':'Find Girl 2’s house.'));return;}
+ if(locationId===SEON_HOUSE.id){setTextIfChanged('objective',partyMembers.seon_jong.joined?'':tr('Talk to Girl 2.'));return;}
  if(partyMembers.seon_jong.joined&&(locationId==='hongdeon'||locationId==='mart-shop'||isMartRoom(locationId))){
   setTextIfChanged('objective',tr('Return to Cucchiaio.'));return;
  }
@@ -3938,8 +3938,8 @@ const MANAGER_POSES={
 };
 const MANAGER_KNIVES='Enemy/boss-mart-raffica-proiettili-3.gif';
 const MANAGER_BARRAGE={id:'manager_barrage',name:'Knife Barrage',fixedDamage:40,guaranteed:true};
-const MANAGER_LINES=[['Riccardo','Hey. Are you all right?'],['Seoyoon','He’s wearing a MART uniform. Maybe he knows what happened.'],['Seoyoon','Riccardo… back up.']];
-translateLines(MANAGER_LINES,['저기요. 괜찮으세요?','마트 직원인가 봐요. 무슨 일이 있었는지 알지도 몰라요.','리카르도 씨… 물러서요.']);
+const MANAGER_LINES=[['Guy','Hey. Are you all right?'],['Girl 1','He’s wearing a MART uniform. Maybe he knows what happened.'],['Girl 1','Guy… back up.']];
+translateLines(MANAGER_LINES,['저기요. 괜찮으세요?','마트 직원인가 봐요. 무슨 일이 있었는지 알지도 몰라요.','Guy 씨… 물러서요.']);
 [['MART Manager','마트 점장'],['Knife Barrage','칼날 연사'],['Mirror Guard','거울 방어'],['Reflected!','반사됐습니다!']].forEach(pair=>bilingual(...pair));
 
 let managerSprite=null,managerMapAssets=null,managerCombatLoad=null,managerSceneBusy=false;
@@ -4048,15 +4048,15 @@ function canTalkToManager(){
 }
 const MART_SOUTH_EXIT={x:768,y:825,range:62};
 const MANAGER_AFTERMATH=[
- ['Seoyoon','Riccardo… are you okay?'],
- ['Riccardo','Yeah. What the hell was that?'],
- ['Seoyoon','I don’t know. When we spoke to him, I thought he needed help.'],
- ['Riccardo','So did I. Are you hurt?'],
- ['Seoyoon','I’m fine. Look, there’s a door at the back.'],
- ['Riccardo','Let’s get out of here.']
+ ['Girl 1','Guy… are you okay?'],
+ ['Guy','Yeah. What the hell was that?'],
+ ['Girl 1','I don’t know. When we spoke to him, I thought he needed help.'],
+ ['Guy','So did I. Are you hurt?'],
+ ['Girl 1','I’m fine. Look, there’s a door at the back.'],
+ ['Guy','Let’s get out of here.']
 ];
 translateLines(MANAGER_AFTERMATH,[
- '리카르도… 괜찮아요?',
+ 'Guy… 괜찮아요?',
  '네. 근데 대체 뭐였죠?',
  '모르겠어요. 말을 걸었을 땐 도움이 필요한 줄 알았어요.',
  '저도요. 어디 다친 데 없어요?',
@@ -4064,22 +4064,22 @@ translateLines(MANAGER_AFTERMATH,[
  '여기서 나가요.'
 ]);
 const YEONNAM_ARRIVAL=[
- ['Riccardo','Now what?'],
- ['Seoyoon','Seon Jong lives nearby. Let’s head up to the road at the top, then turn right. Just past the last intersection, look for a red brick house with steps and a blue door. That’s the one.'],
- ['Riccardo','Got it. Let’s go.']
+ ['Guy','Now what?'],
+ ['Girl 1','Girl 2 lives nearby. Let’s head up to the road at the top, then turn right. Just past the last intersection, look for a red brick house with steps and a blue door. That’s the one.'],
+ ['Guy','Got it. Let’s go.']
 ];
 translateLines(YEONNAM_ARRIVAL,[
  '이제 어떡하죠?',
- '선종 씨 집은 여기서 가까워요. 맨 위쪽 도로까지 올라가서 오른쪽으로 가요. 마지막 교차로를 지나면 계단과 파란 문이 있는 붉은 벽돌집이 보여요. 거기가 선종 씨 집이에요.',
+ 'Girl 2 씨 집은 여기서 가까워요. 맨 위쪽 도로까지 올라가서 오른쪽으로 가요. 마지막 교차로를 지나면 계단과 파란 문이 있는 붉은 벽돌집이 보여요. 거기가 Girl 2 씨 집이에요.',
  '알겠어요. 가요.'
 ]);
 [
  ['Exit to Yeonnam-dong','연남동으로 나가기'],
  ['Yeonnam-dong','연남동'],
  ['Find the south exit.','남쪽 출구를 찾으세요.'],
- ['Find Seon Jong’s house.','선종 씨의 집을 찾으세요.'],
- ['Seon Jong’s house','선종 씨의 집'],
- ['Enter Seon Jong’s house','선종 씨의 집에 들어가기']
+ ['Find Girl 2’s house.','Girl 2 씨의 집을 찾으세요.'],
+ ['Girl 2’s house','Girl 2 씨의 집'],
+ ['Enter Girl 2’s house','Girl 2 씨의 집에 들어가기']
 ].forEach(pair=>bilingual(...pair));
 function canExitMartSouth(){
  return locationId==='mart-e'&&dungeonProgress().managerDefeated&&
@@ -4101,7 +4101,7 @@ updateInteractionUI=function(){
 };
 function paintManagerLine(index,scene='manager'){
  const lines=scene==='aftermath'?MANAGER_AFTERMATH:scene==='arrival'?YEONNAM_ARRIVAL:MANAGER_LINES;
- const [speaker,text]=lines[index],isSeoyoon=speaker==='Seoyoon';
+ const [speaker,text]=lines[index],isSeoyoon=speaker==='Girl 1';
  const target=isSeoyoon?{type:'npc',key:'seoyoon',owner:seoyoonNpc,dog:false}:null;
  openSpeech([''],{type:'story'});
  Object.assign(dialogue,{managerIndex:index,managerScene:scene,type:isSeoyoon?'npc':'story',target});
@@ -4759,8 +4759,8 @@ function loadSeonHouseNpc(){
   seonHouseNpcLoad=Promise.all(Object.entries(SEON_MAP_SPRITES).map(async ([direction,path])=>[direction,await loadAsset(path)]))
    .then(entries=>{
     const idleAssets=Object.fromEntries(entries);
-    if(!idleAssets.down)throw Error('Unable to load Seon Jong’s sprite.');
-    seonHouseNpc={id:'seon_jong',name:'Seon Jong',x:SEON_HOUSE.host.x,y:SEON_HOUSE.host.y,height:MART_DUNGEON_VIEW.actorHeight,
+    if(!idleAssets.down)throw Error('Unable to load Girl 2’s sprite.');
+    seonHouseNpc={id:'seon_jong',name:'Girl 2',x:SEON_HOUSE.host.x,y:SEON_HOUSE.host.y,height:MART_DUNGEON_VIEW.actorHeight,
      direction:'down',radius:8,actor:createActor(MART_DUNGEON_VIEW.actorHeight),idleAssets};
    }).catch(error=>{seonHouseNpcLoad=null;throw error;});
  }
@@ -4773,7 +4773,7 @@ drawNpc=function(n){
  place(n.actor,n.x,n.y);
 };
 [
- ['Talk to Seon Jong.','선종 씨와 대화하세요.'],
+ ['Talk to Girl 2.','Girl 2 씨와 대화하세요.'],
  ['A Sip','한 모금'],['Protective Blend','보호 블렌드'],['Cleansing Infusion','정화 음료'],
  ['Double Espresso','더블 에스프레소'],['Drinks Round','한 잔씩'],['House Blend','하우스 블렌드'],
  ['Wake Up!','일어나요!'],['Restorative Service','회복 서비스'],['Special Reserve','특별 리저브'],['Last Round','마지막 한 잔'],
@@ -4788,48 +4788,48 @@ drawNpc=function(n){
 ].forEach(pair=>bilingual(...pair));
 
 const SEON_HOUSE_ARRIVAL=[
- ['Seon Jong','You made it. Seoyoon, are you all right?'],
- ['Seoyoon','Yeah… Give me a second to catch my breath.'],
- ['Seon Jong','Take your time. I’m here.'],
- ['Seoyoon','We left the restaurant to come here after we called you. The roads were blocked. Someone told us about a passage under the MART, so we went down there.'],
- ['Seon Jong','What happened at the MART?'],
- ['Seoyoon','We were attacked.'],
- ['Seon Jong','Are either of you hurt?'],
- ['Riccardo','I’m all right. Seoyoon?'],
- ['Seoyoon','I’m okay. I just wanted to get out of there and get here.'],
- ['Seoyoon','I almost forgot. Seon Jong, this is Riccardo, the new cook at Cucchiaio. Riccardo, this is Seon Jong.'],
- ['Seon Jong','Nice to meet you, Riccardo.'],
- ['Riccardo','Nice to meet you. Thanks for letting us in.'],
- ['Seoyoon','What about here? Has anything happened in this neighborhood?'],
- ['Seon Jong','It’s still quiet here. Come into the living room. I’ll get you some water.'],
- ['Seoyoon','We’ve spent the whole morning trying to figure out where to go and what to do.'],
- ['Seon Jong','You’re here now. Sit down and rest for a bit. We can talk afterward.'],
- ['Riccardo','Sounds good to me.'],
- ['Seoyoon','Me too. Thanks, Seon Jong.']
+ ['Girl 2','You made it. Girl 1, are you all right?'],
+ ['Girl 1','Yeah… Give me a second to catch my breath.'],
+ ['Girl 2','Take your time. I’m here.'],
+ ['Girl 1','We left the restaurant to come here after we called you. The roads were blocked. Someone told us about a passage under the MART, so we went down there.'],
+ ['Girl 2','What happened at the MART?'],
+ ['Girl 1','We were attacked.'],
+ ['Girl 2','Are either of you hurt?'],
+ ['Guy','I’m all right. Girl 1?'],
+ ['Girl 1','I’m okay. I just wanted to get out of there and get here.'],
+ ['Girl 1','I almost forgot. Girl 2, this is Guy, the new cook at Cucchiaio. Guy, this is Girl 2.'],
+ ['Girl 2','Nice to meet you, Guy.'],
+ ['Guy','Nice to meet you. Thanks for letting us in.'],
+ ['Girl 1','What about here? Has anything happened in this neighborhood?'],
+ ['Girl 2','It’s still quiet here. Come into the living room. I’ll get you some water.'],
+ ['Girl 1','We’ve spent the whole morning trying to figure out where to go and what to do.'],
+ ['Girl 2','You’re here now. Sit down and rest for a bit. We can talk afterward.'],
+ ['Guy','Sounds good to me.'],
+ ['Girl 1','Me too. Thanks, Girl 2.']
 ];
 translateLines(SEON_HOUSE_ARRIVAL,[
- '왔구나. 서윤아, 괜찮아?','응… 잠깐만 숨 좀 돌릴게.','천천히 해. 나 여기 있어.',
+ '왔구나. Girl 1아, 괜찮아?','응… 잠깐만 숨 좀 돌릴게.','천천히 해. 나 여기 있어.',
  '전화하고 바로 너희 집으로 가려고 식당에서 나왔어. 도로가 막혀 있더라. 마트 지하에 통로가 있다고 해서 거기로 내려갔어.',
  '마트에서는 무슨 일이 있었어?','공격당했어.','둘 다 다친 데는 없어요?',
- '전 괜찮아요. 서윤 씨는요?','응, 괜찮아요. 거기서 나와서 여기까지 오는 생각뿐이었어요.',
- '아, 소개를 깜빡했네. 선종아, 쿠키아이오에 새로 온 요리사 리카르도 씨야. 리카르도 씨, 여기는 선종이에요.',
- '만나서 반가워요, 리카르도 씨.','저도 반가워요. 들여보내 주셔서 고마워요.',
+ '전 괜찮아요. Girl 1 씨는요?','응, 괜찮아요. 거기서 나와서 여기까지 오는 생각뿐이었어요.',
+ '아, 소개를 깜빡했네. Girl 2야, 쿠키아이오에 새로 온 요리사 Guy 씨야. Guy 씨, 여기는 Girl 2예요.',
+ '만나서 반가워요, Guy 씨.','저도 반가워요. 들여보내 주셔서 고마워요.',
  '여긴 어때? 이 동네에도 무슨 일 있었어?','여긴 아직 조용해. 거실로 와요. 물 좀 가져올게요.',
  '아침부터 어디로 가야 할지, 뭘 해야 할지 계속 고민했어.',
- '이제 여기까지 왔잖아. 일단 앉아서 좀 쉬어요. 나머지는 이따 얘기해요.','저는 좋아요.','나도. 고마워, 선종아.'
+ '이제 여기까지 왔잖아. 일단 앉아서 좀 쉬어요. 나머지는 이따 얘기해요.','저는 좋아요.','나도. 고마워, Girl 2야.'
 ]);
 const SEON_HOUSE_NEWS=[
  ['TV','Reports of assaults continue to come in from several Seoul neighborhoods. Witnesses say some attacks were over in seconds, before anyone nearby could get away.'],
- ['Seoyoon','That’s how it was where we were. One second we were looking out the window. The next, everyone was running.'],
- ['Seon Jong','When you called, I thought it was just happening near the restaurant.'],
+ ['Girl 1','That’s how it was where we were. One second we were looking out the window. The next, everyone was running.'],
+ ['Girl 2','When you called, I thought it was just happening near the restaurant.'],
  ['TV','A restaurant owner described what happened in his dining room.'],
  ['TV','A customer suddenly got up and attacked someone at the next table. Just a moment earlier, he was asking for more food.'],
- ['Riccardo','The one last night seemed like he wanted to talk, too. Then he jumped me.'],
- ['Seoyoon','When you came back inside, I thought he was drunk. This morning, at the window, I remembered what you’d told me.'],
+ ['Guy','The one last night seemed like he wanted to talk, too. Then he jumped me.'],
+ ['Girl 1','When you came back inside, I thought he was drunk. This morning, at the window, I remembered what you’d told me.'],
  ['TV','Doctors are considering several possibilities, including poisoning and drug use. There is still no evidence linking the assaults to a common cause.'],
- ['Seon Jong','So they still don’t know why it’s happening.'],
- ['Seoyoon','And it’s so quiet outside here.'],
- ['Riccardo','It was quiet where we were, too. Until this morning.']
+ ['Girl 2','So they still don’t know why it’s happening.'],
+ ['Girl 1','And it’s so quiet outside here.'],
+ ['Guy','It was quiet where we were, too. Until this morning.']
 ];
 translateLines(SEON_HOUSE_NEWS,[
  '서울 여러 지역에서 폭행 신고가 잇따르고 있습니다. 목격자들은 주변 사람들이 피할 틈도 없이 불과 몇 초 만에 공격이 벌어졌다고 전했습니다.',
@@ -4842,17 +4842,17 @@ translateLines(SEON_HOUSE_NEWS,[
  '왜 이런 일이 생기는지 아직 모르는구나.','여긴 밖이 이렇게 조용한데.','우리 동네도 그랬어요. 오늘 아침까지는요.'
 ]);
 const SEON_HOUSE_DECISION=[
- ['Seoyoon','So what do we do now? Stay here?'],
- ['Seon Jong','We’re safe here for now. But it sounds like it’s happening all over the city.'],
- ['Riccardo','What if we left Korea? At least until we know what’s going on.'],
- ['Seoyoon','All three of us?'],
- ['Riccardo','Yeah. Wait… my passport.'],
- ['Seon Jong','You don’t have it with you?'],
- ['Riccardo','It’s in my bag. I left it at the restaurant.'],
- ['Seoyoon','We only just got out of there.'],
- ['Riccardo','I know. But if we decide to leave, I won’t get anywhere without it.'],
- ['Seon Jong','Then let’s get the bag. We can figure out the rest back here.'],
- ['Seoyoon','All right. Back to the restaurant. All three of us.']
+ ['Girl 1','So what do we do now? Stay here?'],
+ ['Girl 2','We’re safe here for now. But it sounds like it’s happening all over the city.'],
+ ['Guy','What if we left Korea? At least until we know what’s going on.'],
+ ['Girl 1','All three of us?'],
+ ['Guy','Yeah. Wait… my passport.'],
+ ['Girl 2','You don’t have it with you?'],
+ ['Guy','It’s in my bag. I left it at the restaurant.'],
+ ['Girl 1','We only just got out of there.'],
+ ['Guy','I know. But if we decide to leave, I won’t get anywhere without it.'],
+ ['Girl 2','Then let’s get the bag. We can figure out the rest back here.'],
+ ['Girl 1','All right. Back to the restaurant. All three of us.']
 ];
 translateLines(SEON_HOUSE_DECISION,[
  '이제 어떡하죠? 여기서 기다릴까요?','당장은 여기가 안전해요. 그런데 서울 곳곳에서 벌어지는 일 같네요.',
@@ -4861,9 +4861,9 @@ translateLines(SEON_HOUSE_DECISION,[
  '우리 거기서 겨우 빠져나왔잖아요.','알아요. 그래도 떠나기로 하면 여권 없이는 어디도 못 가요.',
  '그럼 가방부터 가져와요. 나머지는 여기 돌아와서 생각해요.','좋아요. 식당으로 돌아가요. 셋이 같이요.'
 ]);
-const SEON_JOIN_NOTICE='Seon Jong joined the party!';
+const SEON_JOIN_NOTICE='Girl 2 joined the party!';
 [
- [SEON_JOIN_NOTICE,'선종이 파티에 합류했습니다!'],['Meow!','야옹!'],['Return to Cucchiaio.','쿠키아이오로 돌아가세요.'],
+ [SEON_JOIN_NOTICE,'Girl 2가 파티에 합류했습니다!'],['Meow!','야옹!'],['Return to Cucchiaio.','쿠키아이오로 돌아가세요.'],
  ['Test','테스트'],['Hongdeon · Start','홍대 · 시작'],['MART dungeon','마트 지하 던전'],['Before the MART boss','마트 보스 앞']
 ].forEach(pair=>bilingual(...pair));
 
@@ -4908,7 +4908,7 @@ locked=function(){return houseSceneBusy||houseLockBefore();};
 
 function paintHouseLine(lines,index){
  const [speaker,words]=lines[index];
- const owner={'Seon Jong':seonHouseNpc,Seoyoon:seoyoonNpc,TV:tvSpeaker}[speaker];
+ const owner={'Girl 2':seonHouseNpc,"Girl 1":seoyoonNpc,TV:tvSpeaker}[speaker];
  if(!dialogue)openSpeech([''],{type:'story'});
  Object.assign(dialogue,{houseScene:{lines,index},type:owner?'npc':'story',target:owner?{type:'npc',owner}:null});
  if(speaker==='TV'){
@@ -4994,7 +4994,7 @@ const dismissBeforeHouse=$('partyNoticeOk').onclick;
 $('partyNoticeOk').onclick=function(){
  if(partyNotice.hidden)return;
  if(locationId!==SEON_HOUSE.id||!partyMembers.seon_jong.joined)return dismissBeforeHouse();
- partyNotice.hidden=true;$('partyNoticeText').textContent='Seo Yoon joined the party!';
+ partyNotice.hidden=true;$('partyNoticeText').textContent='Girl 1 joined the party!';
  resetInput();updateInteractionUI();
 };
 
@@ -5031,7 +5031,7 @@ updateTravel=function(dt){
 const houseResetBefore=beginIntro;
 beginIntro=function(){
  houseSceneBusy=houseCompanionVisible=false;houseTV.hidden=true;houseCat.hidden=true;
- $('partyNoticeText').textContent='Seo Yoon joined the party!';
+ $('partyNoticeText').textContent='Girl 1 joined the party!';
  setCheckpointOptions(false);
  return houseResetBefore();
 };
