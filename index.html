@@ -1330,8 +1330,8 @@ updateTravel=function(dt){travelBeforeHongTest(dt);testHongButton.hidden=!ENABLE
 /* CUCCHIAIO · interni, scale, porte e editor indipendente per piano */
 const CUCCHIAIO_VERSION='cucchiaio-interiors-2026-11-09-v1';
 const CUCCHIAIO={
- restaurant:{map:'Map/file_00000000742c8209a861d7436b79bd3a.png',name:'Cucchiaio',start:{x:510,y:1210}},
- quarters:{map:'Map/file_00000000204882098018615f2a89953c.png',name:'Staff quarters',start:{x:909,y:720}}
+ restaurant:{map:'Map/file_00000000742c8209a861d7436b79bd3a.png',name:'Cucchiaio',start:{x:510,y:1210},cameraHeight:100},
+ quarters:{map:'Map/file_00000000204882098018615f2a89953c.png',name:'Staff quarters',start:{x:909,y:720},cameraHeight:80}
 };
 const DOOR_FILES={closed:'Map/file_000000001db88209b57ee35d62233eb3.png',up:'Map/file_00000000ece082119b4df77342488992.png',down:'Map/file_00000000ea908206947a3b02b24412db.png'};
 const interiorWorlds={},interiorImages={},doorSprites={};
@@ -1411,7 +1411,18 @@ const exportBeforeCucchiaio=$('editorExport').onclick;$('editorExport').onclick=
 
 /* Visuale di gioco fissa al limite più lontano già previsto. */
 const cameraBeforeFixedZoom=updateCamera;
-updateCamera=function(){if(!intro){const factor=locationId==='office'?CONFIG.spriteHeight/OFFICE_VIEW.playerHeight:isInterior(locationId)?CONFIG.spriteHeight/player.actor.height:locationId==='hongdeon'?1/1.25:1;zoom=locationId==='office'?Math.max(viewWidth/CONFIG.width,viewHeight/CONFIG.height):CONFIG.minZoom*factor;}cameraBeforeFixedZoom();};
+updateCamera=function(){
+ if(!intro){
+  if(isInterior(locationId)){
+   zoom=CONFIG.minZoom*(CONFIG.spriteHeight/CUCCHIAIO[locationId].cameraHeight);
+  }else if(locationId==='office'){
+   zoom=Math.max(viewWidth/CONFIG.width,viewHeight/CONFIG.height);
+  }else{
+   zoom=locationId==='hongdeon'?CONFIG.minZoom/1.25:CONFIG.minZoom;
+  }
+ }
+ cameraBeforeFixedZoom();
+};
 for(const id of ['zoomIn','zoomOut']){$(id).hidden=true;$(id).style.display='none';$(id).onclick=null;}
 
 
@@ -2414,8 +2425,6 @@ const renderBeforeScale=drawPlayer;drawPlayer=function(){const height=locationId
 const npcBeforeScale=drawNpc;drawNpc=function(n){if(n.id==='seoyoon'){if(partyMembers.seoyoon.joined&&!morningBusy){n.actor.node.hidden=true;return;}const height=locationId==='restaurant'?125:locationId==='hongdeon'?HONGDEON.playerHeight*1.25:100;if(n.height!==height||n.actor.height!==height){n.height=height;n.actor.height=height;n.actor.active=null;}}npcBeforeScale(n);};
 const syncBeforeMorning=syncNightSeoyoon;syncNightSeoyoon=function(){if(partyMembers.seoyoon.joined){const index=npcs.indexOf(seoyoonNpc);if(index>=0)npcs.splice(index,1);if(seoyoonNpc)seoyoonNpc.actor.node.hidden=true;return;}if(morningBusy)return;syncBeforeMorning();};
 const targetsBeforeMorning=allTargets;allTargets=function(){return targetsBeforeMorning().filter(t=>!(partyMembers.seoyoon.joined&&t.owner?.id==='seoyoon'));};
-// Keep the established camera scale: larger sprites must not zoom the room out.
-const cameraBeforeMorning=updateCamera;updateCamera=function(){const height=player.actor.height;if(isInterior(locationId))player.actor.height=locationId==='restaurant'?100:80;cameraBeforeMorning();player.actor.height=height;};
 const nightObjectiveBeforeMorning=nightObjective;nightObjective=function(){if(nightState.phase==='morning-complete')return tr('Reach the bus stop.');return nightObjectiveBeforeMorning();};
 const headBeforeMorning=dialogueHead;dialogueHead=function(){const anchor=headBeforeMorning();if(anchor&&dialogue?.morning)anchor.y-=8;return anchor;};
 const uiBeforeMorning=updateInteractionUI;updateInteractionUI=function(){uiBeforeMorning();
@@ -5176,8 +5185,10 @@ function stageCucchiaioReturn(){
  const companionHeight=player.actor.height;
  const blue=returnActor(480,532,companionHeight,a.blueSearch);
  const glasses=returnActor(315,379,companionHeight,a.glassesSearch);
- Object.assign(seoyoonNpc,{x:455,y:1225,height:companionHeight,direction:'up',moving:false});
- Object.assign(seonHouseNpc,{x:565,y:1225,height:companionHeight,direction:'up',moving:false});
+ const entryY=1245;
+ Object.assign(player,{x:510,y:entryY,direction:'up',moving:false});
+ Object.assign(seoyoonNpc,{x:455,y:entryY,height:companionHeight,direction:'up',moving:false});
+ Object.assign(seonHouseNpc,{x:565,y:entryY,height:companionHeight,direction:'up',moving:false});
  for(const {actor} of [seoyoonNpc,seonHouseNpc]){
   if(actor.height!==companionHeight){
    actor.height=companionHeight;
@@ -5190,16 +5201,20 @@ function stageCucchiaioReturn(){
  scene.append(papers);
  cucchiaioReturn={blue,glasses,papers,focus:{x:413,y:405},phase:'opening',index:0,movingPlayer:false,epoch:sceneEpoch};
  scene.classList.add('cucchiaio-return');
- drawReturnCompanions();
+ for(const {actor} of [player,seoyoonNpc,seonHouseNpc])actor.node.hidden=true;
 }
 function drawReturnCompanions(){
+ if(cucchiaioReturn?.phase==='opening')return;
  npcBeforeScale(seoyoonNpc);
  setAsset(seonHouseNpc.actor,seonHouseNpc.idleAssets[seonHouseNpc.direction]||seonHouseNpc.idleAssets.down);
  place(seonHouseNpc.actor,seonHouseNpc.x,seonHouseNpc.y);
 }
 const playerBeforeReturn=drawPlayer;
 drawPlayer=function(){
- if(cucchiaioReturn?.movingPlayer&&locationId==='restaurant')player.moving=true;
+ if(locationId==='restaurant'&&cucchiaioReturn){
+  if(cucchiaioReturn.phase==='opening'){player.actor.node.hidden=true;return;}
+  if(cucchiaioReturn.movingPlayer)player.moving=true;
+ }
  return playerBeforeReturn();
 };
 const lockBeforeReturn=locked;
@@ -5283,14 +5298,17 @@ async function guardedCucchiaioReturn(state,run){
 async function startCucchiaioReturn(){
  const state=cucchiaioReturn;
  await guardedCucchiaioReturn(state,async()=>{
-  await wait(840);
+  await wait(3000);
   if(!returnSceneCurrent(state))return;
-  if(!await panCucchiaioReturn(state,{x:510,y:1160},2100))return;
-  const speed=140;
+  state.phase='party-entry';
+  state.focus={x:510,y:1160};
+  updateCamera();
+  drawPlayer();drawReturnCompanions();
+  const stopY=1175,speed=140;
   await Promise.all([
-   returnWalk(state,player,[[510,1168]],speed,drawPlayer),
-   returnWalk(state,seoyoonNpc,[[455,1190]],speed,drawReturnCompanions),
-   returnWalk(state,seonHouseNpc,[[565,1190]],speed,drawReturnCompanions)
+   returnWalk(state,player,[[510,stopY]],speed,drawPlayer),
+   returnWalk(state,seoyoonNpc,[[455,stopY]],speed,drawReturnCompanions),
+   returnWalk(state,seonHouseNpc,[[565,stopY]],speed,drawReturnCompanions)
   ]);
   paintReturnLine(state,'intruders');
  });
