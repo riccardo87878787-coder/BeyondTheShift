@@ -764,8 +764,10 @@ function endJoystick(e){if(e.pointerId!==joystick.pointer)return;held.delete("to
 for(const name of ["pointerup","pointercancel","lostpointercapture"])game.addEventListener(name,endJoystick);
 window.addEventListener("blur",resetInput);document.addEventListener("visibilitychange",()=>{resetInput();lastTime=0;});
 /* 17 · CAMERA, RICCARDO E CICLO PRINCIPALE */
+let cucchiaioReturn=null;
 function updateCamera(){
- const anchor=intro?film.anchor:player,w=viewWidth/zoom,h=viewHeight/zoom;
+ const sceneFocus=locationId==='restaurant'?cucchiaioReturn?.focus:null;
+ const anchor=intro?film.anchor:sceneFocus||player,w=viewWidth/zoom,h=viewHeight/zoom;
  camera.x=CONFIG.width>w?clamp(anchor.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;
  camera.y=CONFIG.height>h?clamp(anchor.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;
  scene.style.transform=`translate(${-camera.x*zoom}px,${-camera.y*zoom}px) scale(${zoom})`;
@@ -1401,7 +1403,7 @@ const PORTALS=[
 ];
 function nearbyPortal(){return PORTALS.find(p=>p.from===locationId&&Math.hypot(player.x-p.x,player.y-p.y)<p.r);}
 async function useCucchiaioPortal(p){
- const returning=p.from==='hongdeon'&&p.to==='restaurant'&&partyMembers.seon_jong.joined&&!nightState.cucchiaioReturnSeen;if(locked()||intro||dialogue||editor.open||p.from!==locationId)return;resetInput();transitioning=true;const epoch=sceneEpoch;$('fade').classList.add('black');try{await Promise.all([wait(780),isInterior(p.to)?loadInteriorImage(p.to):loadHongdeonMap(),loadDoorSprites(),returning?loadCucchiaioReturnAssets():null]);if(epoch!==sceneEpoch)return;saveWorld();showLocation(p.to);Object.assign(player,p.spawn,{direction:p.direction,moving:false});nearestFree(player);zoom=CONFIG.zoom;if(returning)stageCucchiaioReturn();drawPlayer();updateCamera();await wait(100);}catch(e){clearCucchiaioReturn();$('status').textContent=e.message;notice(e.message);}finally{if(epoch===sceneEpoch){$('fade').classList.remove('black');await wait(780);transitioning=false;if(returning&&cucchiaioReturn)void startCucchiaioReturn();}}}
+ const returning=p.from==='hongdeon'&&p.to==='restaurant'&&partyMembers.seon_jong.joined&&!nightState.cucchiaioReturnSeen;if(locked()||intro||dialogue||editor.open||p.from!==locationId)return;resetInput();transitioning=true;const epoch=sceneEpoch;$('fade').classList.add('black');try{await Promise.all([wait(780),isInterior(p.to)?loadInteriorImage(p.to):loadHongdeonMap(),loadDoorSprites(),returning?loadCucchiaioReturnAssets():null]);if(epoch!==sceneEpoch)return;saveWorld();showLocation(p.to);Object.assign(player,p.spawn,{direction:p.direction,moving:false});nearestFree(player);zoom=CONFIG.zoom;drawPlayer();if(returning)stageCucchiaioReturn();updateCamera();await wait(100);}catch(e){clearCucchiaioReturn();$('status').textContent=e.message;notice(e.message);}finally{if(epoch===sceneEpoch){$('fade').classList.remove('black');await wait(780);transitioning=false;if(returning&&cucchiaioReturn)void startCucchiaioReturn();}}}
 const portalButton=document.createElement('button'),portalIcon=document.createElement('img');portalButton.className='marker object';portalButton.hidden=true;portalIcon.src=UI_ASSETS.exclamation;portalIcon.alt='!';portalButton.appendChild(portalIcon);$('interactions').appendChild(portalButton);portalButton.onclick=e=>{e.stopPropagation();const p=nearbyPortal();if(p)useCucchiaioPortal(p);};
 const uiBeforeCucchiaio=updateInteractionUI;updateInteractionUI=function(){uiBeforeCucchiaio();if(isInterior(locationId))doorButton.hidden=true;const p=nearbyPortal();const hidden=!p||!ready||intro||!!dialogue||editor.open||locked();if(portalButton.hidden!==hidden)portalButton.hidden=hidden;if(!portalButton.hidden){const pos=screenPosition({x:p.x,y:p.y-65});portalButton.style.left=clamp(pos.x,24,viewWidth-24)+'px';portalButton.style.top=clamp(pos.y,52,viewHeight-25)+'px';if(portalButton.getAttribute('aria-label')!==p.label)portalButton.setAttribute('aria-label',p.label);}};
 const travelBeforeCucchiaio=updateTravel;updateTravel=function(dt){travelBeforeCucchiaio(dt);if(isInterior(locationId))testHongButton.hidden=true;updateRoomDoors(dt);};
@@ -5064,21 +5066,9 @@ const CUCCHIAIO_RETURN_FILES={
  glassesWalk:'Enemy/uomo-occhiali-cammina-sud.gif',glassesSearch:'Enemy/uomo-occhiali-rovista-nord.gif',
  michael:'Michael/file_00000000c3208209b2bc6764ca05b9a2.png'
 };
-const RETURN_ENTRANCE=[
- ['Guy','Finally, we made it. I’ll get my passport and we can go.'],
- ['Girl 1','Let’s hope everything is still where we left it.'],
- ['Girl 2','I don’t think anyone’s here.'],
- ['Girl 1','Wait… did you hear that?'],
- ['Guy','Yeah. It came from the kitchen.'],
- ['Girl 2','Let’s go see.']
-];
-translateLines(RETURN_ENTRANCE,[
- '드디어 도착했네요. 여권만 챙기고 나가요.','적어도 우리가 두고 간 그대로였으면 좋겠네요.','아무도 없는 것 같은데요.',
- '잠깐… 들었어요?','네. 주방에서 났어요.','가서 확인해 봐요.'
-]);
 const RETURN_INTRUDERS=[
- ['Guy','Hey! What the hell are you doing here?!'],
- ['Girl 1','Who are you?!'],
+ ['Guy','Who are you two?!'],
+ ['Girl 1','What are you doing here?!'],
  ['Girl 2','Watch out!'],
  ['Guy','Hey! Stop!'],
  ['Guy','What the hell…'],
@@ -5087,7 +5077,7 @@ const RETURN_INTRUDERS=[
  ['Guy','Well, they sure weren’t here to eat.']
 ];
 translateLines(RETURN_INTRUDERS,[
- '이봐요! 여기서 대체 뭐 하는 거예요?!','당신들 누구예요?!','조심해요!','이봐! 멈춰!',
+ '당신들 누구예요?!','여기서 뭐 하는 거예요?!','조심해요!','이봐! 멈춰!',
  '대체 뭐야…','아무 말도 안 하고 도망쳤어요.','뭘 찾는지 정확히 알고 있는 것 같았어요.','적어도 밥 먹으러 온 건 아니네요.'
 ]);
 const RETURN_MUFFLED=[
@@ -5141,10 +5131,10 @@ translateLines(RETURN_DOCUMENTS,[
  '식당 목록이다. 거의 모든 이름에 줄이 그어져 있다. 쿠키아이오와 다른 식당 하나만 남아 있다.',
  '이건 우리 서류가 아닌데요.','그럼 왜 여기에 두고 갔죠?','급하게 도망치다가 떨어뜨렸나 봐요.'
 ]);
-let cucchiaioReturn=null,cucchiaioReturnLoad=null,cucchiaioReturnAssets=null,cucchiaioAudio=null;
+let cucchiaioReturnLoad=null,cucchiaioReturnAssets=null,cucchiaioAudio=null;
 let cucchiaioMichael=null;
 const returnStyle=document.createElement('style');
-returnStyle.textContent='#scene.cucchiaio-return #map{filter:brightness(.60) saturate(.8)}';
+returnStyle.textContent='#scene.cucchiaio-return{filter:brightness(.60) saturate(.8)}';
 document.head.append(returnStyle);
 
 function loadCucchiaioReturnAssets(){
@@ -5183,12 +5173,17 @@ function drawReturnActor(n,asset,paused=false){
 }
 function stageCucchiaioReturn(){
  const a=cucchiaioReturnAssets;
- const companionHeight=player.actor.height===100?125:player.actor.height;
+ const companionHeight=player.actor.height;
  const blue=returnActor(480,532,companionHeight,a.blueSearch);
  const glasses=returnActor(315,379,companionHeight,a.glassesSearch);
  Object.assign(seoyoonNpc,{x:455,y:1225,height:companionHeight,direction:'up',moving:false});
  Object.assign(seonHouseNpc,{x:565,y:1225,height:companionHeight,direction:'up',moving:false});
- seoyoonNpc.actor.height=seonHouseNpc.actor.height=companionHeight;
+ for(const {actor} of [seoyoonNpc,seonHouseNpc]){
+  if(actor.height!==companionHeight){
+   actor.height=companionHeight;
+   actor.active=null;
+  }
+ }
  const papers=document.createElement('div');
  papers.setAttribute('aria-hidden','true');
  papers.style='position:absolute;left:454px;top:330px;width:27px;height:15px;background:#e7d4ae;border:1px solid #6c5640;box-shadow:3px 2px #bca784;z-index:38530;transform:rotate(-9deg);pointer-events:none';
@@ -5202,16 +5197,6 @@ function drawReturnCompanions(){
  setAsset(seonHouseNpc.actor,seonHouseNpc.idleAssets[seonHouseNpc.direction]||seonHouseNpc.idleAssets.down);
  place(seonHouseNpc.actor,seonHouseNpc.x,seonHouseNpc.y);
 }
-const cameraBeforeReturn=updateCamera;
-updateCamera=function(){
- if(locationId!=='restaurant'||!cucchiaioReturn)return cameraBeforeReturn();
- const target=cucchiaioReturn.focus;
- zoom=Math.max(1,viewWidth/750,viewHeight/825);
- const w=viewWidth/zoom,h=viewHeight/zoom;
- camera.x=clamp(target.x-w/2,0,CONFIG.width-w);
- camera.y=clamp(target.y-h/2,0,CONFIG.height-h);
- scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';
-};
 const playerBeforeReturn=drawPlayer;
 drawPlayer=function(){
  if(cucchiaioReturn?.movingPlayer&&locationId==='restaurant')player.moving=true;
@@ -5274,7 +5259,7 @@ function playReturnClink(){
  }catch(_){}
 }
 const returnPhases={
- entrance:RETURN_ENTRANCE,intruders:RETURN_INTRUDERS,muffled:RETURN_MUFFLED,
+ intruders:RETURN_INTRUDERS,muffled:RETURN_MUFFLED,
  michael:RETURN_MICHAEL,documents:RETURN_DOCUMENTS
 };
 function paintReturnLine(state,phase,index=0){
@@ -5307,7 +5292,7 @@ async function startCucchiaioReturn(){
    returnWalk(state,seoyoonNpc,[[455,1190]],speed,drawReturnCompanions),
    returnWalk(state,seonHouseNpc,[[565,1190]],speed,drawReturnCompanions)
   ]);
-  paintReturnLine(state,'entrance');
+  paintReturnLine(state,'intruders');
  });
 }
 async function approachCucchiaioIntruders(state){
@@ -5319,8 +5304,8 @@ async function approachCucchiaioIntruders(state){
  ]);
  if(!returnSceneCurrent(state))return;
  drawReturnActor(state.blue,cucchiaioReturnAssets.blueWalk,true);
- drawReturnActor(state.glasses,cucchiaioReturnAssets.glassesSearch,true);
- paintReturnLine(state,'intruders');
+ drawReturnActor(state.glasses,cucchiaioReturnAssets.glassesWalk,true);
+ paintReturnLine(state,'intruders',1);
 }
 async function fleeCucchiaio(state){
  const a=cucchiaioReturnAssets;
@@ -5345,7 +5330,7 @@ async function approachMichaelAtCucchiaio(state){
 async function freeMichaelAtCucchiaio(state){
  await wait(380);
  if(!returnSceneCurrent(state))return;
- state.michael=returnActor(785,380,125,cucchiaioReturnAssets.michael.down);
+ state.michael=returnActor(785,380,player.actor.height,cucchiaioReturnAssets.michael.down);
 }
 async function inspectCucchiaioPaperwork(state){
  if(!await panCucchiaioReturn(state,{x:512,y:416},900))return;
@@ -5375,11 +5360,9 @@ advanceSpeech=function(){
  if(!dialogue?.cucchiaioReturn||speechPageIndex+1<speechPages.length)return speechBeforeCucchiaioReturn();
  const state=cucchiaioReturn,{phase,index}=state;
  const next=index+1;
- const action=phase==='entrance'&&index===2?async()=>{playReturnClink();await wait(390);paintReturnLine(state,phase,next);}:
-  phase==='entrance'&&next===RETURN_ENTRANCE.length?()=>approachCucchiaioIntruders(state):
-  phase==='intruders'&&index===0?async()=>{
-   drawReturnActor(state.glasses,cucchiaioReturnAssets.glassesWalk,true);
-   await wait(320);paintReturnLine(state,phase,next);
+ const action=phase==='intruders'&&index===0?async()=>{
+   playReturnClink();
+   await approachCucchiaioIntruders(state);
   }:
   phase==='intruders'&&index===3?async()=>{await fleeCucchiaio(state);await wait(320);paintReturnLine(state,phase,next);}:
   phase==='intruders'&&next===RETURN_INTRUDERS.length?()=>paintReturnLine(state,'muffled'):
