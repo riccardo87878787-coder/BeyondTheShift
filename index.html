@@ -619,8 +619,9 @@ function setAsset(actor,asset,paused=false){
  for(const im of actor.images.values())im.hidden=im!==image;
  const b=asset.b,scale=actor.width?actor.width/b.w:actor.height/(asset.fixed?asset.body:b.h);
  const originX=asset.fixed?asset.image.naturalWidth/2:b.x+b.w/2;
- image.style.width=asset.image.naturalWidth*scale+"px";image.style.height=asset.image.naturalHeight*scale+"px";
- image.style.left=-originX*scale+"px";image.style.top=-asset.foot*scale+"px";
+ const horizontalScale=scale*(actor.horizontalScale||1);
+ image.style.width=asset.image.naturalWidth*horizontalScale+"px";image.style.height=asset.image.naturalHeight*scale+"px";
+ image.style.left=-originX*horizontalScale+"px";image.style.top=-asset.foot*scale+"px";
  actor.visibleHeight=(asset.foot-b.y)*scale;actor.active=asset;actor.paused=paused;actor.node.hidden=false;
 }
 function place(actor,x,y,priority=10){actor.node.style.left=x+"px";actor.node.style.top=y+"px";actor.node.style.zIndex=Math.round(y*100+priority);}
@@ -858,7 +859,7 @@ function interact(t){
 function closeDialogue(question=true){
  if(!dialogue)return;
  const previous=dialogue;dialogue=null;$("speech").hidden=true;
- if(previous.target?.owner&&!previous.target.owner.mapPainted){const n=previous.target.owner;n.talking=false;n.direction=n.previousDirection||n.direction;drawNpc(n);}
+ if(!previous.cucchiaioReturn&&previous.target?.owner&&!previous.target.owner.mapPainted){const n=previous.target.owner;n.talking=false;n.direction=n.previousDirection||n.direction;drawNpc(n);}
  if(previous.type==="intro"){intro=false;film.phase="play";zoom=CONFIG.zoom;}
  if(question&&!languageUnlocked&&previous.type==="npc")reactionTime=2;
  resetInput();
@@ -5143,7 +5144,7 @@ translateLines(RETURN_DOCUMENTS,[
 let cucchiaioReturnLoad=null,cucchiaioReturnAssets=null,cucchiaioAudio=null;
 let cucchiaioMichael=null;
 const returnStyle=document.createElement('style');
-returnStyle.textContent='#scene.cucchiaio-return{filter:brightness(.60) saturate(.8)}';
+returnStyle.textContent='#scene.cucchiaio-return{filter:brightness(.86) saturate(.95)}';
 document.head.append(returnStyle);
 
 function loadCucchiaioReturnAssets(){
@@ -5183,12 +5184,14 @@ function drawReturnActor(n,asset,paused=false){
 function stageCucchiaioReturn(){
  const a=cucchiaioReturnAssets;
  const companionHeight=player.actor.height;
- const blue=returnActor(480,532,companionHeight,a.blueSearch);
- const glasses=returnActor(315,379,companionHeight,a.glassesSearch);
+ const intruderHeight=Math.round(companionHeight*1.10);
+ const blue=returnActor(480,532,intruderHeight,a.blueSearch);
+ const glasses=returnActor(315,379,intruderHeight,a.glassesSearch);
  const entryY=1245;
- Object.assign(player,{x:510,y:entryY,direction:'up',moving:false});
- Object.assign(seoyoonNpc,{x:455,y:entryY,height:companionHeight,direction:'up',moving:false});
- Object.assign(seonHouseNpc,{x:565,y:entryY,height:companionHeight,direction:'up',moving:false});
+ const formation=returnPartyFormation(510,entryY-RETURN_PARTY_BACK);
+ Object.assign(player,formation.lead,{direction:'up',moving:false});
+ Object.assign(seoyoonNpc,formation.left,{height:companionHeight,direction:'up',moving:false});
+ Object.assign(seonHouseNpc,formation.right,{height:companionHeight,direction:'up',moving:false});
  for(const {actor} of [seoyoonNpc,seonHouseNpc]){
   if(actor.height!==companionHeight){
    actor.height=companionHeight;
@@ -5217,6 +5220,11 @@ drawPlayer=function(){
  }
  return playerBeforeReturn();
 };
+const RETURN_PARTY_BACK=22;
+function returnPartyFormation(x,y){
+ return {lead:{x,y},left:{x:x-33,y:y+RETURN_PARTY_BACK},right:{x:x+33,y:y+RETURN_PARTY_BACK}};
+}
+function returnPoint({x,y}){return [x,y];}
 const lockBeforeReturn=locked;
 locked=function(){return !!cucchiaioReturn||lockBeforeReturn();};
 
@@ -5304,21 +5312,24 @@ async function startCucchiaioReturn(){
   state.focus={x:510,y:1160};
   updateCamera();
   drawPlayer();drawReturnCompanions();
-  const stopY=1175,speed=140;
+  const {lead,left,right}=returnPartyFormation(510,1193);
+  const speed=140;
   await Promise.all([
-   returnWalk(state,player,[[510,stopY]],speed,drawPlayer),
-   returnWalk(state,seoyoonNpc,[[455,stopY]],speed,drawReturnCompanions),
-   returnWalk(state,seonHouseNpc,[[565,stopY]],speed,drawReturnCompanions)
+   returnWalk(state,player,[returnPoint(lead)],speed,drawPlayer),
+   returnWalk(state,seoyoonNpc,[returnPoint(left)],speed,drawReturnCompanions),
+   returnWalk(state,seonHouseNpc,[returnPoint(right)],speed,drawReturnCompanions)
   ]);
   paintReturnLine(state,'intruders');
  });
 }
 async function approachCucchiaioIntruders(state){
+ const {lead,left,right}=returnPartyFormation(510,604);
+ const speed=240;
  await Promise.all([
-  panCucchiaioReturn(state,{x:425,y:480},3100),
-  returnWalk(state,player,[[510,552]],240,drawPlayer),
-  returnWalk(state,seoyoonNpc,[[454,575]],235,drawReturnCompanions),
-  returnWalk(state,seonHouseNpc,[[560,579]],235,drawReturnCompanions)
+  panCucchiaioReturn(state,{x:472,y:515},3100),
+  returnWalk(state,player,[returnPoint(lead)],speed,drawPlayer),
+  returnWalk(state,seoyoonNpc,[returnPoint(left)],speed,drawReturnCompanions),
+  returnWalk(state,seonHouseNpc,[returnPoint(right)],speed,drawReturnCompanions)
  ]);
  if(!returnSceneCurrent(state))return;
  drawReturnActor(state.blue,cucchiaioReturnAssets.blueWalk,true);
@@ -5337,11 +5348,12 @@ async function fleeCucchiaio(state){
  if(returnSceneCurrent(state))await panCucchiaioReturn(state,{x:515,y:467},1050);
 }
 async function approachMichaelAtCucchiaio(state){
+ const {lead,left,right}=returnPartyFormation(722,539);
  await Promise.all([
-  panCucchiaioReturn(state,{x:687,y:395},630),
-  returnWalk(state,player,[[520,511],[730,511]],280,drawPlayer),
-  returnWalk(state,seoyoonNpc,[[454,520],[670,520]],280,drawReturnCompanions),
-  returnWalk(state,seonHouseNpc,[[562,538],[777,527]],280,drawReturnCompanions)
+  panCucchiaioReturn(state,{x:687,y:430},630),
+  returnWalk(state,player,[[player.x,lead.y],returnPoint(lead)],280,drawPlayer),
+  returnWalk(state,seoyoonNpc,[[seoyoonNpc.x,left.y],returnPoint(left)],280,drawReturnCompanions),
+  returnWalk(state,seonHouseNpc,[[seonHouseNpc.x,right.y],returnPoint(right)],280,drawReturnCompanions)
  ]);
  paintReturnLine(state,'michael');
 }
@@ -5349,6 +5361,19 @@ async function freeMichaelAtCucchiaio(state){
  await wait(380);
  if(!returnSceneCurrent(state))return;
  state.michael=returnActor(785,380,player.actor.height,cucchiaioReturnAssets.michael.down);
+ state.michael.direction='down';
+ drawReturnMichael(state.michael);
+}
+function drawReturnMichael(n){
+ const direction=n.direction||'down';
+ const asset=cucchiaioReturnAssets.michael[direction]||cucchiaioReturnAssets.michael.down;
+ const reference=(workUniformEnabled?workPlayerAssets.idle[direction]:null)||playerAssets.idle[direction]||player.actor.active;
+ if(asset.b&&reference?.b){
+  // Match the apparent width to Riccardo's equivalent pose while keeping the height fixed.
+  const factor=clamp((reference.b.w/reference.b.h)/(asset.b.w/asset.b.h),1,1.32);
+  if(n.actor.horizontalScale!==factor){n.actor.horizontalScale=factor;n.actor.active=null;}
+ }
+ drawReturnActor(n,asset);
 }
 async function inspectCucchiaioPaperwork(state){
  if(!await panCucchiaioReturn(state,{x:512,y:416},900))return;
@@ -5356,7 +5381,7 @@ async function inspectCucchiaioPaperwork(state){
   returnWalk(state,player,[[510,520]],245,drawPlayer),
   returnWalk(state,seoyoonNpc,[[585,515]],220,drawReturnCompanions),
   returnWalk(state,seonHouseNpc,[[650,532]],225,drawReturnCompanions),
-  returnWalk(state,state.michael,[[651,380]],190,()=>drawReturnActor(state.michael,cucchiaioReturnAssets.michael[state.michael.direction]||cucchiaioReturnAssets.michael.down))
+  returnWalk(state,state.michael,[[651,380]],190,()=>drawReturnMichael(state.michael))
  ]);
  paintReturnLine(state,'documents');
 }
