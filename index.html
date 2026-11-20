@@ -112,11 +112,11 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 #checkpointJump{position:absolute;left:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:21;display:grid;justify-items:start;gap:5px}
 #checkpointJump button{min-height:36px;padding:7px 11px;font-size:11px;background:#142b38ed;color:#f5ead5;border:1px solid #b8a67b;box-shadow:none}
 #checkpointOptions{display:grid;gap:4px;padding:5px;background:#132632f5;border:1px solid #b8a67b;border-radius:8px}
-.member-card[data-member="seon_jong"]{isolation:isolate;background:radial-gradient(ellipse at 53% 40%,#f7ead6,#efdec3)}
-.member-card[data-member="seon_jong"]::before{content:"";position:absolute;z-index:-1;inset:4px;border:3px double #b99655;border-radius:7px;box-shadow:0 0 0 1px #d4b770,inset 0 0 7px #a5874f4d;pointer-events:none}
-.member-card[data-member="seon_jong"]::after{content:"";position:absolute;inset:7px auto 7px 8px;width:2.5%;border-radius:4px 0 0 4px;background:#3c7478;pointer-events:none}
-.member-card[data-member="seon_jong"]>img{position:absolute;bottom:5px;left:5%;width:38%;height:calc(100% - 11px);object-fit:contain;object-position:center bottom}
-#equipPortrait[data-member="seon_jong"]{background-size:contain;background-position:center bottom}
+.member-card:is([data-member="seon_jong"],[data-member="michael"]){isolation:isolate;background:radial-gradient(ellipse at 53% 40%,#f7ead6,#efdec3)}
+.member-card:is([data-member="seon_jong"],[data-member="michael"])::before{content:"";position:absolute;z-index:-1;inset:4px;border:3px double #b99655;border-radius:7px;box-shadow:0 0 0 1px #d4b770,inset 0 0 7px #a5874f4d;pointer-events:none}
+.member-card:is([data-member="seon_jong"],[data-member="michael"])::after{content:"";position:absolute;inset:7px auto 7px 8px;width:2.5%;border-radius:4px 0 0 4px;background:#3c7478;pointer-events:none}
+.member-card:is([data-member="seon_jong"],[data-member="michael"])>img{position:absolute;bottom:5px;left:5%;width:38%;height:calc(100% - 11px);object-fit:contain;object-position:center bottom}
+#equipPortrait:is([data-member="seon_jong"],[data-member="michael"]){background-size:contain;background-position:center bottom}
 .seon-TV{position:absolute;left:583px;top:612px;width:25px;height:114px;clip-path:polygon(7% 0,64% 12%,100% 89%,66% 100%,7% 89%);background:#9de6ff5c;pointer-events:none;z-index:72700}
 #rewardContinue{position:absolute;bottom:0;left:3%;right:3%;height:7.3%;display:grid;place-items:center;color:#f5ead5;font-size:3.8cqw}
 @media(prefers-reduced-motion:reduce){#menuCurtain{transition-duration:120ms}}
@@ -1073,6 +1073,9 @@ const SEON_MAP_SPRITES={
  up:'SeonJong/file_00000000e1748209ad1a02cb5aeff250.png'
 };
 partyMembers.seon_jong={name:{ko:'Girl 2',en:'Girl 2'},level:1,hp:180,maxHp:180,ep:20,maxEp:20,joined:false,card:'SeonJong/file_0000000090588209a75519f8058fa6f1.png'};
+const MAP_DIRECTIONS={down:'sud',up:'nord',left:'ovest',right:'est'};
+const MICHAEL_IDLE=Object.fromEntries(Object.entries(MAP_DIRECTIONS).map(([dir,suffix])=>[dir,'Michael/michael-fermo-'+suffix+'.png']));
+partyMembers.michael={name:{ko:'Guy 2',en:'Guy 2'},level:4,hp:215,maxHp:215,ep:22,maxEp:22,joined:false,card:MICHAEL_IDLE.down};
 const partySlots=['riccardo',null,null,null];let won=50000,language='ko',languageUnlocked=false;
 function updateMember(id,patch){const member=partyMembers[id];if(!member)return;Object.assign(member,patch);member.level=clamp(Math.trunc(member.level)||1,1,LIMITS.level);member.maxHp=clamp(Math.trunc(member.maxHp)||1,1,LIMITS.hp);member.maxEp=clamp(Math.trunc(member.maxEp)||0,0,member.epLimit||LIMITS.ep);member.hp=clamp(Math.trunc(member.hp)||0,0,member.maxHp);member.ep=clamp(Math.trunc(member.ep)||0,0,member.maxEp);renderMenu();}
 function assignMember(slot,id){if(slot<0||slot>3||id!==null&&(!partyMembers[id]||partyMembers[id].joined===false))return;const old=partySlots.indexOf(id);if(id&&old>=0)partySlots[old]=null;partySlots[slot]=id;renderMenu();}
@@ -1474,6 +1477,7 @@ equipPage.innerHTML='<div id="equipCanvas"><h1>EQUIP</h1><div id="equipPortrait"
 game.appendChild(equipPage);
 let equipMember='riccardo',equipSlot='head',equipSelected=null,equipTutorial=false;
 function equipCharacters(){return partySlots.filter(id=>id&&partyMembers[id]&&partyMembers[id].joined!==false);}
+function equipIconSource(item,slot){return item?.iconSrc||'Equip/Icone/'+(item?item.icon:'slot_'+slot)+'.png';}
 function renderEquip(){
  const characters=equipCharacters();if(!characters.includes(equipMember))equipMember=characters[0]||'riccardo';
  const m=partyMembers[equipMember],slots=equipmentFor(equipMember);
@@ -1482,16 +1486,16 @@ function renderEquip(){
  $('equipPortrait').style.backgroundImage='url("'+m.card+'")';
  for(const id of ['equipPrev','equipNext']){$(id).hidden=characters.length<2||equipTutorial;}
  $('equipSlots').replaceChildren();
- for(const slot of EQUIP_SLOTS){const b=document.createElement('button');b.className='equip-slot';b.setAttribute('aria-pressed',String(slot===equipSlot));const item=EQUIP_ITEMS[slots[slot]],img=document.createElement('img');img.src='Equip/Icone/'+(item?item.icon:'slot_'+slot)+'.png';img.alt='';b.appendChild(img);const words=document.createElement('span'),label=document.createElement('strong'),value=document.createElement('small');label.textContent=EQUIP_LABELS[slot];value.textContent=item?item.name:'Empty';words.append(label,value);b.appendChild(words);b.onclick=()=>{equipSlot=slot;equipSelected=null;renderEquip();};$('equipSlots').appendChild(b);}
+ for(const slot of EQUIP_SLOTS){const b=document.createElement('button');b.className='equip-slot';b.setAttribute('aria-pressed',String(slot===equipSlot));const item=EQUIP_ITEMS[slots[slot]],img=document.createElement('img');img.src=equipIconSource(item,slot);img.alt='';b.appendChild(img);const words=document.createElement('span'),label=document.createElement('strong'),value=document.createElement('small');label.textContent=EQUIP_LABELS[slot];value.textContent=item?item.name:'Empty';words.append(label,value);b.appendChild(words);b.onclick=()=>{equipSlot=slot;equipSelected=null;renderEquip();};$('equipSlots').appendChild(b);}
  const ids=Object.keys(EQUIP_ITEMS).filter(id=>EQUIP_ITEMS[id].slot===equipSlot&&availableEquip(id,equipMember)>0);
  if(!ids.includes(equipSelected))equipSelected=ids[0]||null;
  $('equipAvailable').replaceChildren();
- for(const id of ids){const item=EQUIP_ITEMS[id],b=document.createElement('button');b.className='equip-item';b.setAttribute('aria-pressed',String(id===equipSelected));const img=document.createElement('img');img.src='Equip/Icone/'+item.icon+'.png';img.alt='';const name=document.createElement('span');name.textContent=item.name;const count=document.createElement('small');count.textContent=slots[equipSlot]===id?'Equipped':'×'+availableEquip(id,equipMember);b.append(img,name,count);b.onclick=()=>{equipSelected=id;renderEquip();};$('equipAvailable').appendChild(b);}
+ for(const id of ids){const item=EQUIP_ITEMS[id],b=document.createElement('button');b.className='equip-item';b.setAttribute('aria-pressed',String(id===equipSelected));const img=document.createElement('img');img.src=equipIconSource(item);img.alt='';const name=document.createElement('span');name.textContent=item.name;const count=document.createElement('small');count.textContent=slots[equipSlot]===id?'Equipped':'×'+availableEquip(id,equipMember);b.append(img,name,count);b.onclick=()=>{equipSelected=id;renderEquip();};$('equipAvailable').appendChild(b);}
  if(!ids.length)$('equipAvailable').textContent='No compatible equipment.';
  const item=EQUIP_ITEMS[equipSelected];$('equipDetailIcon').hidden=!item;
  $('equipItemName').textContent=item?.name||'Empty slot';$('equipDescription').textContent=item?.description||'Select a slot to see compatible equipment.';
  $('equipComparison').replaceChildren();
- if(item){$('equipDetailIcon').src='Equip/Icone/'+item.icon+'.png';const current=equipmentStats(equipMember),old=EQUIP_ITEMS[slots[equipSlot]]||{};for(const [stat,label] of [['attack','ATK'],['defense','DEF'],['speed','SPD'],['technique','TEC'],['resistance','RES']]){const next=current[stat]-(old[stat]||0)+(item[stat]||0);if(!item[stat]&&!old[stat])continue;const row=document.createElement('div');row.append(document.createTextNode(label+' '+current[stat]+' → '));const value=document.createElement('span');value.textContent=next;value.className=next>current[stat]?'better':next<current[stat]?'worse':'';row.appendChild(value);$('equipComparison').appendChild(row);}}
+ if(item){$('equipDetailIcon').src=equipIconSource(item);const current=equipmentStats(equipMember),old=EQUIP_ITEMS[slots[equipSlot]]||{};for(const [stat,label] of [['attack','ATK'],['defense','DEF'],['speed','SPD'],['technique','TEC'],['resistance','RES']]){const next=current[stat]-(old[stat]||0)+(item[stat]||0);if(!item[stat]&&!old[stat])continue;const row=document.createElement('div');row.append(document.createTextNode(label+' '+current[stat]+' → '));const value=document.createElement('span');value.textContent=next;value.className=next>current[stat]?'better':next<current[stat]?'worse':'';row.appendChild(value);$('equipComparison').appendChild(row);}}
  $('equipConfirm').disabled=!item||slots[equipSlot]===equipSelected;
  $('equipConfirm').textContent=slots[equipSlot]===equipSelected&&item?'EQUIPPED':'EQUIP';
  $('equipBack').disabled=equipTutorial;
@@ -2088,9 +2092,22 @@ const EP_LEVELS=[1,5,10,20,30,40,50];
 const CHARACTER_GROWTH={
  riccardo:{accuracy:90,hp:250,hpGrowth:25,attack:15,attackGrowth:2,speed:8,speedGrowth:.5,technique:4,techniqueGrowth:.5,resistance:6,resistanceGrowth:1,defenseGrowth:1,ep:[12,18,26,40,54,68,80]},
  seoyoon:{accuracy:70,hp:160,hpGrowth:15,attack:4,attackGrowth:.5,speed:12,speedGrowth:.75,technique:12,techniqueGrowth:3,resistance:10,resistanceGrowth:1.5,defenseGrowth:1/3,ep:[18,28,40,62,82,102,120]},
- seon_jong:{hp:180,hpGrowth:18,attack:4,attackGrowth:.5,speed:10,speedGrowth:.5,technique:14,techniqueGrowth:3,resistance:12,resistanceGrowth:1.5,defenseGrowth:1/3,ep:[20,32,46,70,92,114,135]}
+ seon_jong:{hp:180,hpGrowth:18,attack:4,attackGrowth:.5,speed:10,speedGrowth:.5,technique:14,techniqueGrowth:3,resistance:12,resistanceGrowth:1.5,defenseGrowth:1/3,ep:[20,32,46,70,92,114,135]},
+ michael:{accuracy:92,hp:170,hpGrowth:15,attack:12,attackGrowth:1,speed:13,speedGrowth:.75,technique:6,techniqueGrowth:.5,resistance:5,resistanceGrowth:1,defenseGrowth:2/3,ep:[16,24,34,48,62,76,90]}
 };
 const TECHNIQUES={
+ michael:[
+  {id:'butter_smash',name:'Butter Smash',level:2,ep:4,type:'physical',power:.8,target:'single',stopChance:.25,butter:true,description:'Deal light damage to one enemy with a 25% chance to stop their next turn.'},
+  {id:'quick_cut',name:'Quick Cut',level:5,ep:4,type:'physical',power:1.35,target:'single',description:'Strike one enemy with a quick slash.'},
+  {id:'double_slice',name:'Double Slice',level:10,ep:6,type:'physical',power:1,hits:2,target:'single',description:'Strike one enemy twice.'},
+  {id:'disarm',name:'Disarm',level:15,ep:8,type:'physical',power:1.25,attackReduction:.2,duration:3,target:'single',description:'Hit one enemy and reduce their ATK by 20% for three turns.'},
+  {id:'blade_rush',name:'Blade Rush',level:20,ep:12,type:'physical',power:.9,hits:4,target:'single',description:'Strike one enemy four times in rapid succession.'},
+  {id:'precision_strike',name:'Precision Strike',level:25,ep:16,type:'physical',power:2.1,criticalChance:.55,target:'single',description:'Strike one enemy with a 55% chance to deal 50% extra damage.'},
+  {id:'butter_avalanche',name:'Butter Avalanche',level:35,ep:20,type:'physical',power:1.5,stopChance:.45,butter:true,target:'all-enemies',description:'Hit all enemies with a 45% chance per enemy to stop their next turn.'},
+  {id:'knife_storm',name:'Knife Storm',level:40,ep:26,type:'physical',power:1.25,hits:3,target:'all-enemies',description:'Strike every enemy three times.'},
+  {id:'execution',name:'Execution',level:45,ep:32,type:'physical',power:3,lowHpPower:5,lowHpThreshold:.3,target:'single',description:'Strike one enemy harder at 30% HP or below.'},
+  {id:'final_service',name:'Final Service',level:50,ep:40,type:'physical',power:1.5,hits:6,target:'single',description:'Strike one enemy six times.'}
+ ],
  riccardo:[
  {id:'firm_pan_strike',name:'Firm Pan Strike',level:5,ep:4,type:'physical',power:1.5,target:'single',description:'Strike one target with a decisive frying-pan blow.'},
  {id:'lid_guard',name:'Lid Guard',level:10,ep:6,type:'guard',target:'self',duration:1,reduction:.5,taunt:true,description:'Halve incoming damage until your next turn and draw single-target physical attacks.'},
@@ -2139,6 +2156,7 @@ function awardExperience(total,ids=partySlots.filter(id=>id&&partyMembers[id]?.h
 function techniqueDamage(skill,user,target,{hit=0,protection=1}={}){const multiplier=skill.power||1;let damage;if(skill.type==='physical')damage=user.attack*multiplier-Math.max(0,target.defense||0)*(1-(skill.ignoreDefense||0));else damage=user.technique*multiplier*100/(100+Math.max(0,target.resistance||0));const element=skill.elements?.[hit]||skill.element||'none',affinity=target.affinities?.[element]??1;return affinity===0?0:Math.max(1,Math.floor(damage*affinity*protection));}
 function resetProgression(){for(const id of Object.keys(partyMembers)){if(!CHARACTER_GROWTH[id])continue;Object.assign(partyMembers[id],{level:1,exp:0,legendarySkills:[]});syncMemberProgression(id,{refill:true});}}
 Object.assign(EQUIP_ITEMS,{
+ worn_kitchen_knife:{slot:'weapon',name:'Worn Kitchen Knife',owner:'michael',iconSrc:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#78513a" d="m2 20 2 2 7-7-2-2z"/><path fill="#bcc8d0" stroke="#465159" d="M8 13 21 2c1 6-1 10-8 15z"/></svg>'),description:'Michael’s starter knife.'},
  serving_tray:{slot:'weapon',name:'Serving Tray',icon:'file_000000002b6c8209b039a7af1d763843',owner:'seoyoon',description:'An ordinary serving tray. Starter equipment; no stat bonuses.'},
  burgundy_hair_clip:{slot:'head',name:'Burgundy Hair Clip',icon:'file_00000000081882099a9fec856ee196b5',owner:'seoyoon',description:'A small burgundy hair clip. No stat bonuses.'},
  waitress_shirt:{slot:'body',name:'Waitress Shirt',icon:'file_000000008c408212811f9cbee7e750e2',owner:'seoyoon',description:'A pale pink waitress shirt. No stat bonuses.'},
@@ -2173,7 +2191,7 @@ const menuBeforeProgression=renderMenu;renderMenu=function(){menuBeforeProgressi
 const closeBeforeProgression=closeMenu;closeMenu=function(){if(!autoMenu)progressionPage.hidden=true;closeBeforeProgression();};
 function saveRpgGame(){if(!menuOpen||autoMenu||!nearMartSavePoint())return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
 function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-dungeon'].includes(data.location)||isMartShop(data.location)||isMartRoom(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
-const beginBeforeProgression=beginIntro;beginIntro=function(){progressionPage.hidden=true;partyMembers.seon_jong.joined=false;const slot=partySlots.indexOf('seon_jong');if(slot>=0)partySlots[slot]=null;beginBeforeProgression();resetProgression();equipSeoyoonStarter();renderMenu();};
+const beginBeforeProgression=beginIntro;beginIntro=function(){progressionPage.hidden=true;for(const id of ['seon_jong','michael']){partyMembers[id].joined=false;const slot=partySlots.indexOf(id);if(slot>=0)partySlots[slot]=null;}beginBeforeProgression();resetProgression();equipSeoyoonStarter();renderMenu();};
 resetProgression();equipSeoyoonStarter();
 battleStats=function(){return totalStats('riccardo');};
 Object.assign(TaraiParty,{updateMember,getStats:totalStats,getBaseStats:personalStats,addExperience:awardExperience,setLevel:setCharacterLevel});
@@ -2303,8 +2321,9 @@ async function resumeNightGame(beforeRestore=null){
    const id=data.slots?.[i];if(!partyMembers[id]?.joined||occupied.has(id))return null;
    occupied.add(id);return id;
   }));
-  if(partyMembers.seon_jong.joined&&!occupied.has('seon_jong')){
-   const free=partySlots.indexOf(null);if(free>=0)partySlots[free]='seon_jong';
+  for(const id of ['seon_jong','michael']){
+   if(!partyMembers[id].joined||occupied.has(id))continue;
+   const free=partySlots.indexOf(null);if(free>=0)partySlots[free]=id;
   }
   equipState=freshEquipState();equipState.stage=['new','equip','after','done'].includes(data.equip?.stage)?data.equip.stage:'done';for(const [id,n] of Object.entries(data.equip?.owned||{}))if(EQUIP_ITEMS[id]&&Number.isFinite(n)&&n>0)equipState.owned[id]=clamp(Math.trunc(n),0,99);for(const id of Object.keys(partyMembers))for(const [slot,item] of Object.entries(data.equip?.members?.[id]||{}))if(EQUIP_ITEMS[item]?.owner===id&&EQUIP_ITEMS[item].slot===slot&&equipState.owned[item]>0)equipmentFor(id)[slot]=item;equipSeoyoonStarter();for(const id of Object.keys(partyMembers))syncMemberProgression(id);
   inventory={};for(const [id,n] of Object.entries(data.inventory||{}))if(ITEM_CATALOG[id]&&Number.isFinite(n))inventory[id]=clamp(Math.trunc(n),0,999);won=clamp(Math.trunc(data.won)||0,0,LIMITS.won);language=data.language==='ko'?'ko':'en';jobAssigned=!!data.jobAssigned;languageUnlocked=jobAssigned;menuUnlocked=!!data.menuUnlocked;
@@ -2573,7 +2592,7 @@ async function partyFinishAction(epoch){
  if(!battleAlive(epoch))return;paintFirstBattle();if(partyHeroes().every(f=>f.hp()<=0)){firstBattlePhase='defeat';battleHint(tr('Party defeated.'));showBattleResult(tr('DEFEAT'),tr('Try the battle again.'),true);return;}if(partyEnemies().every(f=>f.hp()<=0)){await victoryFirstBattle(epoch);return;}if(!await battlePause(200,epoch))return;await nextPartyTurn(epoch);}
 const originalPerformBattle=performFirstBattleAttack;performFirstBattleAttack=async function(target){if(!partyBattle)return originalPerformBattle(target);const user=currentPartyFighter(),skill=selectedBattleSkill;if(firstBattlePhase!=='target'||!user?.member||user.hp()<=0||!canChooseBattleTarget(target))return;if(skill&&(!learnedTechniques(user.member).some(t=>t.id===skill.id)||partyMembers[user.member].ep<skill.ep))return;
  const epoch=firstBattleEpoch;firstBattlePhase='acting';selectedBattleSkill=null;closeBattleSkills();if(skill)updateMember(user.member,{ep:partyMembers[user.member].ep-skill.ep});paintFirstBattle();battleHint(partyName(user)+' · '+(skill?tr(skill.name):'ATK'));
- if(skill&&user.member==='seon_jong'){await playSeonTechnique(user,target,skill,epoch);}else if(skill?.type==='guard'){user.guard=true;await battlePause(350,epoch);}else if(skill?.id==='scorching_tray')await partyFire(user,target,skill,epoch);else if(skill?.id==='shocking_tray')await partyLightning(user,target,skill,epoch);else await partyMelee(user,target,skill,epoch);if(battleAlive(epoch))await partyFinishAction(epoch);
+ if(skill&&user.member==='michael'){await playMichaelTechnique(user,target,skill,epoch);}else if(skill&&user.member==='seon_jong'){await playSeonTechnique(user,target,skill,epoch);}else if(skill?.type==='guard'){user.guard=true;await battlePause(350,epoch);}else if(skill?.id==='scorching_tray')await partyFire(user,target,skill,epoch);else if(skill?.id==='shocking_tray')await partyLightning(user,target,skill,epoch);else await partyMelee(user,target,skill,epoch);if(battleAlive(epoch))await partyFinishAction(epoch);
 };
 async function nextPartyTurn(epoch){if(!battleAlive(epoch))return;if(!partyBattle.queue.length)partyBattle.queue=firstBattleFighters.filter(f=>f.hp()>0).sort((a,b)=>partyStats(b).speed-partyStats(a).speed).map(f=>f.id);let f;while(partyBattle.queue.length){const nextId=partyBattle.queue.shift();f=firstBattleFighters.find(f=>f.id===nextId);if(f?.hp()>0)break;f=null;}if(!f)return nextPartyTurn(epoch);partyBattle.current=f.id;
  if(f.member){commandFirstBattle();return;}firstBattlePhase='enemy';paintFirstBattle();const targets=partyHeroes().filter(h=>h.hp()>0),guarded=targets.find(h=>h.guard),target=guarded||targets[Math.floor(Math.random()*targets.length)];battleHint(partyName(f)+' · ATK');await partyMelee(f,target,null,epoch);if(battleAlive(epoch))await partyFinishAction(epoch);
@@ -2704,7 +2723,7 @@ async function jumpToChaosExitTest(){
   $('rpgMenu').classList.remove('auto');game.classList.remove('travel-ending','battle-active','battle-entering');equipPage.hidden=true;progressionPage.hidden=true;sleepPrompt.hidden=true;partyNotice.hidden=true;resumeNightButton.hidden=true;dinnerMontage.hidden=true;
   equipTutorial=false;equipTransition=false;equipPage.inert=false;jobAssigned=true;languageUnlocked=true;menuUnlocked=true;
   equipState=freshEquipState();equipState.stage='done';for(const id of RICCARDO_STARTER_ITEMS){equipState.owned[id]=1;equipmentFor('riccardo')[EQUIP_ITEMS[id].slot]=id;}equipSeoyoonStarter();
-  partyMembers.riccardo.joined=true;partyMembers.seoyoon.joined=true;partySlots.splice(0,4,'riccardo','seoyoon',null,null);resetProgression();partyMembers.riccardo.exp=60;partyMembers.riccardo.level=levelFromExp(60);for(const id of ['riccardo','seoyoon'])syncMemberProgression(id,{refill:true});inventory={};
+  partyMembers.riccardo.joined=true;partyMembers.seoyoon.joined=true;partyMembers.seon_jong.joined=partyMembers.michael.joined=false;partySlots.splice(0,4,'riccardo','seoyoon',null,null);resetProgression();partyMembers.riccardo.exp=60;partyMembers.riccardo.level=levelFromExp(60);for(const id of ['riccardo','seoyoon'])syncMemberProgression(id,{refill:true});inventory={};
   hongMapImage=chaosImage;showLocation('hongdeon');Object.assign(player,{x:1360,y:1950,direction:'down',moving:false});nearestFree(player);drawPlayer();syncNightSeoyoon();syncChaosActors();updateCamera();renderMenu();refreshNightObjective();clearMarkers();resetInput();
   await wait(50);fade.classList.remove('black');await wait(430);
  }catch(e){console.error(e);notice('Unable to start the exit test: '+e.message);}
@@ -2783,7 +2802,9 @@ const poseBeforeDungeon=drawBattlePose;drawBattlePose=function(f,pose,restart=fa
  const url=restart?URL.createObjectURL(a.blob):a.url;
  return new Promise(resolve=>{img.onload=()=>{if(f.play!==token||!battleAlive(epoch)){if(restart)URL.revokeObjectURL(url);resolve(false);return;}f.node.append(img);const old=f.image;f.image=img;f.pose=pose;if(old){old.remove();if(old.dataset.temporaryUrl)URL.revokeObjectURL(old.dataset.temporaryUrl);}if(restart)img.dataset.temporaryUrl=url;resolve(true);};img.onerror=()=>{if(restart)URL.revokeObjectURL(url);resolve(false);};img.src=url;});
 };
-const statsBeforeDungeon=partyStats;partyStats=function(f){const s=statsBeforeDungeon(f);return f.precisionDebuff?{...s,accuracy:Math.max(0,(s.accuracy??100)-f.precisionDebuff.amount)}:s;};
+const statsBeforeDungeon=partyStats;partyStats=function(f){const base=statsBeforeDungeon(f);
+ const s=f.attackDebuff?{...base,attack:Math.floor(base.attack*(1-f.attackDebuff.reduction))}:base;
+ return f.precisionDebuff?{...s,accuracy:Math.max(0,(s.accuracy??100)-f.precisionDebuff.amount)}:s;};
 function applyPriceCheck(target){target.precisionDebuff={amount:20,turns:2};}
 function finishAccuracyTurn(f){if(f?.precisionDebuff&&--f.precisionDebuff.turns<=0)f.precisionDebuff=null;}
 
@@ -2793,7 +2814,12 @@ partyHit=async function(user,target,skill,epoch){
  if(override!==9999&&!skill?.guaranteed&&!normalAttackHits(partyStats(user),skill)){floatBattleMiss(target);paintFirstBattle();return;}
  const protection=(target.guard?.valueOf()?0.5:1)*(1-(target.protectiveBlend?.reduction||0));
  const damage=override??(skill?.fixedDamage!=null?Math.max(1,Math.floor(skill.fixedDamage*protection)):skill?techniqueDamage(skill,partyStats(user),partyStats(target),{protection}):Math.max(1,Math.floor((partyStats(user).attack-partyStats(target).defense)*protection)));
- partySetHP(target,target.hp()-damage);if(damage>0&&skill?.id==='price_check'&&target.hp()>0)applyPriceCheck(target);
+ partySetHP(target,target.hp()-damage);
+ if(damage>0&&target.hp()>0){
+  if(skill?.id==='price_check')applyPriceCheck(target);
+  if(skill?.attackReduction)target.attackDebuff={reduction:skill.attackReduction,turns:skill.duration};
+  if(skill?.stopChance&&Math.random()<skill.stopChance){target.stopTurns=1;announceBattleEffect(partyName(target)+' · '+tr('STOP'));}
+ }
  floatBattleDamage(target,damage);if(skill?.element==='lightning')hitElectric(target);else if(skill?.element==='fire')hitFire(target);else if(!['price_check','heavy_delivery'].includes(skill?.id))battleImpact(target);
  await drawBattlePose(target,'hurt',true);paintFirstBattle();
 };
@@ -2829,7 +2855,9 @@ async function enemyHeavyDelivery(user,target,epoch){
  try{await partyHit(user,target,HEAVY_DELIVERY,epoch);await battlePause(240,epoch);}finally{burst.remove();}
  if(!battleAlive(epoch))return;await battlePause(60,epoch);if(battleAlive(epoch))await drawBattlePose(user,'idle',true);
 }
-const finishBeforeDungeon=partyFinishAction;partyFinishAction=async function(epoch){if(!battleAlive(epoch))return;const current=currentPartyFighter();finishAccuracyTurn(current);finishProtectiveBlendTurn(current);return finishBeforeDungeon(epoch);};
+const finishBeforeDungeon=partyFinishAction;partyFinishAction=async function(epoch){if(!battleAlive(epoch))return;const current=currentPartyFighter();finishAccuracyTurn(current);finishProtectiveBlendTurn(current);
+ if(current?.attackDebuff&&--current.attackDebuff.turns<=0)current.attackDebuff=null;
+ return finishBeforeDungeon(epoch);};
 nextPartyTurn=async function(epoch){
  if(!battleAlive(epoch))return;
  if(!partyBattle.queue.length){
@@ -2839,6 +2867,11 @@ nextPartyTurn=async function(epoch){
  }
  let f;while(partyBattle.queue.length){const id=partyBattle.queue.shift();f=firstBattleFighters.find(f=>f.id===id);if(f?.hp()>0)break;f=null;}
  if(!f)return nextPartyTurn(epoch);partyBattle.current=f.id;
+ if(f.stopTurns>0){
+  f.stopTurns--;firstBattlePhase=f.member?'acting':'enemy';battleHint(partyName(f)+' · '+tr('STOP'));paintFirstBattle();
+  if(await battlePause(480,epoch))await partyFinishAction(epoch);
+  return;
+ }
  if(f.member){commandFirstBattle();return;}
  firstBattlePhase='enemy';paintFirstBattle();const targets=partyHeroes().filter(h=>h.hp()>0),target=targets.find(h=>h.guard)||targets[Math.floor(Math.random()*targets.length)],r=Math.random();
  if(isManager(f)){
@@ -2948,7 +2981,7 @@ async function enterDungeonTest(saved=null,beforeRestore=null,checkpoint='dungeo
  closeDialogue(false);reactionTime=0;intro=false;film.phase='play';ending=false;menuOpen=false;autoMenu=false;transitioning=false;destinationOpen=false;officeSequence=null;travelScene=null;nightTransition=false;chaosBusy=false;chaosCamera=null;chaosCompanionVisible=false;civilianBalloon.hidden=true;
  nightState={phase:'morning-complete',firstVictoryReward:true,chaos:{stage:'done',revealed:true},mart:{heardPassage:true,visited:true,storyDungeon:true,test:true,dungeon:null}};storyPhase='complete';storyNight=false;storyCamera=null;storyEncounter=null;setStoryBusy(false);workUniformEnabled=true;
  if(storyEnemy){storyEnemy.actor.node.remove();storyEnemy=null;}storyNightLighting.hidden=true;scene.classList.remove('story-night');for(const id of ['rpgMenu','inventoryPage','languagePage','destinations','trainWindow'])$(id).hidden=true;$('rpgMenu').classList.remove('auto');game.classList.remove('travel-ending','battle-active','battle-entering');equipPage.hidden=true;progressionPage.hidden=true;sleepPrompt.hidden=true;partyNotice.hidden=true;resumeNightButton.hidden=true;dinnerMontage.hidden=true;equipTutorial=false;equipTransition=false;jobAssigned=true;languageUnlocked=true;menuUnlocked=true;
- equipState=freshEquipState();equipState.stage='done';for(const id of RICCARDO_STARTER_ITEMS){equipState.owned[id]=1;equipmentFor('riccardo')[EQUIP_ITEMS[id].slot]=id;}equipSeoyoonStarter();for(const [id,n] of Object.entries(saved?.equip?.owned||{}))if(EQUIP_ITEMS[id]&&Number.isFinite(n)&&n>0)equipState.owned[id]=clamp(Math.trunc(n),1,99);for(const id of ['riccardo','seoyoon'])for(const [slot,item] of Object.entries(saved?.equip?.members?.[id]||{}))if(EQUIP_ITEMS[item]?.owner===id&&EQUIP_ITEMS[item].slot===slot&&equipState.owned[item]>0)equipmentFor(id)[slot]=item;partyMembers.riccardo.joined=partyMembers.seoyoon.joined=true;partyMembers.seon_jong.joined=false;partySlots.splice(0,4,'riccardo','seoyoon',null,null);resetProgression();
+ equipState=freshEquipState();equipState.stage='done';for(const id of RICCARDO_STARTER_ITEMS){equipState.owned[id]=1;equipmentFor('riccardo')[EQUIP_ITEMS[id].slot]=id;}equipSeoyoonStarter();for(const [id,n] of Object.entries(saved?.equip?.owned||{}))if(EQUIP_ITEMS[id]&&Number.isFinite(n)&&n>0)equipState.owned[id]=clamp(Math.trunc(n),1,99);for(const id of ['riccardo','seoyoon'])for(const [slot,item] of Object.entries(saved?.equip?.members?.[id]||{}))if(EQUIP_ITEMS[item]?.owner===id&&EQUIP_ITEMS[item].slot===slot&&equipState.owned[item]>0)equipmentFor(id)[slot]=item;partyMembers.riccardo.joined=partyMembers.seoyoon.joined=true;partyMembers.seon_jong.joined=partyMembers.michael.joined=false;partySlots.splice(0,4,'riccardo','seoyoon',null,null);resetProgression();
  for(const id of ['riccardo','seoyoon']){const m=partyMembers[id];m.joined=true;if(saved?.members?.[id]){const s=saved.members[id];Object.assign(m,{level:clamp(Math.trunc(s.level)||3,1,50),exp:Math.max(0,Number(s.exp)||0),hp:Math.max(0,Number(s.hp)||0),ep:Math.max(0,Number(s.ep)||0)});syncMemberProgression(id);}else{m.exp=id==='riccardo'?260:200;m.level=3;syncMemberProgression(id,{refill:true});}}
  won=clamp(Number(saved?.won??50000),0,LIMITS.won);inventory=saved?{}:{staff_meal:5,espresso_shot:3,emergency_snack:1};if(saved)for(const[id,n]of Object.entries(saved.inventory||{}))if(ITEM_CATALOG[id]&&Number.isInteger(n)&&n>0)inventory[id]=Math.min(999,n);
  dungeonState=restoreMartProgress(saved?.dungeon);
@@ -3339,6 +3372,7 @@ function canChooseBattleTarget(f){
  if(selectedBattleItem)return itemEligible(selectedBattleItem,f);
  if(!f)return false;
  const target=selectedBattleSkill?.target;
+ if(selectedBattleSkill&&currentPartyFighter()?.member==='michael')return f.kind==='enemy'&&f.hp()>0;
  if(target==='fallen-ally')return !!f.member&&f.hp()<=0;
  if(target==='ally'||target==='all-allies'||target==='self')return !!f.member&&f.hp()>0;
  return f.hp()>0;
@@ -4685,6 +4719,56 @@ loadPartyBattle=async function(kind){
  return result;
 };
 
+// Field sprite supplies a temporary battle pose until Michael’s dedicated art is available.
+let michaelBattleAsset=null;
+const loadBeforeMichael=loadPartyBattle;
+loadPartyBattle=async function(kind){
+ const result=await loadBeforeMichael(kind);
+ if(partyBattle?.members.includes('michael')){
+  michaelBattleAsset ||= battleAsset(MICHAEL_IDLE.left).catch(error=>{michaelBattleAsset=null;throw error;});
+  firstBattleAssets.michael={idle:await michaelBattleAsset};
+ }
+ return result;
+};
+
+function michaelStrike(skill,target,random=Math.random){
+ const power=skill.lowHpPower&&target.hp()<=partyStats(target).maxHp*skill.lowHpThreshold?skill.lowHpPower:skill.power;
+ return {...skill,power:skill.criticalChance&&random()<skill.criticalChance?power*1.5:power};
+}
+async function throwMichaelButter(user,targets,epoch){
+ const stage=$('battleStage'),from=bodyPoint(user);
+ await Promise.all(targets.map(async target=>{
+  const to=bodyPoint(target),piece=document.createElement('div');
+  Object.assign(piece.style,{position:'absolute',width:'20px',height:'13px',background:'#ffdc62',
+   border:'2px solid #956116',boxShadow:'inset -3px -3px #e6a72b,inset 3px 3px #fff2a8',zIndex:'32',pointerEvents:'none'});
+  stage.append(piece);
+  try{
+   await partyTween(430,epoch,t=>{
+    const x=from.x+(to.x-from.x)*t,y=from.y+(to.y-from.y)*t-Math.sin(Math.PI*t)*user.height*.5;
+    piece.style.transform='translate('+(x-10)+'px,'+(y-7)+'px) rotate('+t*240+'deg)';
+   });
+  }finally{piece.remove();}
+ }));
+}
+async function playMichaelTechnique(user,target,skill,epoch){
+ const targets=skill.target==='all-enemies'?partyEnemies().filter(f=>f.hp()>0):[target];
+ const hits=skill.hits||1;
+ if(!skill.butter&&targets.length===1){
+  for(let hit=0;hit<hits&&battleAlive(epoch)&&target.hp()>0;hit++)await partyMelee(user,target,michaelStrike(skill,target),epoch);
+  return;
+ }
+ await drawBattlePose(user,'attack',true);
+ if(!battleAlive(epoch))return;
+ if(skill.butter)await throwMichaelButter(user,targets,epoch);
+ for(let hit=0;hit<hits&&battleAlive(epoch);hit++){
+  const living=targets.filter(f=>f.hp()>0);
+  if(!living.length)break;
+  await Promise.all(living.map(f=>partyHit(user,f,michaelStrike(skill,f),epoch)));
+  if(!await battlePause(300,epoch))return;
+ }
+ if(battleAlive(epoch))await drawBattlePose(user,'idle',true);
+}
+
 const SEON_CURABLE=['poison','sleep','silence'];
 function clearSeonAilments(target,ailments){
  for(const ailment of ailments){
@@ -5076,8 +5160,7 @@ beginIntro=function(){
 /* Return to Cucchiaio after the third party member joins. */
 const CUCCHIAIO_RETURN_FILES={
  blueWalk:'Enemy/uomo-blu-cammina-sud.gif',blueSearch:'Enemy/uomo-blu-rovista-sud.gif',
- glassesWalk:'Enemy/uomo-occhiali-cammina-sud.gif',glassesSearch:'Enemy/uomo-occhiali-rovista-nord.gif',
- michael:'Michael/file_00000000c3208209b2bc6764ca05b9a2.png'
+ glassesWalk:'Enemy/uomo-occhiali-cammina-sud.gif',glassesSearch:'Enemy/uomo-occhiali-rovista-nord.gif'
 };
 const RETURN_INTRUDERS=[
  ['Guy','Who are you two?!'],
@@ -5102,8 +5185,6 @@ const RETURN_MUFFLED=[
 ];
 translateLines(RETURN_MUFFLED,['으음! 으으음!','잠깐… 들었어요?','으음! 으음!','누가 있어요!','저쪽에서 들려요!']);
 const RETURN_MICHAEL=[
- ['Guy','GUY 2?!'],
- ['Girl 1','Oh my God!'],
  ['Guy 2','Finally! I thought no one was coming!'],
  ['Guy','What the hell happened?!'],
  ['Guy 2','Those bastards came in and started asking about the deliveries. When I asked who they were, they tied me up.'],
@@ -5120,7 +5201,7 @@ const RETURN_MICHAEL=[
  ['Guy 2','Anyway… thanks. I don’t know how long I’d have been stuck back there.']
 ];
 translateLines(RETURN_MICHAEL,[
- 'GUY 2?!','세상에!','드디어! 아무도 안 오는 줄 알았어요!','대체 무슨 일이 있었어요?!',
+ '드디어! 아무도 안 오는 줄 알았어요!','대체 무슨 일이 있었어요?!',
  '그 자식들이 들어와서 납품 얘길 묻기 시작했어요. 누군지 물었더니 저를 묶어 버렸어요.','다친 데는 없어요?',
  '괜찮아요. 소시지처럼 꽁꽁 묶인 것만 빼면요.','빌어먹을 하루를 보내는 모임에 어서 와요.',
  '뭘 찾고 있었는지 알아요?','모르겠어요. 계속 송장이랑 서류를 뒤지더라고요.','우리가 왔을 때도 딱 그러고 있었어요.',
@@ -5145,34 +5226,27 @@ translateLines(RETURN_DOCUMENTS,[
  '이건 우리 서류가 아닌데요.','그럼 왜 여기에 두고 갔죠?','급하게 도망치다가 떨어뜨렸나 봐요.'
 ]);
 let cucchiaioReturnLoad=null,cucchiaioReturnAssets=null,cucchiaioAudio=null;
-let cucchiaioMichael=null;
 const returnStyle=document.createElement('style');
 returnStyle.textContent='#scene.cucchiaio-return{filter:brightness(.86) saturate(.95)}';
 document.head.append(returnStyle);
 
 function loadCucchiaioReturnAssets(){
  if(cucchiaioReturnLoad)return cucchiaioReturnLoad;
- const {michael,...files}=CUCCHIAIO_RETURN_FILES;
- const agents=Promise.all(Object.entries(files).map(async ([key,path])=>{
-  const asset=await loadAsset(path);
-  if(!asset){cache.delete(path+'|false|false');throw Error('Unable to load '+path);}
-  return [key,asset];
- }));
- const michaelViews=loadDungeonImage(michael).then(async sheet=>{
-  // Split at the transparent gutters in the supplied south, west, north, east strip.
-  const edges=[0,344,614,927,1224].map(x=>Math.round(x/1224*sheet.naturalWidth));
-  return Object.fromEntries(await Promise.all(['down','left','up','right'].map(async (dir,i)=>{
-   const tile=document.createElement('canvas');
-   tile.width=edges[i+1]-edges[i];tile.height=sheet.naturalHeight;
-   tile.getContext('2d').drawImage(sheet,edges[i],0,tile.width,tile.height,0,0,tile.width,tile.height);
-   const asset=await loadAsset(tile.toDataURL());
-   if(!asset)throw Error('Unable to read Guy 2’s sprite');
-   return [dir,asset];
+ async function loadSet(files){
+  return Object.fromEntries(await Promise.all(Object.entries(files).map(async ([key,path])=>{
+   const asset=await loadAsset(path);
+   if(!asset){cache.delete(path+'|false|false');throw Error('Unable to load '+path);}
+   return [key,asset];
   })));
- });
- cucchiaioReturnLoad=Promise.all([agents,michaelViews,loadSeoyoon(),loadSeonHouseNpc()])
-  .then(([entries,views])=>{cucchiaioReturnAssets={...Object.fromEntries(entries),michael:views};})
-  .catch(error=>{cucchiaioReturnLoad=null;throw error;});
+ }
+ const walkFiles=folder=>Object.fromEntries(Object.entries(MAP_DIRECTIONS).map(([dir,suffix])=>[dir,folder+'-'+suffix+'.gif']));
+ cucchiaioReturnLoad=Promise.all([
+  loadSet(CUCCHIAIO_RETURN_FILES),loadSet(MICHAEL_IDLE),
+  loadSet(walkFiles('Michael/michael-cammina')),loadSet(walkFiles('SeonJong/seon-jong-cammina')),
+  loadSeoyoon(),loadSeonHouseNpc()
+ ]).then(([agents,michaelIdle,michaelWalk,seonWalk])=>{
+  cucchiaioReturnAssets={...agents,michaelIdle,michaelWalk,seonWalk};
+ }).catch(error=>{cucchiaioReturnLoad=null;throw error;});
  return cucchiaioReturnLoad;
 }
 function returnActor(x,y,height,asset,paused=false){
@@ -5190,8 +5264,7 @@ function stageCucchiaioReturn(){
  const intruderHeight=Math.round(companionHeight*1.10);
  const blue=returnActor(480,532,intruderHeight,a.blueSearch);
  const glasses=returnActor(315,379,intruderHeight,a.glassesSearch);
- const entryY=1245;
- const formation=returnPartyFormation(510,entryY-RETURN_PARTY_BACK);
+ const formation=returnPartyFormation(510,1214);
  Object.assign(player,formation.lead,{direction:'up',moving:false});
  Object.assign(seoyoonNpc,formation.left,{height:companionHeight,direction:'up',moving:false});
  Object.assign(seonHouseNpc,formation.right,{height:companionHeight,direction:'up',moving:false});
@@ -5212,7 +5285,8 @@ function stageCucchiaioReturn(){
 function drawReturnCompanions(){
  if(cucchiaioReturn?.phase==='opening')return;
  npcBeforeScale(seoyoonNpc);
- setAsset(seonHouseNpc.actor,seonHouseNpc.idleAssets[seonHouseNpc.direction]||seonHouseNpc.idleAssets.down);
+ const seonAsset=(seonHouseNpc.moving?cucchiaioReturnAssets.seonWalk:seonHouseNpc.idleAssets)[seonHouseNpc.direction];
+ setAsset(seonHouseNpc.actor,seonAsset||seonHouseNpc.idleAssets.down);
  place(seonHouseNpc.actor,seonHouseNpc.x,seonHouseNpc.y);
 }
 const playerBeforeReturn=drawPlayer;
@@ -5223,7 +5297,7 @@ drawPlayer=function(){
  }
  return playerBeforeReturn();
 };
-const RETURN_PARTY_BACK=22;
+const RETURN_PARTY_BACK=64;
 function returnPartyFormation(x,y){
  return {lead:{x,y},left:{x:x-33,y:y+RETURN_PARTY_BACK},right:{x:x+33,y:y+RETURN_PARTY_BACK}};
 }
@@ -5252,7 +5326,7 @@ function panCucchiaioReturn(state,to,duration){
  });
 }
 async function returnWalk(state,n,path,speed,redraw,face=true){
- if(n===player)state.movingPlayer=true;else if(n===seoyoonNpc)n.moving=true;
+ if(n===player)state.movingPlayer=true;else n.moving=true;
  try{
   for(const [x,y] of path){
    const from={x:n.x,y:n.y},dx=x-from.x,dy=y-from.y;
@@ -5264,7 +5338,7 @@ async function returnWalk(state,n,path,speed,redraw,face=true){
   return true;
  }finally{
   if(n===player){state.movingPlayer=false;player.moving=false;}
-  if(n===seoyoonNpc)n.moving=false;
+  n.moving=false;
   if(returnSceneCurrent(state))redraw();
  }
 }
@@ -5350,33 +5424,31 @@ async function fleeCucchiaio(state){
  ]);
  if(returnSceneCurrent(state))await panCucchiaioReturn(state,{x:515,y:467},1050);
 }
-async function approachMichaelAtCucchiaio(state){
- const {lead,left,right}=returnPartyFormation(722,539);
- await Promise.all([
-  panCucchiaioReturn(state,{x:687,y:430},630),
-  returnWalk(state,player,[[player.x,lead.y],returnPoint(lead)],280,drawPlayer),
-  returnWalk(state,seoyoonNpc,[[seoyoonNpc.x,left.y],returnPoint(left)],280,drawReturnCompanions),
-  returnWalk(state,seonHouseNpc,[[seonHouseNpc.x,right.y],returnPoint(right)],280,drawReturnCompanions)
- ]);
+async function revealMichaelInDiningRoom(state){
+ const fade=$('fade');
+ state.fading=true;
+ fade.style.transition='opacity 750ms';
+ fade.classList.add('black');
+ await wait(750);
+ if(!returnSceneCurrent(state))return;
+ Object.assign(player,{x:486,y:550,direction:'right',moving:false});
+ Object.assign(seoyoonNpc,{x:449,y:601,direction:'right',moving:false});
+ Object.assign(seonHouseNpc,{x:507,y:633,direction:'up',moving:false});
+ state.michael=returnActor(571,561,player.actor.height,cucchiaioReturnAssets.michaelIdle.left);
+ state.michael.direction='left';
+ state.focus={x:510,y:568};
+ drawPlayer();drawReturnCompanions();drawReturnMichael(state.michael);updateCamera();
+ await wait(2000);
+ if(!returnSceneCurrent(state))return;
+ fade.classList.remove('black');
+ await wait(750);
+ if(!returnSceneCurrent(state))return;
+ fade.style.transition='';state.fading=false;
  paintReturnLine(state,'michael');
 }
-async function freeMichaelAtCucchiaio(state){
- await wait(380);
- if(!returnSceneCurrent(state))return;
- state.michael=returnActor(785,380,player.actor.height,cucchiaioReturnAssets.michael.down);
- state.michael.direction='down';
- drawReturnMichael(state.michael);
-}
 function drawReturnMichael(n){
- const direction=n.direction||'down';
- const asset=cucchiaioReturnAssets.michael[direction]||cucchiaioReturnAssets.michael.down;
- const reference=(workUniformEnabled?workPlayerAssets.idle[direction]:null)||playerAssets.idle[direction]||player.actor.active;
- if(asset.b&&reference?.b){
-  // Match the apparent width to Riccardo's equivalent pose while keeping the height fixed.
-  const factor=clamp((reference.b.w/reference.b.h)/(asset.b.w/asset.b.h),1,1.32);
-  if(n.actor.horizontalScale!==factor){n.actor.horizontalScale=factor;n.actor.active=null;}
- }
- drawReturnActor(n,asset);
+ const views=n.moving?cucchiaioReturnAssets.michaelWalk:cucchiaioReturnAssets.michaelIdle;
+ drawReturnActor(n,views[n.direction]||views.down);
 }
 async function inspectCucchiaioPaperwork(state){
  if(!await panCucchiaioReturn(state,{x:512,y:416},900))return;
@@ -5384,23 +5456,44 @@ async function inspectCucchiaioPaperwork(state){
   returnWalk(state,player,[[510,520]],245,drawPlayer),
   returnWalk(state,seoyoonNpc,[[585,515]],220,drawReturnCompanions),
   returnWalk(state,seonHouseNpc,[[650,532]],225,drawReturnCompanions),
-  returnWalk(state,state.michael,[[651,380]],190,()=>drawReturnMichael(state.michael))
+  returnWalk(state,state.michael,[[651,561],[651,524]],190,()=>drawReturnMichael(state.michael))
  ]);
  paintReturnLine(state,'documents');
 }
-function clearCucchiaioReturn(keepMichael=false){
+async function recruitMichaelAtCucchiaio(state){
+ await returnWalk(state,state.michael,[[state.michael.x,player.y],[player.x,player.y]],150,()=>drawReturnMichael(state.michael));
+ if(!returnSceneCurrent(state))return;
+ const member=partyMembers.michael;
+ if(!member.joined){
+  Object.assign(member,{joined:true,level:4,exp:EXP_LEVELS[3],legendarySkills:[]});
+  equipState.owned.worn_kitchen_knife=1;
+  equipmentFor('michael').weapon='worn_kitchen_knife';
+  syncMemberProgression('michael',{refill:true});
+  assignMember(3,'michael');
+ }
+ nightState.cucchiaioReturnSeen=true;
+ $('partyNoticeText').textContent='Michael joined the party!';
+ partyNotice.hidden=false;
+ clearCucchiaioReturn();
+ localizeUI();$('partyNoticeOk').focus();refreshNightObjective();
+}
+function clearCucchiaioReturn(){
  if(!cucchiaioReturn)return;
  const state=cucchiaioReturn;cucchiaioReturn=null;
+ if(state.fading){const fade=$('fade');fade.classList.remove('black');fade.style.transition='';}
  state.blue.actor.node.remove();state.glasses.actor.node.remove();state.papers.remove();
- if(state.michael){
-  if(keepMichael)cucchiaioMichael=state.michael;
-  else state.michael.actor.node.remove();
- }
+ state.michael?.actor.node.remove();
  if(seoyoonNpc)seoyoonNpc.actor.node.hidden=true;
  if(seonHouseNpc)seonHouseNpc.actor.node.hidden=true;
  scene.classList.remove('cucchiaio-return');
  resetInput();updateCamera();updateInteractionUI();
 }
+const dismissBeforeMichael=$('partyNoticeOk').onclick;
+$('partyNoticeOk').onclick=function(){
+ if(locationId!=='restaurant'||!partyMembers.michael.joined||partyNotice.hidden)return dismissBeforeMichael();
+ partyNotice.hidden=true;$('partyNoticeText').textContent='Girl 1 joined the party!';
+ resetInput();updateInteractionUI();
+};
 const speechBeforeCucchiaioReturn=advanceSpeech;
 advanceSpeech=function(){
  if(!dialogue?.cucchiaioReturn||speechPageIndex+1<speechPages.length)return speechBeforeCucchiaioReturn();
@@ -5412,13 +5505,9 @@ advanceSpeech=function(){
   }:
   phase==='intruders'&&index===3?async()=>{await fleeCucchiaio(state);await wait(320);paintReturnLine(state,phase,next);}:
   phase==='intruders'&&next===RETURN_INTRUDERS.length?()=>paintReturnLine(state,'muffled'):
-  phase==='muffled'&&next===RETURN_MUFFLED.length?()=>approachMichaelAtCucchiaio(state):
-  phase==='michael'&&index===1?async()=>{await freeMichaelAtCucchiaio(state);paintReturnLine(state,phase,next);}:
+  phase==='muffled'&&next===RETURN_MUFFLED.length?()=>revealMichaelInDiningRoom(state):
   phase==='michael'&&next===RETURN_MICHAEL.length?()=>inspectCucchiaioPaperwork(state):
-  phase==='documents'&&next===RETURN_DOCUMENTS.length?async()=>{
-   await wait(420);if(!returnSceneCurrent(state))return;
-   nightState.cucchiaioReturnSeen=true;clearCucchiaioReturn(true);refreshNightObjective();
-  }:null;
+  phase==='documents'&&next===RETURN_DOCUMENTS.length?()=>recruitMichaelAtCucchiaio(state):null;
  if(!action){paintReturnLine(state,phase,next);return;}
  closeDialogue(false);
  void guardedCucchiaioReturn(state,action);
@@ -5426,7 +5515,6 @@ advanceSpeech=function(){
 const locationBeforeCucchiaioReturn=showLocation;
 showLocation=function(id){
  if(cucchiaioReturn)clearCucchiaioReturn();
- if(cucchiaioMichael){cucchiaioMichael.actor.node.remove();cucchiaioMichael=null;}
  locationBeforeCucchiaioReturn(id);
 };
 const objectiveBeforeCucchiaioReturn=refreshNightObjective;
@@ -5439,10 +5527,25 @@ refreshNightObjective=function(){
 const resetBeforeCucchiaioReturn=beginIntro;
 beginIntro=function(){
  if(cucchiaioReturn){closeDialogue(false);clearCucchiaioReturn();}
- if(cucchiaioMichael){cucchiaioMichael.actor.node.remove();cucchiaioMichael=null;}
  return resetBeforeCucchiaioReturn();
 };
 
+
+[
+ ['Michael joined the party!','마이클이 파티에 합류했습니다!'],['STOP','정지'],
+ ['Worn Kitchen Knife','낡은 주방칼'],['Michael’s starter knife.','마이클의 기본 장비입니다.'],
+ ...TECHNIQUES.michael.map((skill,index)=>[skill.name,[
+  '버터 강타','빠른 베기','이중 베기','무장 해제','칼날 돌진','정밀 타격','버터 눈사태','칼날 폭풍','처형','마지막 서비스'
+ ][index]]),
+ ...TECHNIQUES.michael.map((skill,index)=>[skill.description,[
+  '적 하나에게 약한 피해를 주고 25% 확률로 다음 턴을 건너뛰게 합니다.',
+  '적 하나를 빠르게 벱니다.','적 하나를 두 번 공격합니다.',
+  '적 하나를 공격하고 3턴 동안 공격력을 20% 낮춥니다.',
+  '적 하나를 빠르게 네 번 공격합니다.','적 하나를 공격하며 55% 확률로 피해가 50% 증가합니다.',
+  '모든 적을 공격하고 적마다 45% 확률로 다음 턴을 건너뛰게 합니다.',
+  '모든 적을 세 번 공격합니다.','HP가 30% 이하인 적에게 더 큰 피해를 줍니다.','적 하나를 여섯 번 공격합니다.'
+ ][index]])
+].forEach(pair=>bilingual(...pair));
 
 pendingNightSave=readRpgSave();
 
