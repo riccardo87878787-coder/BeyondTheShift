@@ -194,9 +194,9 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 <style>
 /* PRIMO COMBATTIMENTO · area di battaglia 2/3, comandi 1/3 */
 #battleScreen{position:absolute;inset:0;z-index:35;background:#03091e;color:#fff3d8;font-family:Georgia,serif;container-type:size;isolation:isolate}
-#battleBackground{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:0;transition:opacity .75s;image-rendering:pixelated;pointer-events:none}
+#battleBackground{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:0;transition:opacity .34s;image-rendering:pixelated;pointer-events:none}
 #battleScreen.background-in #battleBackground{opacity:1}
-#battleStage{position:absolute;inset:0 0 auto;height:66.666667%;opacity:0;transition:opacity .55s}
+#battleStage{position:absolute;inset:0 0 auto;height:66.666667%;opacity:0;transition:opacity .25s}
 #battleScreen.fighters-in #battleStage{opacity:1}
 #battleStage :is(.protective-blend-icon,.stop-status-icon){position:absolute;z-index:2;left:65%;top:-18%;width:clamp(12px,3.7cqw,22px);height:auto;transform:translateX(-50%);opacity:0;pointer-events:none;image-rendering:pixelated;transition:opacity 220ms ease}
 #battleStage :is(.protective-blend-icon,.stop-status-icon).active{opacity:1}
@@ -1027,11 +1027,28 @@ function showLocation(id){
 }
 const originalDepth=rebuildDepth;rebuildDepth=function(){if(locationId==='city')originalDepth();else{depthNodes.forEach(n=>n.remove());depthNodes=[];for(const z of world.depth)makeDepth(z.polygon,z.baseY);}};
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function mapFadeDuration(){return matchMedia('(prefers-reduced-motion: reduce)').matches?85:175;}
 async function changeLocation(id){
- if(locked())return;resetInput();transitioning=true;const epoch=sceneEpoch;$('fade').classList.add('black');
- try{await Promise.all([wait(780),id==='office'?loadOfficeMap():Promise.resolve(),id==='office'?loadOfficeNpcs():Promise.resolve()]);if(epoch!==sceneEpoch)return;
- showLocation(id);const start=id==='office'?OFFICE.start:{x:755,y:1490};Object.assign(player,start,{direction:id==='office'?'up':'down'});zoom=id==='office'?OFFICE_VIEW.zoom:CONFIG.zoom;drawPlayer();updateCamera();await wait(100);
- }catch(error){$('status').textContent=error.message;}finally{if(epoch===sceneEpoch){$('fade').classList.remove('black');await wait(780);transitioning=false;}}
+ if(locked())return;
+ resetInput();transitioning=true;
+ const epoch=sceneEpoch,fade=$('fade'),previous=fade.style.transition,fadeMs=mapFadeDuration();
+ fade.style.transition='opacity '+fadeMs+'ms ease-in-out';
+ fade.classList.add('black');
+ try{
+  await Promise.all([wait(fadeMs+12),id==='office'?loadOfficeMap():null,id==='office'?loadOfficeNpcs():null]);
+  if(epoch!==sceneEpoch)return;
+  showLocation(id);
+  const start=id==='office'?OFFICE.start:{x:755,y:1490};
+  Object.assign(player,start,{direction:id==='office'?'up':'down'});
+  zoom=id==='office'?OFFICE_VIEW.zoom:CONFIG.zoom;
+  drawPlayer();updateCamera();await new Promise(requestAnimationFrame);
+ }catch(error){$('status').textContent=error.message;}
+ finally{
+  if(epoch===sceneEpoch){
+   fade.classList.remove('black');await wait(fadeMs+12);
+   if(epoch===sceneEpoch){fade.style.transition=previous;transitioning=false;}
+  }
+ }
 }
 const originalTargets=allTargets;allTargets=function(){if(locationId==='city')return originalTargets();return npcs.map(owner=>({key:owner.id,type:'npc',owner,dog:false}));};
 const originalPoint=targetPoint;targetPoint=function(t){if(t.type==='door')return locationId==='city'?{x:755,y:1488}:{x:510,y:1315};return originalPoint(t);};
@@ -1411,7 +1428,31 @@ const PORTALS=[
 ];
 function nearbyPortal(){return PORTALS.find(p=>p.from===locationId&&Math.hypot(player.x-p.x,player.y-p.y)<p.r);}
 async function useCucchiaioPortal(p){
- const returning=p.from==='hongdeon'&&p.to==='restaurant'&&partyMembers.seon_jong.joined&&!nightState.cucchiaioReturnSeen;if(locked()||intro||dialogue||editor.open||p.from!==locationId)return;resetInput();transitioning=true;const epoch=sceneEpoch;$('fade').classList.add('black');try{await Promise.all([wait(780),isInterior(p.to)?loadInteriorImage(p.to):loadHongdeonMap(),loadDoorSprites(),returning?loadCucchiaioReturnAssets():null]);if(epoch!==sceneEpoch)return;saveWorld();showLocation(p.to);Object.assign(player,p.spawn,{direction:p.direction,moving:false});nearestFree(player);zoom=CONFIG.zoom;drawPlayer();if(returning)stageCucchiaioReturn();updateCamera();await wait(100);}catch(e){clearCucchiaioReturn();$('status').textContent=e.message;notice(e.message);}finally{if(epoch===sceneEpoch){$('fade').classList.remove('black');await wait(780);transitioning=false;if(returning&&cucchiaioReturn)void startCucchiaioReturn();}}}
+ if(locked()||intro||dialogue||editor.open||p.from!==locationId)return;
+ const returning=p.from==='hongdeon'&&p.to==='restaurant'&&partyMembers.seon_jong.joined&&!nightState.cucchiaioReturnSeen;
+ resetInput();transitioning=true;
+ const epoch=sceneEpoch,fade=$('fade'),previous=fade.style.transition,fadeMs=mapFadeDuration();
+ fade.style.transition='opacity '+fadeMs+'ms ease-in-out';
+ fade.classList.add('black');
+ try{
+  await Promise.all([wait(fadeMs+12),isInterior(p.to)?loadInteriorImage(p.to):loadHongdeonMap(),loadDoorSprites(),returning?loadCucchiaioReturnAssets():null]);
+  if(epoch!==sceneEpoch)return;
+  saveWorld();showLocation(p.to);
+  Object.assign(player,p.spawn,{direction:p.direction,moving:false});
+  nearestFree(player);zoom=CONFIG.zoom;drawPlayer();
+  if(returning)stageCucchiaioReturn();
+  updateCamera();await new Promise(requestAnimationFrame);
+ }catch(e){clearCucchiaioReturn();$('status').textContent=e.message;notice(e.message);}
+ finally{
+  if(epoch===sceneEpoch){
+   fade.classList.remove('black');await wait(fadeMs+12);
+   if(epoch===sceneEpoch){
+    fade.style.transition=previous;transitioning=false;
+    if(returning&&cucchiaioReturn)void startCucchiaioReturn();
+   }
+  }
+ }
+}
 const portalButton=document.createElement('button'),portalIcon=document.createElement('img');portalButton.className='marker object';portalButton.hidden=true;portalIcon.src=UI_ASSETS.exclamation;portalIcon.alt='!';portalButton.appendChild(portalIcon);$('interactions').appendChild(portalButton);portalButton.onclick=e=>{e.stopPropagation();const p=nearbyPortal();if(p)useCucchiaioPortal(p);};
 const uiBeforeCucchiaio=updateInteractionUI;updateInteractionUI=function(){uiBeforeCucchiaio();if(isInterior(locationId))doorButton.hidden=true;const p=nearbyPortal();const hidden=!p||!ready||intro||!!dialogue||editor.open||locked();if(portalButton.hidden!==hidden)portalButton.hidden=hidden;if(!portalButton.hidden){const pos=screenPosition({x:p.x,y:p.y-65});portalButton.style.left=clamp(pos.x,24,viewWidth-24)+'px';portalButton.style.top=clamp(pos.y,52,viewHeight-25)+'px';if(portalButton.getAttribute('aria-label')!==p.label)portalButton.setAttribute('aria-label',p.label);}};
 const travelBeforeCucchiaio=updateTravel;updateTravel=function(dt){travelBeforeCucchiaio(dt);if(isInterior(locationId))testHongButton.hidden=true;updateRoomDoors(dt);};
@@ -1603,15 +1644,11 @@ const FIRST_BATTLE={
  // Coordinate nell'area superiore: gli altri tre posti restano liberi.
  partyPositions:[{x:72,y:68},{x:83,y:80},{x:72,y:91},{x:83,y:98}],
  enemyPosition:{x:24,y:88},heroHeight:14.5,enemyHeight:23.2,
- timing:{vortex:1100,background:800,entrance:600,attack:720,impact:350,enemyAttack:1440,enemyImpact:680,hurt:510,vanish:300,victory:3300}
+ timing:{vortex:650,background:360,entrance:270,attack:720,impact:350,enemyAttack:1440,enemyImpact:680,hurt:510,vanish:300,victory:3300}
 };
-function partyBattlePositions(count,stage=$('battleStage')){
- if(count!==4||!stage.clientWidth||!stage.clientHeight)return FIRST_BATTLE.partyPositions;
- const w=stage.clientWidth,h=stage.clientHeight;
- const gap=Math.min(h*.18,w*.30);
- const dx=gap/w*100/2,dy=gap/h*100;
- // Equal screen-space gaps in both directions, with room for the bottom menu.
- return [{x:78-dx,y:95-dy},{x:78+dx,y:95-dy},{x:78-dx,y:95},{x:78+dx,y:95}];
+function partyBattlePositions(count){
+ const positions=FIRST_BATTLE.partyPositions;
+ return count===4?positions.map(({x},i)=>({x,y:62+i*12})):positions;
 }
 let firstBattleActive=false,firstBattleEpoch=0,firstBattlePhase='closed',firstBattleEnemy=null,firstBattleAssets=null,firstBattleLoad=null,firstBattleFighters=[],firstBattleStart=null;
 const battleScreen=document.createElement('section');battleScreen.id='battleScreen';battleScreen.hidden=true;battleScreen.setAttribute('aria-label','Turn-based battle');
@@ -1639,7 +1676,7 @@ async function battleAsset(src,prepareBlob=null){
 }
 async function loadFirstBattle(){
  if(firstBattleAssets)return firstBattleAssets;if(firstBattleLoad)return firstBattleLoad;
- firstBattleLoad=(async()=>{const assets={riccardo:{},enemy:{}};await Promise.all([battleAsset(FIRST_BATTLE.background).then(a=>assets.background=a),...['riccardo','enemy'].flatMap(kind=>Object.entries(FIRST_BATTLE[kind]).map(([pose,src])=>battleAsset(src,pose==='victory'?loopVictoryGif:null).then(a=>assets[kind][pose]=a)))]);firstBattleAssets=assets;return assets;})();
+ firstBattleLoad=(async()=>{const assets={riccardo:{},enemy:{}};await Promise.all([loadDungeonImage(FIRST_BATTLE.background).then(image=>assets.background=image),...['riccardo','enemy'].flatMap(kind=>Object.entries(FIRST_BATTLE[kind]).map(([pose,src])=>battleAsset(src,pose==='victory'?loopVictoryGif:null).then(a=>assets[kind][pose]=a)))]);firstBattleAssets=assets;return assets;})();
  try{return await firstBattleLoad;}catch(e){firstBattleLoad=null;throw e;}
 }
 function battleMember(){return partyMembers.riccardo;}
@@ -1811,12 +1848,17 @@ async function startFirstBattle(){
  firstBattleActive=true;const epoch=++firstBattleEpoch;firstBattlePhase='loading';firstBattleStart={hp:battleMember().hp,ep:battleMember().ep};resetInput();clearMarkers();reactionTime=0;
  $('speech').hidden=true;$('reaction').hidden=true;doorButton.hidden=true;portalButton.hidden=true;testHongButton.hidden=true;
  game.classList.add('battle-active');
- // Precarica prima del vortice: niente schermata vuota se manca un file.
- try{await loadFirstBattle();}catch(e){if(!battleAlive(epoch))return;battleScreen.hidden=false;firstBattlePhase='error';paintFirstBattle();showBattleResult('LOAD ERROR',e.message,true);battleHint('Check the asset path, then retry.');return;}
+ firstBattlePhase='entering';game.classList.add('battle-entering');
+ const [transition,loaded]=await Promise.allSettled([playBattleVortex(epoch),loadFirstBattle()]);
  if(!battleAlive(epoch))return;
- firstBattleEnemy={...FIRST_BATTLE.enemyStats};firstBattlePhase='entering';game.classList.add('battle-entering');
- if(!await playBattleVortex(epoch))return;
- battleScreen.hidden=false;battleScreen.className='';$('battleResult').hidden=true;$('battleBackground').src=firstBattleAssets.background.url;await buildBattleFighters();if(!battleAlive(epoch))return;paintFirstBattle();
+ if(loaded.status==='rejected'||transition.status==='rejected'){
+  const error=loaded.status==='rejected'?loaded.reason:transition.reason;
+  game.classList.remove('battle-entering');battleVortex.classList.remove('closing');
+  battleScreen.hidden=false;firstBattlePhase='error';paintFirstBattle();showBattleResult('LOAD ERROR',error.message,true);battleHint('Check the asset path, then retry.');return;
+ }
+ if(!transition.value)return;
+ firstBattleEnemy={...FIRST_BATTLE.enemyStats};
+ battleScreen.hidden=false;battleScreen.className='';$('battleResult').hidden=true;$('battleBackground').src=firstBattleAssets.background.src;await buildBattleFighters();if(!battleAlive(epoch))return;paintFirstBattle();
  void battleScreen.offsetWidth;battleScreen.classList.add('background-in');
  if(!await battlePause(FIRST_BATTLE.timing.background,epoch))return;
  battleScreen.classList.add('fighters-in');
@@ -1836,15 +1878,6 @@ const beginBeforeFirstBattle=beginIntro;beginIntro=function(){if(firstBattleActi
 new ResizeObserver(()=>{
  if(!firstBattleActive||!firstBattleAssets||battleScreen.hidden)return;
  const stage=$('battleStage'),h=stage.clientHeight;
- const heroes=firstBattleFighters.filter(f=>f.kind!=='enemy');
- if(partyBattle&&heroes.length===4){
-  const homes=partyBattlePositions(heroes.length,stage);
-  heroes.forEach((f,i)=>{
-   const atHome=f.x===f.home.x&&f.y===f.home.y;
-   f.home=homes[i];
-   if(atHome)positionBattleFighter(f);
-  });
- }
  for(const f of firstBattleFighters){
   f.height=h*(f.kind==='enemy'?FIRST_BATTLE.enemyHeight:FIRST_BATTLE.heroHeight)/100;
   drawBattlePose(f,f.pose);
@@ -2552,7 +2585,7 @@ TECHNIQUES.seoyoon.find(t=>t.id==='frozen_service').level=20;
 TECHNIQUES.seoyoon.find(t=>t.id==='blazing_plates').level=null;
 bilingual('Scorching Tray','작열의 쟁반');bilingual('Shocking Tray','전격 쟁반');bilingual(renamedTray.description,'뜨거운 부메랑 쟁반으로 대상 하나를 공격합니다.');bilingual('Send an electric shock through one target.','대상 하나에게 전기 충격을 가합니다.');
 [['Party defeated.','파티가 쓰러졌습니다.'],['The strangers are defeated.','낯선 자들을 물리쳤습니다.'],['400 EXP shared between surviving party members.','생존한 파티원들이 경험치 400을 나눠 받습니다.'],['Hungry stranger','굶주린 낯선 사람'],['Select a target.','대상을 선택하세요.'],['Not enough EP.','EP가 부족합니다.']].forEach(p=>bilingual(...p));
-async function loadPartyBattle(){if(partyBattleAssets)return partyBattleAssets;if(partyBattleLoading)return partyBattleLoading;partyBattleLoading=(async()=>{await loadFirstBattle();const seo={},fx={};await Promise.all([...Object.entries(SEO_BATTLE).map(async([k,p])=>seo[k]=await battleAsset(p,k==='victory'?loopVictoryGif:null)),...Object.entries(SKILL_FX).map(async([k,p])=>fx[k]=await battleAsset(p))]);firstBattleAssets.seoyoon=seo;return partyBattleAssets={seo,fx};})();try{return await partyBattleLoading;}catch(e){partyBattleLoading=null;throw e;}}
+async function loadPartyBattle(){if(partyBattleAssets)return partyBattleAssets;if(partyBattleLoading)return partyBattleLoading;partyBattleLoading=(async()=>{const seo={},fx={};await Promise.all([loadFirstBattle(),...Object.entries(SEO_BATTLE).map(async([k,p])=>seo[k]=await battleAsset(p,k==='victory'?loopVictoryGif:null)),...Object.entries(SKILL_FX).map(async([k,p])=>fx[k]=await battleAsset(p))]);firstBattleAssets.seoyoon=seo;return partyBattleAssets={seo,fx};})();try{return await partyBattleLoading;}catch(e){partyBattleLoading=null;throw e;}}
 function partyHeroes(){return firstBattleFighters.filter(f=>f.kind!=='enemy');}
 function partyEnemies(){return firstBattleFighters.filter(f=>f.kind==='enemy');}
 function currentPartyFighter(){return firstBattleFighters.find(f=>f.id===partyBattle?.current);}
@@ -2578,7 +2611,7 @@ async function buildPartyFighters(){const stage=$('battleStage');stage.replaceCh
   if(manager)fighter.node.classList.add('mart-manager-battle');
   return fighter;
  }):[makePartyFighter('enemy','hungry-1',positions[0],h*FIRST_BATTLE.enemyHeight/100,stats()),makePartyFighter('enemy','hungry-2',positions[1],h*FIRST_BATTLE.enemyHeight/100,stats())];
- const homes=partyBattlePositions(partyBattle.members.length,stage);
+ const homes=partyBattlePositions(partyBattle.members.length);
  firstBattleFighters=[...enemies,...partyBattle.members.map((id,i)=>makePartyFighter(id,id,homes[i],h*FIRST_BATTLE.heroHeight/100))];firstBattleEnemy=firstBattleFighters[0].stats;await Promise.all(firstBattleFighters.map(f=>drawBattlePose(f,'idle',true)));}
 const originalCommandBattle=commandFirstBattle;commandFirstBattle=function(){if(!partyBattle)return originalCommandBattle();selectedBattleSkill=null;closeBattleSkills();const f=currentPartyFighter();if(f)f.guard=false;firstBattlePhase='command';battleHint(tr('Choose an action.'));paintFirstBattle();};
 function effectImage(asset,style){const img=document.createElement('img');img.className='party-skill-effect';img.alt='';img.src=URL.createObjectURL(asset.blob);Object.assign(img.style,style);$('battleStage').append(img);let done=false;return{img,remove(){if(done)return;done=true;URL.revokeObjectURL(img.src);img.remove();}};}
@@ -2630,21 +2663,19 @@ const originalVictoryBattle=victoryFirstBattle;victoryFirstBattle=async function
 async function startRescueBattle(options=null){if(firstBattleActive)return;const members=partySlots.filter(id=>id&&Object.hasOwn(partyMembers,id)&&partyMembers[id].joined!==false).slice(0,4);partyBattle={members,kind:options?.kind||'rescue',enemyIds:options?.enemyIds||null,rewardExp:options?.rewardExp??400,current:null,queue:[],rewarded:false,start:Object.fromEntries(members.map(id=>[id,{hp:partyMembers[id].hp,ep:partyMembers[id].ep}]))};
  firstBattleActive=true;const epoch=++firstBattleEpoch;firstBattlePhase='loading';resetInput();closeDialogue(false);clearMarkers();game.classList.add('battle-active');game.classList.remove('battle-entering');$('battleResult').hidden=true;
  try{
-  const kind=partyBattle.kind,rescue=kind==='rescue',assets=loadPartyBattle(kind);
-  if(!rescue)await assets;
-  if(!battleAlive(epoch)){void assets.catch(()=>{});return;}
+  const assets=loadPartyBattle(partyBattle.kind);
   firstBattlePhase='entering';game.classList.add('battle-entering');
   const [transition,loaded]=await Promise.allSettled([playBattleVortex(epoch),assets]);
   if(!battleAlive(epoch))return;
   if(loaded.status==='rejected')throw loaded.reason;
   if(transition.status==='rejected')throw transition.reason;
   if(!transition.value)return;
-  battleScreen.hidden=false;battleScreen.className='party-battle';$('battleBackground').src=firstBattleAssets.background.url;
+  battleScreen.hidden=false;battleScreen.className='party-battle';$('battleBackground').src=firstBattleAssets.background.src;
   await buildPartyFighters();if(!battleAlive(epoch))return;
   paintFirstBattle();void battleScreen.offsetWidth;battleScreen.classList.add('background-in');
-  if(!await battlePause(rescue?350:FIRST_BATTLE.timing.background,epoch))return;
+  if(!await battlePause(FIRST_BATTLE.timing.background,epoch))return;
   battleScreen.classList.add('fighters-in');
-  if(!await battlePause(rescue?440:FIRST_BATTLE.timing.entrance,epoch))return;
+  if(!await battlePause(FIRST_BATTLE.timing.entrance,epoch))return;
   battleScreen.classList.add('menu-in');game.classList.remove('battle-entering');battleVortex.classList.remove('closing');
   await nextPartyTurn(epoch);
  }catch(e){console.error(e);if(!battleAlive(epoch))return;game.classList.remove('battle-entering');battleVortex.classList.remove('closing');firstBattlePhase='error';battleScreen.hidden=false;showBattleResult(tr('LOAD ERROR'),e.message,true);}
@@ -2805,19 +2836,34 @@ const DUNGEON_COMBAT_FILES={
 };
 const PRICE_CHECK={id:'price_check',name:'Price Check',type:'fixed',fixedDamage:18,accuracyPenalty:20,duration:2};
 const HEAVY_DELIVERY={id:'heavy_delivery',name:'Heavy Delivery',type:'physical',power:1.5};
-let dungeonCombatPromise=null,dungeonCombatAssets=null;
+const dungeonCombatAssets={enemies:{},fx:{}};
+const dungeonCombatLoads=new Map();
+const DUNGEON_COMBAT_FX={cashier:{beam:'icons/raggio_rosso_price_check.gif'},
+ stockkeeper:{box:'icons/scatolone_in_volo.gif',break:'icons/scatolone_impatto.gif'}};
 
-async function loadDungeonCombat(){
- if(dungeonCombatAssets)return dungeonCombatAssets;if(dungeonCombatPromise)return dungeonCombatPromise;
- dungeonCombatPromise=(async()=>{const enemies={},fx={};await Promise.all([
- ...Object.entries(DUNGEON_COMBAT_FILES).map(async([id,files])=>{enemies[id]={};await Promise.all(Object.entries(files).map(async([pose,file])=>{const a=await battleAsset(file);Object.assign(a,ENEMY_ASSET_META[file]);enemies[id][pose]=a;}));}),
- ...Object.entries({beam:'icons/raggio_rosso_price_check.gif',box:'icons/scatolone_in_volo.gif',break:'icons/scatolone_impatto.gif'}).map(async([id,file])=>fx[id]=await battleAsset(file))]);return dungeonCombatAssets={enemies,fx};})();
- try{return await dungeonCombatPromise;}catch(e){dungeonCombatPromise=null;throw e;}
+function loadDungeonCombat(ids){
+ return Promise.all([...new Set(ids)].filter(id=>Object.hasOwn(DUNGEON_COMBAT_FILES,id)).map(id=>{
+  if(!dungeonCombatLoads.has(id)){
+   const load=async()=>{
+    const poses=Object.entries(DUNGEON_COMBAT_FILES[id]).map(async ([pose,file])=>{
+     const asset=await battleAsset(file);
+     Object.assign(asset,ENEMY_ASSET_META[file]);
+     return [pose,asset];
+    });
+    const effects=Object.entries(DUNGEON_COMBAT_FX[id]||{}).map(async ([effect,file])=>[effect,await battleAsset(file)]);
+    const [enemy,fx]=await Promise.all([Promise.all(poses),Promise.all(effects)]);
+    dungeonCombatAssets.enemies[id]=Object.fromEntries(enemy);
+    Object.assign(dungeonCombatAssets.fx,Object.fromEntries(fx));
+   };
+   dungeonCombatLoads.set(id,load().catch(error=>{dungeonCombatLoads.delete(id);throw error;}));
+  }
+  return dungeonCombatLoads.get(id);
+ }));
 }
 const partyLoadBeforeDungeon=loadPartyBattle;
 loadPartyBattle=async function(kind){
  if(kind!=='mart')return partyLoadBeforeDungeon(kind);
- const [assets]=await Promise.all([partyLoadBeforeDungeon(kind),loadDungeonCombat()]);
+ const [assets]=await Promise.all([partyLoadBeforeDungeon(kind),loadDungeonCombat(partyBattle?.enemyIds||[])]);
  return assets;
 };
 const poseBeforeDungeon=drawBattlePose;drawBattlePose=function(f,pose,restart=false){
@@ -3927,14 +3973,18 @@ function openWarehousePrompt(){if(locationId!=='mart-shop'||!martProgress().hear
 warehousePrompt.querySelector('[data-no]').onclick=closeWarehousePrompt;warehousePrompt.querySelector('[data-yes]').onclick=()=>{warehousePrompt.hidden=true;void changeWarehouseArea('mart-a',MART_FIRST_SPAWN,'down');};
 warehousePrompt.addEventListener('keydown',e=>{if(e.key==='Escape')closeWarehousePrompt();});
 const warehouseLockBefore=locked;locked=function(){return warehouseBusy||!warehousePrompt.hidden||warehouseLockBefore();};
-async function changeWarehouseArea(to,spawn,direction){if(warehouseBusy)return;warehouseBusy=true;resetInput();const epoch=sceneEpoch,fade=$('fade'),previous={transition:fade.style.transition,zIndex:fade.style.zIndex};const fadeMs=matchMedia('(prefers-reduced-motion: reduce)').matches?100:230;
+async function changeWarehouseArea(to,spawn,direction){if(warehouseBusy)return;warehouseBusy=true;resetInput();const epoch=sceneEpoch,fade=$('fade'),previous={transition:fade.style.transition,zIndex:fade.style.zIndex};const fadeMs=mapFadeDuration();
  fade.style.zIndex='45';fade.style.transition='opacity '+fadeMs+'ms ease-in-out';
- try{await Promise.all([to==='hongdeon'?loadHongdeonMap():to==='city'?Promise.resolve():loadWarehouseArea(to),workUniformEnabled?loadWorkUniform():Promise.resolve()]);if(epoch!==sceneEpoch)return;fade.classList.add('black');await wait(fadeMs+20);if(epoch!==sceneEpoch)return;saveWorld();
+ fade.classList.add('black');
+ try{
+  await Promise.all([wait(fadeMs+12),to==='hongdeon'?loadHongdeonMap():to==='city'?null:loadWarehouseArea(to),workUniformEnabled?loadWorkUniform():null]);
+  if(epoch!==sceneEpoch)return;
+  saveWorld();
   const progress=martProgress();
   if(locationId==='mart-dungeon'||isMartRoom(locationId))progress.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};
   progress.storyDungeon=to==='mart-dungeon'||isMartRoom(to);progress.visited=true;
   if(isMartRoom(to)&&!isMartRoom(locationId))dungeonState=restoreMartProgress(progress.dungeon);
-  showLocation(to);Object.assign(player,spawn,{direction,moving:false});nearestFree(player);drawPlayer();updateCamera();await new Promise(requestAnimationFrame);fade.classList.remove('black');await wait(fadeMs+20);
+  showLocation(to);Object.assign(player,spawn,{direction,moving:false});nearestFree(player);drawPlayer();updateCamera();await new Promise(requestAnimationFrame);fade.classList.remove('black');await wait(fadeMs+12);
  }catch(e){console.error(e);if(epoch===sceneEpoch)openMartNotice(tr('Unable to enter this area.'));fade.classList.remove('black');}finally{if(epoch===sceneEpoch){fade.style.transition=previous.transition;fade.style.zIndex=previous.zIndex;warehouseBusy=false;resetInput();updateInteractionUI();}}
 }
 const leaveBeforeWarehouseStory=leaveDungeonTest;leaveDungeonTest=async function(){if(storyDungeonMode())return changeWarehouseArea('mart-shop',MART_SHOP.returnFromStockroom,'down');return leaveBeforeWarehouseStory();};
@@ -4750,15 +4800,17 @@ function loadSeonBattle(){
     const {cleanse,...poses}=Object.fromEntries(entries);
     seonCleanseAsset=cleanse;
     for(const asset of Object.values(poses)){asset.foot=asset.width/2;asset.ground=asset.height*594/640;}
-    firstBattleAssets.seon_jong={...poses,item:poses.cast};
+    return {...poses,item:poses.cast};
    }).catch(error=>{seonBattleLoad=null;throw error;});
  }
  return seonBattleLoad;
 }
 const loadBeforeSeon=loadPartyBattle;
 loadPartyBattle=async function(kind){
- const result=await loadBeforeSeon(kind);
- if(partyBattle?.members.includes('seon_jong'))await loadSeonBattle();
+ const base=loadBeforeSeon(kind);
+ if(!partyBattle?.members.includes('seon_jong'))return base;
+ const [result,poses]=await Promise.all([base,loadSeonBattle()]);
+ firstBattleAssets.seon_jong=poses;
  return result;
 };
 
@@ -4778,8 +4830,8 @@ const BUTTER_FALL_SLOWDOWN=1.15;
 let michaelBattleLoad=null,butterEffects=null;
 const loadBeforeMichael=loadPartyBattle;
 loadPartyBattle=async function(kind){
- const result=await loadBeforeMichael(kind);
- if(!partyBattle?.members.includes('michael'))return result;
+ const base=loadBeforeMichael(kind);
+ if(!partyBattle?.members.includes('michael'))return base;
  if(!michaelBattleLoad){
   const load=async files=>Object.fromEntries(await Promise.all(Object.entries(files).map(async([pose,path])=>
    [pose,await battleAsset(path,pose==='victory'?loopVictoryGif:
@@ -4787,7 +4839,7 @@ loadPartyBattle=async function(kind){
   michaelBattleLoad=Promise.all([load(MICHAEL_BATTLE_FILES),load(BUTTER_EFFECT_FILES)])
    .catch(error=>{michaelBattleLoad=null;throw error;});
  }
- const [poses,effects]=await michaelBattleLoad;
+ const [result,[poses,effects]]=await Promise.all([base,michaelBattleLoad]);
  firstBattleAssets.michael=poses;butterEffects=effects;
  return result;
 };
@@ -5564,8 +5616,19 @@ async function inspectCucchiaioPaperwork(state){
  paintReturnLine(state,'documents');
 }
 async function recruitMichaelAtCucchiaio(state){
- await returnWalk(state,state.michael,[[state.michael.x,player.y],[player.x,player.y]],150,()=>drawReturnMichael(state.michael));
- if(!returnSceneCurrent(state))return;
+ const {x,y}=player,target=[x,y];
+ const redrawCompanions=()=>{
+  drawReturnCompanions();
+  for(const companion of [seoyoonNpc,seonHouseNpc]){
+   if(companion.x===x&&companion.y===y)companion.actor.node.hidden=true;
+  }
+ };
+ const gathered=await Promise.all([
+  returnWalk(state,seoyoonNpc,[[x+26,y-16],target],150,redrawCompanions),
+  returnWalk(state,seonHouseNpc,[[x+55,y+24],target],160,redrawCompanions),
+  returnWalk(state,state.michael,[[state.michael.x,y],target],150,()=>drawReturnMichael(state.michael))
+ ]);
+ if(!returnSceneCurrent(state)||gathered.includes(false))return;
  const member=partyMembers.michael;
  if(!member.joined){
   Object.assign(member,{joined:true,level:4,exp:EXP_LEVELS[3],legendarySkills:[]});
