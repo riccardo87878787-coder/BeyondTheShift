@@ -1605,6 +1605,14 @@ const FIRST_BATTLE={
  enemyPosition:{x:24,y:88},heroHeight:14.5,enemyHeight:23.2,
  timing:{vortex:1100,background:800,entrance:600,attack:720,impact:350,enemyAttack:1440,enemyImpact:680,hurt:510,vanish:300,victory:3300}
 };
+function partyBattlePositions(count,stage=$('battleStage')){
+ if(count!==4||!stage.clientWidth||!stage.clientHeight)return FIRST_BATTLE.partyPositions;
+ const w=stage.clientWidth,h=stage.clientHeight;
+ const gap=Math.min(h*.18,w*.30);
+ const dx=gap/w*100/2,dy=gap/h*100;
+ // Equal screen-space gaps in both directions, with room for the bottom menu.
+ return [{x:78-dx,y:95-dy},{x:78+dx,y:95-dy},{x:78-dx,y:95},{x:78+dx,y:95}];
+}
 let firstBattleActive=false,firstBattleEpoch=0,firstBattlePhase='closed',firstBattleEnemy=null,firstBattleAssets=null,firstBattleLoad=null,firstBattleFighters=[],firstBattleStart=null;
 const battleScreen=document.createElement('section');battleScreen.id='battleScreen';battleScreen.hidden=true;battleScreen.setAttribute('aria-label','Turn-based battle');
 battleScreen.innerHTML='<img id="battleBackground" alt=""><div id="battleStage"></div><div id="battleMenu"><div id="battleStatus"><strong id="battleName">RICCARDO</strong><div class="battle-stat"><span>HP</span><div class="battle-meter"><div id="battleHpFill" class="battle-meter-fill"></div><span id="battleHpValue" class="battle-meter-value"></span></div></div><div class="battle-stat"><span>EP</span><div class="battle-meter ep"><div id="battleEpFill" class="battle-meter-fill"></div><span id="battleEpValue" class="battle-meter-value"></span></div></div><p id="battleHint" role="status" aria-live="polite"></p></div><div id="battleCommands"><button data-battle-command="attack">ATK</button><button disabled>SKILLS</button><button disabled>ITEM</button><button disabled>DEFENSE</button><button disabled>RUN</button></div></div><div id="battleResult" hidden><strong id="battleResultTitle"></strong><p id="battleResultText"></p><button id="battleRetry">RETRY</button><button id="battleContinue">CONTINUE</button></div>';
@@ -1825,7 +1833,23 @@ advanceSpeech=function(){
  advanceBeforeFirstBattle();if(finish&&!dialogue&&equipState.stage==='done')void startDinnerMontage();
 };
 const beginBeforeFirstBattle=beginIntro;beginIntro=function(){if(firstBattleActive)closeFirstBattle();beginBeforeFirstBattle();};
-new ResizeObserver(()=>{if(!firstBattleActive||!firstBattleAssets||battleScreen.hidden)return;const h=$('battleStage').clientHeight;for(const f of firstBattleFighters){f.height=h*(f.kind==='enemy'?FIRST_BATTLE.enemyHeight:FIRST_BATTLE.heroHeight)/100;drawBattlePose(f,f.pose);}}).observe(battleScreen);
+new ResizeObserver(()=>{
+ if(!firstBattleActive||!firstBattleAssets||battleScreen.hidden)return;
+ const stage=$('battleStage'),h=stage.clientHeight;
+ const heroes=firstBattleFighters.filter(f=>f.kind!=='enemy');
+ if(partyBattle&&heroes.length===4){
+  const homes=partyBattlePositions(heroes.length,stage);
+  heroes.forEach((f,i)=>{
+   const atHome=f.x===f.home.x&&f.y===f.home.y;
+   f.home=homes[i];
+   if(atHome)positionBattleFighter(f);
+  });
+ }
+ for(const f of firstBattleFighters){
+  f.height=h*(f.kind==='enemy'?FIRST_BATTLE.enemyHeight:FIRST_BATTLE.heroHeight)/100;
+  drawBattlePose(f,f.pose);
+ }
+}).observe(battleScreen);
 window.TaraiBattle={start:startFirstBattle,getState:()=>({active:firstBattleActive,phase:firstBattlePhase,enemy:firstBattleEnemy?{...firstBattleEnemy}:null,riccardo:{hp:battleMember().hp,ep:battleMember().ep,...battleStats()},reservedPartyPositions:FIRST_BATTLE.partyPositions.map(p=>({...p}))})};
 
 /* STORIA · dal primo Equip all'incontro notturno */
@@ -2554,7 +2578,8 @@ async function buildPartyFighters(){const stage=$('battleStage');stage.replaceCh
   if(manager)fighter.node.classList.add('mart-manager-battle');
   return fighter;
  }):[makePartyFighter('enemy','hungry-1',positions[0],h*FIRST_BATTLE.enemyHeight/100,stats()),makePartyFighter('enemy','hungry-2',positions[1],h*FIRST_BATTLE.enemyHeight/100,stats())];
- firstBattleFighters=[...enemies,...partyBattle.members.map((id,i)=>makePartyFighter(id,id,FIRST_BATTLE.partyPositions[i],h*FIRST_BATTLE.heroHeight/100))];firstBattleEnemy=firstBattleFighters[0].stats;await Promise.all(firstBattleFighters.map(f=>drawBattlePose(f,'idle',true)));}
+ const homes=partyBattlePositions(partyBattle.members.length,stage);
+ firstBattleFighters=[...enemies,...partyBattle.members.map((id,i)=>makePartyFighter(id,id,homes[i],h*FIRST_BATTLE.heroHeight/100))];firstBattleEnemy=firstBattleFighters[0].stats;await Promise.all(firstBattleFighters.map(f=>drawBattlePose(f,'idle',true)));}
 const originalCommandBattle=commandFirstBattle;commandFirstBattle=function(){if(!partyBattle)return originalCommandBattle();selectedBattleSkill=null;closeBattleSkills();const f=currentPartyFighter();if(f)f.guard=false;firstBattlePhase='command';battleHint(tr('Choose an action.'));paintFirstBattle();};
 function effectImage(asset,style){const img=document.createElement('img');img.className='party-skill-effect';img.alt='';img.src=URL.createObjectURL(asset.blob);Object.assign(img.style,style);$('battleStage').append(img);let done=false;return{img,remove(){if(done)return;done=true;URL.revokeObjectURL(img.src);img.remove();}};}
 function bodyPoint(f){const stage=$('battleStage');return{x:f.x/100*stage.clientWidth,y:f.y/100*stage.clientHeight-f.height*.55};}
@@ -4749,6 +4774,7 @@ const BUTTER_EFFECT_FILES={
  fall:'icons/butter-smash-caduta-1.gif',
  splash:'icons/butter-smash-splash.gif'
 };
+const BUTTER_FALL_SLOWDOWN=1.15;
 let michaelBattleLoad=null,butterEffects=null;
 const loadBeforeMichael=loadPartyBattle;
 loadPartyBattle=async function(kind){
@@ -4756,7 +4782,8 @@ loadPartyBattle=async function(kind){
  if(!partyBattle?.members.includes('michael'))return result;
  if(!michaelBattleLoad){
   const load=async files=>Object.fromEntries(await Promise.all(Object.entries(files).map(async([pose,path])=>
-   [pose,await battleAsset(path,pose==='victory'?loopVictoryGif:null)])));
+   [pose,await battleAsset(path,pose==='victory'?loopVictoryGif:
+    pose==='fall'?blob=>retimeBattleGif(blob,BUTTER_FALL_SLOWDOWN,true):null)])));
   michaelBattleLoad=Promise.all([load(MICHAEL_BATTLE_FILES),load(BUTTER_EFFECT_FILES)])
    .catch(error=>{michaelBattleLoad=null;throw error;});
  }
@@ -4811,12 +4838,13 @@ async function throwMichaelButter(user,targets,epoch){
   if(!await partyTween(300,epoch,t=>{rise.img.style.top=(start*(1-t))+'px';}))return false;
   if(!await battlePause(80,epoch))return false;
  }finally{rise.remove();}
+ const fallScale=scale*2;
  const drops=targets.map(target=>{
   const to=bodyPoint(target);
-  return {effect:playButterEffect(butterEffects.fall,to.x,0,scale),end:to.y-551*scale};
+  return {effect:playButterEffect(butterEffects.fall,to.x,0,fallScale),end:to.y-551*fallScale};
  });
  try{
-  return await partyTween(480,epoch,t=>{
+  return await partyTween(Math.round(480*BUTTER_FALL_SLOWDOWN),epoch,t=>{
    for(const {effect,end} of drops)effect.img.style.top=(Math.max(0,t*t)*end)+'px';
   });
  }finally{for(const {effect} of drops)effect.remove();}
@@ -5359,10 +5387,7 @@ function stageCucchiaioReturn(){
 }
 function drawReturnCompanions(){
  if(cucchiaioReturn?.phase==='opening')return;
- if(partyDialogueFolded(seoyoonNpc))seoyoonNpc.actor.node.hidden=true;
- else {if(seoyoonNpc.moving)foldedDialogueActors.delete(seoyoonNpc);npcBeforeScale(seoyoonNpc);}
- if(partyDialogueFolded(seonHouseNpc)){seonHouseNpc.actor.node.hidden=true;return;}
- if(seonHouseNpc.moving)foldedDialogueActors.delete(seonHouseNpc);
+ npcBeforeScale(seoyoonNpc);
  const seonAsset=(seonHouseNpc.moving?cucchiaioReturnAssets.seonWalk:seonHouseNpc.idleAssets)[seonHouseNpc.direction];
  setAsset(seonHouseNpc.actor,seonAsset||seonHouseNpc.idleAssets.down);
  place(seonHouseNpc.actor,seonHouseNpc.x,seonHouseNpc.y);
@@ -5625,38 +5650,19 @@ beginIntro=function(){
  ][index]])
 ].forEach(pair=>bilingual(...pair));
 
-/* In dialogue, a recruited companion walks out of the party and back in. */
+/* Companions who emerge for a conversation stay out until it closes. */
 const PARTY_DIALOGUE_SPEAKERS={'Girl 1':'seoyoon','Girl 2':'seon_jong','Guy 2':'michael'};
-const foldedDialogueActors=new WeakMap();
-let partyDialogueMotion=null;
+let partyDialogueScene=null;
 let michaelFieldLoad=null;
 
-function partyDialogueFolded(n){
- const folded=foldedDialogueActors.get(n);
- if(!folded||folded.epoch!==sceneEpoch||folded.area!==locationId||n.moving)return false;
- return true;
-}
-const drawBeforePartyDialogue=drawNpc;
-drawNpc=function(n){
- if(n===partyDialogueMotion?.actor){
-  if(partyDialogueMotion.actorVisible)drawPartyDialogueActor(n);
-  return;
- }
- if(partyDialogueFolded(n)){n.actor.node.hidden=true;return;}
- if(n.moving)foldedDialogueActors.delete(n);
- return drawBeforePartyDialogue(n);
-};
-function drawPartyDialogueActor(n){
- const asset=(n.moving?n.walkAssets?.[n.direction]:null)||n.idleAssets?.[n.direction]||n.idleAssets?.down;
- setAsset(n.actor,asset);
- place(n.actor,n.x,n.y,n.moving?11:9);
+function partyDialogueFieldActor(id){
+ if(id==='seoyoon')return seoyoonNpc;
+ if(id==='seon_jong')return seonHouseNpc;
+ return cucchiaioReturn?.michael;
 }
 async function partyDialogueAssets(id){
  if(id==='seoyoon'){await loadSeoyoon();return seoyoonNpc;}
  if(id==='seon_jong'){await loadSeonHouseNpc();return seonHouseNpc;}
- if(cucchiaioReturn?.michael){
-  return Object.assign(cucchiaioReturn.michael,{idleAssets:cucchiaioReturnAssets.michaelIdle,walkAssets:cucchiaioReturnAssets.michaelWalk});
- }
  if(!michaelFieldLoad){
   const load=async files=>Object.fromEntries(await Promise.all(Object.entries(files)
    .map(async([dir,file])=>[dir,await loadAsset(file)])));
@@ -5668,10 +5674,16 @@ async function partyDialogueAssets(id){
  }
  return michaelFieldLoad;
 }
-function partyDialogueCurrent(m){
- return partyDialogueMotion===m&&m.epoch===sceneEpoch&&m.area===locationId&&m.line===dialogue;
+function partyDialogueSceneCurrent(state){
+ return partyDialogueScene===state&&state.epoch===sceneEpoch&&state.area===locationId;
 }
-function partyDialogueDestination(){
+function clearPartyDialogueScene(state){
+ if(partyDialogueScene!==state)return;
+ partyDialogueScene=null;
+ for(const actor of state.actors.values())actor.actor.node.remove();
+ $('speech').classList.remove('party-dialogue-motion');
+}
+function partyDialogueDestination(state){
  const step=28/zoom,at=screenPosition(player);
  const preferred=at.x>viewWidth*.62?-1:1;
  const candidates=[[preferred,0],[-preferred,0],[0,1],[0,-1],
@@ -5680,72 +5692,60 @@ function partyDialogueDestination(){
   const destination={x:player.x+dx*step,y:player.y+dy*step};
   const screen=screenPosition(destination);
   if(screen.x<12||screen.x>viewWidth-12||screen.y<12||screen.y>viewHeight-12)continue;
+  if([...state.actors.values()].some(actor=>Math.hypot(actor.x-destination.x,actor.y-destination.y)<step*.7))continue;
   if([.25,.5,.75,1].every(t=>staticFree(player.x+dx*step*t,player.y+dy*step*t,6)))return destination;
  }
  return {x:player.x+preferred*step*.48,y:player.y};
 }
-async function walkPartyDialogueActor(m,to,route=false){
- const n=m.actor;
- let points=[to];
- if(route&&Math.hypot(n.x-to.x,n.y-to.y)*zoom>48){
-  try{points=[...cinematicPath(n,to),to];}catch(_){/* Scripted positions may lie outside the walk grid. */}
- }
- for(const target of points){
-  const from={x:n.x,y:n.y},dx=target.x-from.x,dy=target.y-from.y,distance=Math.hypot(dx,dy);
-  if(distance<.1)continue;
-  n.direction=facing(dx,dy);n.moving=true;
-  const duration=Math.max(45,distance*zoom*1000/102);
-  const completed=await new Promise(resolve=>{
-   const start=performance.now();
-   function frame(now){
-    if(!partyDialogueCurrent(m)){resolve(false);return;}
-    const t=clamp((now-start)/duration,0,1);
-    n.x=from.x+dx*t;n.y=from.y+dy*t;
-    drawPartyDialogueActor(n);
-    if(t<1)requestAnimationFrame(frame);else resolve(true);
-   }
-   requestAnimationFrame(frame);
-  });
-  if(!completed)return false;
- }
- n.moving=false;
- if(!partyDialogueCurrent(m))return false;
- drawPartyDialogueActor(n);
- return true;
+function drawPartyDialogueActor(n,moving=false){
+ const asset=(moving?n.walkAssets?.[n.direction]:null)||n.idleAssets?.[n.direction]||n.idleAssets?.down;
+ setAsset(n.actor,asset);
+ // During separation and regrouping Riccardo covers the exact overlap.
+ place(n.actor,n.x,n.y,moving?9:11);
 }
-function finishPartyDialogueMotion(m){
- if(partyDialogueMotion!==m)return;
- partyDialogueMotion=null;
- $('speech').classList.remove('party-dialogue-motion');
- if(m.actor){
-  m.actor.moving=false;
-  if(m.isProxy){
-   m.actor.actor.node.remove();
-   if(m.sourceActor)foldedDialogueActors.set(m.sourceActor,{epoch:m.epoch,area:m.area});
-  }else if(m.actorVisible){
-   m.actor.actor.node.hidden=true;
-   foldedDialogueActors.set(m.actor,{epoch:m.epoch,area:m.area});
+function walkPartyDialogueActor(state,n,to){
+ const x=n.x,y=n.y,dx=to.x-x,dy=to.y-y;
+ const duration=Math.max(45,Math.hypot(dx,dy)*zoom*1000/102);
+ n.direction=facing(dx,dy);
+ drawPartyDialogueActor(n,true);
+ return new Promise(resolve=>{
+  const start=performance.now();
+  function frame(now){
+   if(!partyDialogueSceneCurrent(state)){resolve(false);return;}
+   const t=clamp((now-start)/duration,0,1);
+   n.x=x+dx*t;n.y=y+dy*t;
+   drawPartyDialogueActor(n,t<1);
+   if(t<1)requestAnimationFrame(frame);else resolve(true);
   }
- }
+  requestAnimationFrame(frame);
+ });
 }
 const closeBeforePartyDialogue=closeDialogue;
 closeDialogue=function(question=true){
- if(partyDialogueMotion)finishPartyDialogueMotion(partyDialogueMotion);
- return closeBeforePartyDialogue(question);
+ const state=partyDialogueScene;
+ const regroup=state&&!state.returning&&state.line===dialogue;
+ const originalOwner=regroup?dialogue?.target?.owner:null;
+ const wasHidden=originalOwner?.actor?.node.hidden;
+ const result=closeBeforePartyDialogue(question);
+ if(!regroup)return result;
+ if(wasHidden&&originalOwner?.actor)originalOwner.actor.node.hidden=true;
+ if(!partyDialogueSceneCurrent(state)||!state.actors.size){clearPartyDialogueScene(state);return result;}
+ state.busy=state.returning=true;
+ void Promise.all([...state.actors.values()].map(actor=>walkPartyDialogueActor(state,actor,player)))
+  .finally(()=>{clearPartyDialogueScene(state);updateInteractionUI();});
+ return result;
 };
 const locationBeforePartyDialogue=showLocation;
 showLocation=function(id){
- if(partyDialogueMotion)finishPartyDialogueMotion(partyDialogueMotion);
+ if(partyDialogueScene)clearPartyDialogueScene(partyDialogueScene);
  return locationBeforePartyDialogue(id);
 };
 const lockBeforePartyDialogue=locked;
-locked=function(){return !!partyDialogueMotion?.busy||lockBeforePartyDialogue();};
+locked=function(){return !!partyDialogueScene?.busy||lockBeforePartyDialogue();};
 const dialogueHeadBeforeParty=dialogueHead;
 dialogueHead=function(){
- const n=partyDialogueMotion?.actor;
- if(n&&partyDialogueMotion.line===dialogue&&partyDialogueMotion.actorVisible){
-  return screenPosition({x:n.x,y:n.y-(n.actor.visibleHeight||n.height)});
- }
+ const state=partyDialogueScene,actor=state?.speaker;
+ if(actor&&state.line===dialogue)return screenPosition({x:actor.x,y:actor.y-(actor.actor.visibleHeight||actor.height)});
  return dialogueHeadBeforeParty();
 };
 const textBeforePartyDialogue=setSpeechText;
@@ -5753,58 +5753,51 @@ setSpeechText=function(value){
  const text=String(value??'');
  const name=text.match(/^(Girl 1|Girl 2|Guy 2):\s*/)?.[1]||currentSpeaker();
  const id=PARTY_DIALOGUE_SPEAKERS[name];
- const previous=partyDialogueMotion;
- if(previous?.line===dialogue&&previous.id===id&&previous.text===text)return textBeforePartyDialogue(value);
- if(previous)finishPartyDialogueMotion(previous);
+ let state=partyDialogueScene;
+ if(state&&state.line!==dialogue){clearPartyDialogueScene(state);state=null;}
+ if(state)state.speaker=state.actors.get(id)||null;
  textBeforePartyDialogue(value);
  if(!text.trim()||!dialogue||!id||!partyMembers[id]?.joined||!partySlots.includes(id))return;
- const m={id,text,line:dialogue,epoch:sceneEpoch,area:locationId,busy:true,actor:null,actorVisible:false,isProxy:false};
- partyDialogueMotion=m;
+ // The set pieces own the positions, movement and exits of their actors.
+ if(dialogue.cucchiaioReturn||dialogue.houseScene||dialogue.managerScene||dialogue.chaos)return;
+ if(state?.speaker)return;
+ const existing=partyDialogueFieldActor(id);
+ if(existing?.actor&&!existing.actor.node.hidden)return;
+ if(!state){
+  state={line:dialogue,epoch:sceneEpoch,area:locationId,actors:new Map(),busy:false,returning:false,speaker:null};
+  partyDialogueScene=state;
+ }
+ if(state.busy)return;
+ state.busy=true;
  $('speech').classList.add('party-dialogue-motion');
  void(async()=>{
   try{
    const field=await partyDialogueAssets(id);
-   if(!partyDialogueCurrent(m))return;
-   const existing=field.actor&&!field.actor.node.hidden;
-   const actor=existing?field:{...field,x:player.x,y:player.y,actor:createActor(player.actor.height),direction:player.direction};
-   m.actor=actor;m.isProxy=!existing;m.actorVisible=true;m.sourceActor=field.actor?field:null;
-   // The character overlaps Riccardo before stepping out to speak.
-   const origin={x:player.x,y:player.y},target=partyDialogueDestination();
-   if(existing&&!await walkPartyDialogueActor(m,origin,true))return;
-   if(!await walkPartyDialogueActor(m,target))return;
+   if(!partyDialogueSceneCurrent(state)||state.line!==dialogue)return;
+   if(field.actor&&!field.actor.node.hidden)return;
+   const target=partyDialogueDestination(state);
+   const actor={idleAssets:field.idleAssets,walkAssets:field.walkAssets,x:player.x,y:player.y,
+    height:player.actor.height,actor:createActor(player.actor.height),direction:player.direction};
+   state.actors.set(id,actor);
+   if(!await walkPartyDialogueActor(state,actor,target))return;
    actor.direction=facing(player.x-actor.x,player.y-actor.y);
    player.direction=facing(actor.x-player.x,actor.y-player.y);
+   state.speaker=actor;
    drawPlayer();drawPartyDialogueActor(actor);
-   m.busy=false;$('speech').classList.remove('party-dialogue-motion');
-   pop($('speech'));updateInteractionUI();
-  }catch(error){
-   console.error(error);finishPartyDialogueMotion(m);updateInteractionUI();
-  }finally{
-   if(!partyDialogueCurrent(m))finishPartyDialogueMotion(m);
+   pop($('speech'));
+  }catch(error){console.error(error);}
+  finally{
+   if(partyDialogueSceneCurrent(state)&&!state.returning){
+    state.busy=false;$('speech').classList.remove('party-dialogue-motion');updateInteractionUI();
+   }
   }
  })();
 };
 const advanceBeforePartyDialogue=advanceSpeech;
 advanceSpeech=function(){
- const m=partyDialogueMotion;
- if(!m||m.line!==dialogue)return advanceBeforePartyDialogue();
- if(m.busy)return;
- if(speechPageIndex+1<speechPages.length)return advanceBeforePartyDialogue();
- m.busy=true;$('speech').classList.add('party-dialogue-motion');
- void(async()=>{
-  try{
-   if(!await walkPartyDialogueActor(m,player)||!partyDialogueCurrent(m))return;
-   finishPartyDialogueMotion(m);
-   advanceBeforePartyDialogue();
-  }catch(error){
-   console.error(error);
-   if(partyDialogueCurrent(m)){finishPartyDialogueMotion(m);advanceBeforePartyDialogue();}
-  }finally{
-   if(!partyDialogueCurrent(m))finishPartyDialogueMotion(m);
-  }
- })();
+ if(partyDialogueScene?.busy)return;
+ return advanceBeforePartyDialogue();
 };
-
 
 pendingNightSave=readRpgSave();
 
