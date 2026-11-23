@@ -6169,6 +6169,23 @@ const SEWER_LINKS=[
  ['d',[419,257],'e',[347,60]],['e',[452,162],'f',[30,91],'f'],
  ['e',[129,264],'g',[78,44],'g'],['f',[427,288],'g',[419,44],'g']
 ];
+/* Soglie alle estremità dei corridoi, sul modello di MART_PORTALS (coordinate su base 512). */
+const SEWER_EXIT_LINES={
+ a:{b:{x:488,y:168,dir:'right',span:[161,175]}},
+ b:{a:{x:32,y:107,dir:'left',span:[99,112]},c:{x:451,y:268,dir:'down',span:[443,459]}},
+ c:{b:{x:58,y:49,dir:'up',span:[55,71]},d:{x:453,y:100,dir:'right',span:[94,110]}},
+ d:{c:{x:93,y:255,dir:'down',span:[87,100]},e:{x:419,y:271,dir:'down',span:[413,426]}},
+ e:{d:{x:347,y:47,dir:'up',span:[340,354]},f:{x:455,y:162,dir:'right',span:[154,173]},g:{x:129,y:274,dir:'down',span:[121,137]}},
+ f:{e:{x:26,y:91,dir:'left',span:[85,98]},g:{x:427,y:301,dir:'down',span:[412,441]}},
+ g:{e:{x:78,y:26,dir:'up',span:[74,83]},f:{x:419,y:26,dir:'up',span:[414,424]}}
+};
+function reachedSewerExit(key,exit,position,previous){
+ const line=SEWER_EXIT_LINES[key]?.[exit.to];
+ if(!line)return false;
+ const scale=sewerScale(key);
+ return reachedMartExit({x:line.x*scale,y:line.y*scale,dir:line.dir,
+  span:line.span.map(value=>value*scale)},position,previous);
+}
 const SEWER_START=[33,168],SEWER_STAIRS=[258,158],SEWER_TERMINALS=[[45,266],[463,195],[170,230]];
 const SEWER_SURFACE={id:'hongdeon',x:1360,y:1925,direction:'up'};
 const SEWER_ENEMIES={
@@ -6503,12 +6520,14 @@ updateTravel=function(dt){
   const back=exits.find(exit=>exit.to===sewerReturnDoor.from);
   if(!back||distToExit(back)>120)sewerReturnDoor=null;
  }
- const exit=exits.find(exit=>sewerEnabled(exit.circuit)&&
-  !(sewerReturnDoor?.room===locationId&&sewerReturnDoor.from===exit.to)&&distToExit(exit)<100);
- if(exit){void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn),{from:key});return;}
- const distance=Math.hypot(player.x-sewerLastPosition.x,player.y-sewerLastPosition.y)*zoom;
+ const previous=sewerLastPosition;
+ const distance=previous?Math.hypot(player.x-previous.x,player.y-previous.y)*zoom:0;
  sewerLastPosition={x:player.x,y:player.y};
- if(distance>45)return;
+ if(distance<=0||distance>45)return;
+ const exit=exits.find(exit=>sewerEnabled(exit.circuit)&&
+  !(sewerReturnDoor?.room===locationId&&sewerReturnDoor.from===exit.to)&&
+  reachedSewerExit(key,exit,player,previous));
+ if(exit){void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn),{from:key});return;}
  sewerDistance+=distance;
  if(sewerDistance<sewerEncounterAt)return;
  const nearDoor=sewerExits(key).some(exit=>{const at=sewerPoint(key,exit.at);return Math.hypot(player.x-at.x,player.y-at.y)*zoom<110;});
