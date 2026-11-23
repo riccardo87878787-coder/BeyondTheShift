@@ -152,6 +152,18 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .battle-roster-member>strong{font-size:3cqw;line-height:1;display:block;min-height:0;align-self:center}
 .roster-stat{height:100%;min-height:0}.roster-meter{height:100%;min-height:0}
 
+
+#sewerLayer{position:absolute;inset:0;z-index:2;pointer-events:none}
+#sewerLayer[hidden],#sewerLayer img[hidden]{display:none}
+#sewerLayer img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.battle-fighter.sewer-materializing{z-index:3;animation:sewer-materialize 100ms ease-out}
+@keyframes sewer-materialize{from{opacity:.15}to{opacity:1}}
+.sewer-status{position:absolute;z-index:2;left:50%;bottom:-.7em;transform:translateX(-50%);color:#fff;
+ background:#282342;border:1px solid #c6b8dd;border-radius:4px;padding:2px 3px;font:bold 8px monospace;pointer-events:none}
+.sewer-status.poison{background:#3e2151}.sewer-status.blind{bottom:1em;background:#253342}
+.sewer-status.confusion{bottom:2.7em;background:#56431a}
+@media(prefers-reduced-motion:reduce){.battle-fighter.sewer-materializing{animation:none}}
+
 </style>
 <style>
 #equipPage{position:absolute;inset:0;z-index:30;background:#182e2f;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;color:#3b2414;font-family:Georgia,'Noto Sans KR',serif}
@@ -615,11 +627,14 @@ function createActor(height=54,width=null){
  return {node,height,width,images:new Map(),active:null,paused:false,visibleHeight:height};
 }
 function setAsset(actor,asset,paused=false){
- if(!asset)return;if(actor.active===asset&&actor.paused===paused){actor.node.hidden=false;return;}
+ if(!asset)return;
+ const height=actor===player.actor?56*1.05/zoom:actor.height;
+ if(actor.active===asset&&actor.paused===paused&&actor.renderedHeight===height){actor.node.hidden=false;return;}
+ actor.renderedHeight=height;
  const key=asset.key+(paused&&asset.freeze?"|pause":"");let image=actor.images.get(key);
  if(!image){image=document.createElement("img");image.src=paused&&asset.freeze?asset.freeze:asset.file;image.alt="";image.draggable=false;actor.images.set(key,image);actor.node.appendChild(image);}
  for(const im of actor.images.values())im.hidden=im!==image;
- const b=asset.b,scale=actor.width?actor.width/b.w:actor.height/(asset.fixed?asset.body:b.h);
+ const b=asset.b,scale=actor.width?actor.width/b.w:height/(actor===player.actor?Math.max(1,asset.foot-b.y):asset.fixed?asset.body:b.h);
  const originX=asset.fixed?asset.image.naturalWidth/2:b.x+b.w/2;
  const horizontalScale=scale*(actor.horizontalScale||1);
  image.style.width=asset.image.naturalWidth*horizontalScale+"px";image.style.height=asset.image.naturalHeight*scale+"px";
@@ -947,7 +962,7 @@ function tick(now){
    if(!dialogue&&!locked()){const d=currentDirection();if(d){player.direction=d;const v=VECTORS[d],step=PLAYER_WALK_SCREEN_SPEED*dt/zoom;moveEntity(player,v.x*step,v.y*step);}}
    player.moving=Math.hypot(player.x-x,player.y-y)>.0001;
   }
-  updateOfficeSequence(dt);updateTravel(dt);if(!locked()){updateNpcs(dt);if(locationId==="city")updateTraffic(dt);}drawPlayer();updateCamera();updateInteractionUI();updateStatus();
+  updateOfficeSequence(dt);updateTravel(dt);if(!locked()){updateNpcs(dt);if(locationId==="city")updateTraffic(dt);}updateCamera();drawPlayer();updateInteractionUI();updateStatus();
  }
  requestAnimationFrame(tick);
 }
@@ -2245,10 +2260,10 @@ let progressionView='status',progressionMember='riccardo';
 function renderProgressionPage(){const ids=partySlots.filter(id=>id&&partyMembers[id]?.joined!==false);if(!ids.includes(progressionMember))progressionMember=ids[0]||'riccardo';$('progressionTitle').textContent=progressionView==='skills'?'SKILLS':'STATUS';$('progressionMembers').replaceChildren();for(const id of ids){const b=document.createElement('button');b.textContent=partyMembers[id].name.en;b.setAttribute('aria-pressed',String(id===progressionMember));b.onclick=()=>{progressionMember=id;renderProgressionPage();};$('progressionMembers').appendChild(b);}const body=$('progressionBody');body.replaceChildren();const m=partyMembers[progressionMember];if(progressionView==='skills'){const skills=learnedTechniques(progressionMember);if(!skills.length){const p=document.createElement('p');p.textContent='No techniques learned yet.';body.appendChild(p);}for(const t of skills){const row=document.createElement('article');row.className='technique-card';const title=document.createElement('strong');title.textContent=techniqueName(t)+' · '+t.ep+' EP';const description=document.createElement('p');description.textContent=t.description;row.append(title,description);body.appendChild(row);}return;}const personal=personalStats(progressionMember),stats=totalStats(progressionMember),next=m.level<50?EXP_LEVELS[m.level]-m.exp:0;const level=document.createElement('p');level.textContent='Lv '+m.level+' / 50 · EXP '+m.exp.toLocaleString('en-US')+(m.level<50?' · Next '+next.toLocaleString('en-US'):' · MAX');body.appendChild(level);for(const [stat,label,value] of [['maxHp','HP',m.hp+'/'+m.maxHp],['maxEp','EP',m.ep+'/'+m.maxEp],['attack','ATK'],['defense','DEF'],['speed','SPD'],['technique','TEC'],['resistance','RES'],['accuracy','ACC',stats.accuracy+'%']]){const row=document.createElement('div');row.className='progression-stat';const name=document.createElement('strong');name.textContent=label;const v=document.createElement('span');v.textContent=value||String(stats[stat]);const detail=document.createElement('small');detail.textContent='Base '+personal[stat]+(stat==='accuracy'?'%':'')+' + Equip '+(stats[stat]-personal[stat])+(stat==='accuracy'?'%':'');row.append(name,v,detail);body.appendChild(row);}const p=document.createElement('p');p.className='affinity-note';p.textContent='Fire · Ice · Lightning: normal resistance';body.appendChild(p);}
 function openProgressionPage(view){if(autoMenu)return;progressionView=view;resetInput();$('languagePage').hidden=true;$('inventoryPage').hidden=true;progressionPage.hidden=false;renderProgressionPage();$('progressionBack').focus();}
 $('progressionBack').onclick=()=>{progressionPage.hidden=true;$('menuNav').querySelector('[data-menu-index="'+(progressionView==='skills'?1:3)+'"]')?.focus();};
-const menuBeforeProgression=renderMenu;renderMenu=function(){menuBeforeProgression();for(const [index,view] of [[1,'skills'],[3,'status']])$('menuNav').querySelector('[data-menu-index="'+index+'"]')?.addEventListener('click',()=>openProgressionPage(view));const save=$('menuNav').querySelector('[data-menu-index="5"]');if(save){save.disabled=!nearMartSavePoint();save.onclick=()=>{if(autoMenu||save.disabled||!nearMartSavePoint())return;save.textContent=tr(saveRpgGame()?'Saved':'Save failed');};}if(!progressionPage.hidden)renderProgressionPage();};
+const menuBeforeProgression=renderMenu;renderMenu=function(){menuBeforeProgression();for(const [index,view] of [[1,'skills'],[3,'status']])$('menuNav').querySelector('[data-menu-index="'+index+'"]')?.addEventListener('click',()=>openProgressionPage(view));const save=$('menuNav').querySelector('[data-menu-index="5"]');if(save){save.disabled=!(nearMartSavePoint()||atSewerSavePoint());save.onclick=()=>{if(autoMenu||save.disabled||!(nearMartSavePoint()||atSewerSavePoint()))return;save.textContent=tr(saveRpgGame()?'Saved':'Save failed');};}if(!progressionPage.hidden)renderProgressionPage();};
 const closeBeforeProgression=closeMenu;closeMenu=function(){if(!autoMenu)progressionPage.hidden=true;closeBeforeProgression();};
-function saveRpgGame(){if(!menuOpen||autoMenu||!nearMartSavePoint())return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
-function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-dungeon'].includes(data.location)||isMartShop(data.location)||isMartRoom(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
+function saveRpgGame(){if(!menuOpen||autoMenu||!(nearMartSavePoint()||atSewerSavePoint()))return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
+function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-dungeon'].includes(data.location)||isMartShop(data.location)||isMartRoom(data.location)||isSewerRoom(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
 const beginBeforeProgression=beginIntro;beginIntro=function(){progressionPage.hidden=true;for(const id of ['seon_jong','michael']){partyMembers[id].joined=false;const slot=partySlots.indexOf(id);if(slot>=0)partySlots[slot]=null;}beginBeforeProgression();resetProgression();equipSeoyoonStarter();renderMenu();};
 resetProgression();equipSeoyoonStarter();
 battleStats=function(){return totalStats('riccardo');};
@@ -2368,7 +2383,7 @@ const beginBeforeNight=beginIntro;beginIntro=function(){nightEpoch++;nightState=
 async function resumeNightGame(beforeRestore=null){
  const data=readRpgSave();if(!data||nightTransition)return false;if(data.location==='mart-dungeon'){data.location='mart-a';data.player={...MART_FIRST_SPAWN};}const epoch=++nightEpoch;nightTransition=true;resumeNightButton.hidden=true;resetInput();const fade=$('fade');fade.style.zIndex='40';fade.style.transition='none';fade.classList.add('black');
  try{
-  await Promise.all([isWarehouseArea(data.location)?loadWarehouseArea(data.location):isInterior(data.location)?loadInteriorImage(data.location):loadHongdeonMap(),loadSeoyoon(),loadDoorSprites(),loadWorkUniform()]);if(epoch!==nightEpoch)return false;
+  await Promise.all([isSewerRoom(data.location)?loadSewerRoom(data.location.slice(6)):isWarehouseArea(data.location)?loadWarehouseArea(data.location):isInterior(data.location)?loadInteriorImage(data.location):loadHongdeonMap(),loadSeoyoon(),loadDoorSprites(),loadWorkUniform()]);if(epoch!==nightEpoch)return false;
   beforeRestore?.();
   closeDialogue(false);intro=false;film.phase='play';ending=false;menuOpen=false;autoMenu=false;transitioning=false;destinationOpen=false;officeSequence=null;travelScene=null;$('rpgMenu').hidden=true;$('destinations').hidden=true;$('trainWindow').hidden=true;progressionPage.hidden=true;equipPage.hidden=true;sleepPrompt.hidden=true;
   for(const id of Object.keys(partyMembers)){
@@ -2390,7 +2405,7 @@ async function resumeNightGame(beforeRestore=null){
    x:Number(data.player?.x)||CUCCHIAIO[data.location]?.start.x||1360,
    y:Number(data.player?.y)||CUCCHIAIO[data.location]?.start.y||1950
   };
-  Object.assign(player,savedPosition,{direction:Object.hasOwn(VECTORS,data.player?.direction)?data.player.direction:'down',moving:false});if(!nearestFree(player)&&isMartRoom(data.location))Object.assign(player,martRoomEntry(data.location));drawPlayer();updateCamera();syncNightSeoyoon();renderMenu();refreshNightObjective();bedDismissed=nearFirstBed();if(nightState.phase==='morning')void startMorningScene();
+  Object.assign(player,savedPosition,{direction:Object.hasOwn(VECTORS,data.player?.direction)?data.player.direction:'down',moving:false});if(!nearestFree(player)&&isMartRoom(data.location))Object.assign(player,martRoomEntry(data.location));if(isSewerRoom(data.location))resetSewerEncounters();updateCamera();drawPlayer();syncNightSeoyoon();renderMenu();refreshNightObjective();bedDismissed=nearFirstBed();if(nightState.phase==='morning')void startMorningScene();
   if(!await nightWait(50,epoch))return false;fade.style.transition='opacity 650ms linear';fade.classList.remove('black');if(!await nightWait(700,epoch))return false;fade.style.transition='';fade.style.zIndex='';nightTransition=false;updateInteractionUI();return true;
  }catch(e){if(epoch===nightEpoch){nightTransition=false;fade.classList.remove('black');fade.style.transition='';fade.style.zIndex='';notice('Unable to resume: '+e.message);}return false;}
 }
@@ -2681,7 +2696,7 @@ async function startRescueBattle(options=null){if(firstBattleActive)return;const
  }catch(e){console.error(e);if(!battleAlive(epoch))return;game.classList.remove('battle-entering');battleVortex.classList.remove('closing');firstBattlePhase='error';battleScreen.hidden=false;showBattleResult(tr('LOAD ERROR'),e.message,true);}
 }
 const originalCloseBattle=closeFirstBattle;closeFirstBattle=function(){originalCloseBattle();partyBattle=null;};
-const originalContinueBattle=$('battleContinue').onclick;$('battleContinue').onclick=()=>{if(!partyBattle)return originalContinueBattle();if(firstBattlePhase!=='victory')return;const mart=partyBattle.kind==='mart';closeFirstBattle();if(mart){resetInput();updateInteractionUI();}else void finishRescueBattle();};
+const originalContinueBattle=$('battleContinue').onclick;$('battleContinue').onclick=()=>{if(!partyBattle)return originalContinueBattle();if(firstBattlePhase!=='victory')return;const dungeon=isDungeonBattle();closeFirstBattle();if(dungeon){resetInput();updateInteractionUI();}else void finishRescueBattle();};
 const originalRetryBattle=$('battleRetry').onclick;$('battleRetry').onclick=()=>{if(!partyBattle)return originalRetryBattle();const start=partyBattle.start,options={kind:partyBattle.kind,enemyIds:partyBattle.enemyIds,rewardExp:partyBattle.rewardExp};closeFirstBattle();for(const[id,stats]of Object.entries(start))updateMember(id,stats);void startRescueBattle(options);};
 window.TaraiPartyBattle={start:startRescueBattle,getState:()=>partyBattle?{phase:firstBattlePhase,current:partyBattle.current,queue:[...partyBattle.queue],fighters:firstBattleFighters.map(f=>({id:f.id,kind:f.kind,hp:f.hp(),home:f.home,guard:f.guard})),rewarded:partyBattle.rewarded}:null};
 
@@ -2949,37 +2964,56 @@ nextPartyTurn=async function(epoch){
  if(f.stopTurns>0){
   firstBattlePhase=f.member?'acting':'enemy';battleHint(partyName(f)+' · '+tr('STOP'));paintFirstBattle();
   if(!await battlePause(480,epoch))return;
-  f.stopTurns--;f.stopFrozen=false;f.stopIcon?.remove();f.stopIcon=null;
+  f.skipPoison=true;f.stopTurns--;f.stopFrozen=false;f.stopIcon?.remove();f.stopIcon=null;
   await drawBattlePose(f,'idle',true);
   if(battleAlive(epoch))await partyFinishAction(epoch);
   return;
  }
- if(f.member){commandFirstBattle();return;}
+ if(f.member){
+  if(!await confusePartyTurn(f,epoch)&&battleAlive(epoch))commandFirstBattle();
+  return;
+ }
  firstBattlePhase='enemy';paintFirstBattle();const targets=partyHeroes().filter(h=>h.hp()>0),target=targets.find(h=>h.guard)||targets[Math.floor(Math.random()*targets.length)],r=Math.random();
  if(isManager(f)){
   await managerTurn(f,targets,target,epoch);
   if(battleAlive(epoch))await partyFinishAction(epoch);
   return;
  }
+ const sewer=sewerFoe(f.stats.profile);
+ if(sewer){
+  await playSewerAttack(f,target,r<.5?sewer.skill:null,epoch);
+  if(battleAlive(epoch))await partyFinishAction(epoch);
+  return;
+ }
  const skill=f.stats.profile==='cashier'&&r<.3?PRICE_CHECK:f.stats.profile==='stockkeeper'&&r<.5?HEAVY_DELIVERY:null;
  battleHint(partyName(f)+' · '+(skill?tr(skill.name):'ATK'));
- if(skill){if(skill===PRICE_CHECK)await enemyPriceCheck(f,target,epoch);else await enemyHeavyDelivery(f,target,epoch);if(battleAlive(epoch)){const waitMs=fighterReactionMs(target);await battlePause(Math.max(0,waitMs-(skill===PRICE_CHECK?730:300)),epoch);}}
+ if(skill){
+  stageEnemyAtTarget(f,target);
+  try{
+   if(skill===PRICE_CHECK)await enemyPriceCheck(f,target,epoch);
+   else await enemyHeavyDelivery(f,target,epoch);
+   if(battleAlive(epoch))await battlePause(Math.max(0,fighterReactionMs(target)-(skill===PRICE_CHECK?730:300)),epoch);
+  }finally{if(battleAlive(epoch))positionBattleFighter(f);}
+ }
  else await partyMelee(f,target,null,epoch);
  if(battleAlive(epoch))await partyFinishAction(epoch);
 };
 const accuracyLine=document.createElement('small');accuracyLine.id='battleAccuracy';$('battleStatus').insertBefore(accuracyLine,$('battleHint'));
 const itemCommand=$('battleCommands').children[2],defenseCommand=$('battleCommands').children[3],runCommand=$('battleCommands').children[4];
-const paintBeforeDungeon=paintFirstBattle;paintFirstBattle=function(){paintBeforeDungeon();const mart=partyBattle?.kind==='mart',enabled=mart&&firstBattlePhase==='command';for(const b of [itemCommand,defenseCommand,runCommand]){b.disabled=!enabled;b.classList.toggle('available',enabled);}const f=currentPartyFighter();accuracyLine.textContent=f?.member?'ACC '+partyStats(f).accuracy+'%'+(f.precisionDebuff?' · '+f.precisionDebuff.turns+' '+tr('turns'):''):'';};
+const paintBeforeDungeon=paintFirstBattle;paintFirstBattle=function(){paintBeforeDungeon();const enabled=isDungeonBattle()&&firstBattlePhase==='command';for(const b of [itemCommand,defenseCommand,runCommand]){b.disabled=!enabled;b.classList.toggle('available',enabled);}const f=currentPartyFighter();accuracyLine.textContent=f?.member?'ACC '+partyStats(f).accuracy+'%'+(f.precisionDebuff?' · '+f.precisionDebuff.turns+' '+tr('turns'):''):'';};
 function showCombatItemTargets(id){
  if(firstBattlePhase!=='command'||!ITEM_CATALOG[id]||!(inventory[id]>0))return;
  selectedBattleSkill=null;selectedBattleItem=id;closeBattleSkills();firstBattlePhase='target';
  battleHint(tr('Choose a target'));paintFirstBattle();
 }
-defenseCommand.onclick=async()=>{if(partyBattle?.kind!=='mart'||firstBattlePhase!=='command')return;const epoch=firstBattleEpoch,f=currentPartyFighter();firstBattlePhase='acting';f.guard=true;battleHint(tr('DEFENSE'));paintFirstBattle();if(await battlePause(350,epoch))await partyFinishAction(epoch);};
-runCommand.onclick=async()=>{if(partyBattle?.kind!=='mart'||firstBattlePhase!=='command')return;const epoch=firstBattleEpoch;firstBattlePhase='acting';paintFirstBattle();const escaped=Math.random()<.7;battleHint(tr(escaped?'Escaped!':'Could not escape!'));if(!await battlePause(600,epoch))return;if(escaped){closeFirstBattle();afterDungeonBattle();}else await partyFinishAction(epoch);};
-const startPartyBeforeDungeon=startRescueBattle;startRescueBattle=async function(options=null){if(firstBattleActive)return;const pending=startPartyBeforeDungeon(options);if(partyBattle)partyBattle.startInventory={...inventory};await pending;};
-const retryBeforeDungeon=$('battleRetry').onclick;$('battleRetry').onclick=()=>{if(partyBattle?.kind==='mart'&&partyBattle.startInventory)inventory={...partyBattle.startInventory};retryBeforeDungeon();};
-const continueBeforeDungeon=$('battleContinue').onclick;$('battleContinue').onclick=()=>{const mart=partyBattle?.kind==='mart';continueBeforeDungeon();if(mart)afterDungeonBattle();};
+defenseCommand.onclick=async()=>{if(!isDungeonBattle()||firstBattlePhase!=='command')return;const epoch=firstBattleEpoch,f=currentPartyFighter();firstBattlePhase='acting';f.guard=true;battleHint(tr('DEFENSE'));paintFirstBattle();if(await battlePause(350,epoch))await partyFinishAction(epoch);};
+runCommand.onclick=async()=>{if(!isDungeonBattle()||firstBattlePhase!=='command')return;const epoch=firstBattleEpoch;firstBattlePhase='acting';paintFirstBattle();const escaped=Math.random()<.7;battleHint(tr(escaped?'Escaped!':'Could not escape!'));if(!await battlePause(600,epoch))return;if(escaped){closeFirstBattle();afterDungeonBattle();}else await partyFinishAction(epoch);};
+const startPartyBeforeDungeon=startRescueBattle;startRescueBattle=async function(options=null){if(firstBattleActive)return;const pending=startPartyBeforeDungeon(options);if(partyBattle){
+  partyBattle.startInventory={...inventory};
+  if(partyBattle.kind==='sewers')partyBattle.poisonAtStart={...sewerProgress().poison};
+ }await pending;};
+const retryBeforeDungeon=$('battleRetry').onclick;$('battleRetry').onclick=()=>{if(isDungeonBattle()&&partyBattle.startInventory)inventory={...partyBattle.startInventory};retryBeforeDungeon();};
+const continueBeforeDungeon=$('battleContinue').onclick;$('battleContinue').onclick=()=>{const dungeon=isDungeonBattle();continueBeforeDungeon();if(dungeon)afterDungeonBattle();};
 [['Disturbed Cashier','이상해진 계산원'],['Altered Courier','이상해진 배달원'],['Price Check','가격 확인'],['Heavy Delivery','무거운 배달'],['turns','턴'],['Escaped!','도망쳤습니다!'],['Could not escape!','도망치지 못했습니다!']].forEach(p=>bilingual(...p));
 
 /* Standalone MART floor test. Its save slot never overwrites story progress. */
@@ -3054,9 +3088,9 @@ window.addEventListener('pointerup',e=>{if(e.target?.closest?.('#testDungeonButt
 async function enterDungeonTest(saved=null,beforeRestore=null,checkpoint='dungeon'){
  if(dungeonJumping||(firstBattleActive&&!beforeRestore))return false;dungeonJumping=true;resetInput();paintTestShortcuts();
  try{
- const afterRecruitment=checkpoint==='hongdeon-recruited';
- const roomId=afterRecruitment?'hongdeon':isMartRoom(saved?.location)?saved.location:checkpoint==='boss'?'mart-e':'mart-a';
- const areaLoad=afterRecruitment?Promise.all([loadHongdeonMap(),loadChaosImage(),loadChaosActors()]):loadMartRoom(roomId);
+ const sewerCheckpoint=checkpoint==='sewers',afterRecruitment=checkpoint==='hongdeon-recruited'||sewerCheckpoint;
+ const roomId=sewerCheckpoint?'sewer-a':afterRecruitment?'hongdeon':isMartRoom(saved?.location)?saved.location:checkpoint==='boss'?'mart-e':'mart-a';
+ const areaLoad=sewerCheckpoint?loadSewerRoom('a'):afterRecruitment?Promise.all([loadHongdeonMap(),loadChaosImage(),loadChaosActors()]):loadMartRoom(roomId);
  await Promise.all([areaLoad,loadWorkUniform(),loadSeoyoon()]);const fade=$('fade');fade.style.zIndex='40';fade.style.transition='opacity 400ms linear';fade.classList.add('black');await wait(430);
  beforeRestore?.();
  sceneEpoch++;storyEpoch++;nightEpoch++;morningEpoch++;chaosEpoch++;trainRun++;for(const m of morningMotions.values())m.resolve(false);morningMotions.clear();morningMotion=null;morningRunner=null;morningBusy=false;
@@ -3076,7 +3110,15 @@ async function enterDungeonTest(saved=null,beforeRestore=null,checkpoint='dungeo
   nightState.mart.dungeon={...dungeonState,opened:[...dungeonState.opened]};
   void loadCucchiaioReturnAssets().catch(()=>{});
  }
- showLocation(roomId);const spawn=afterRecruitment?{x:1360,y:1925,direction:'up'}:checkpoint==='boss'?{x:768,y:418,direction:'down'}:martRoomEntry(roomId),position=saved?.location===roomId?saved.player:null;Object.assign(player,spawn,position,{direction:Object.hasOwn(VECTORS,position?.direction)?position.direction:spawn.direction,moving:false});if(!nearestFree(player))Object.assign(player,spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;drawPlayer();updateCamera();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';
+ if(sewerCheckpoint){
+  partyMembers.michael.joined=true;partySlots[3]='michael';
+  equipState.owned.worn_kitchen_knife=1;equipmentFor('michael').weapon='worn_kitchen_knife';
+  for(const member of partySlots){
+   setCharacterLevel(member,6);syncMemberProgression(member,{refill:true});
+  }
+  nightState.cucchiaioReturnSeen=true;sewerTestReturn=SEWER_SURFACE;
+ }
+ showLocation(roomId);const spawn=sewerCheckpoint?{...sewerPoint('a',SEWER_START),direction:'right'}:afterRecruitment?{x:1360,y:1925,direction:'up'}:checkpoint==='boss'?{x:768,y:418,direction:'down'}:martRoomEntry(roomId),position=saved?.location===roomId?saved.player:null;Object.assign(player,spawn,position,{direction:Object.hasOwn(VECTORS,position?.direction)?position.direction:spawn.direction,moving:false});if(!nearestFree(player))Object.assign(player,spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;if(sewerCheckpoint)resetSewerEncounters();updateCamera();drawPlayer();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';
  }catch(e){console.error(e);notice(e.message);$('fade').classList.remove('black');$('fade').style.zIndex='';$('fade').style.transition='';return false;}
  finally{dungeonJumping=false;paintTestShortcuts();updateInteractionUI();}
  return true;
@@ -3106,7 +3148,7 @@ const victoryBanner=document.createElement('button');victoryBanner.id='victoryBa
 const rewardsScreen=document.createElement('section');rewardsScreen.id='rewardsScreen';rewardsScreen.hidden=true;rewardsScreen.tabIndex=0;rewardsScreen.setAttribute('role','button');rewardsScreen.setAttribute('aria-label','Battle rewards');rewardsScreen.innerHTML='<h1 id="rewardsTitle"></h1><div id="rewardParticipants"></div><div id="rewardCurrency"><img alt=""><strong></strong></div><div id="rewardItems"><strong></strong><div></div></div><div id="rewardLearned" aria-live="polite" hidden></div><div id="rewardContinue"></div>';game.append(rewardsScreen);$('rewardCurrency').querySelector('img').src=REWARD_ASSETS.won;
 let victoryRewards=null,rewardFrame=0,rewardAssetPromise=null;
 function loadRewardAssets(){return rewardAssetPromise||(rewardAssetPromise=Promise.all(Object.values(REWARD_ASSETS).map(src=>loadDungeonImage(src))).catch(e=>{rewardAssetPromise=null;throw e;}));}
-function rollEnemyRewards(ids,random=Math.random){let money=0;const items={};for(const id of ids){const rule=ENEMY_REWARDS[id]||ENEMY_REWARDS.weak;money+=rule.won;if(random()<rule.chance)items[rule.item]=(items[rule.item]||0)+1;}return{won:money,items};}
+function rollEnemyRewards(ids,random=Math.random){let money=0;const items={};for(const id of ids){const rule=ENEMY_REWARDS[id]||SEWER_REWARD_RULES[id]||ENEMY_REWARDS.weak;money+=rule.won;if(random()<rule.chance)items[rule.item]=(items[rule.item]||0)+1;}return{won:money,items};}
 function resetRewardScreen(){cancelAnimationFrame(rewardFrame);rewardFrame=0;victoryRewards=null;victoryBanner.hidden=true;rewardsScreen.hidden=true;}
 const closeBeforeRewards=closeFirstBattle;closeFirstBattle=function(){resetRewardScreen();closeBeforeRewards();};
 const lockedBeforeRewards=locked;locked=function(){return menuFadeBusy||!!victoryRewards||lockedBeforeRewards();};
@@ -3124,7 +3166,7 @@ document.addEventListener('click',e=>{if(menuReplay)return;const b=e.target.clos
 },true);
 victoryFirstBattle=async function(epoch){
  if(!battleAlive(epoch)||victoryRewards?.epoch===epoch)return;
- const members=partyBattle?[...partyBattle.members]:['riccardo'],enemyIds=partyBattle?.kind==='mart'?[...partyBattle.enemyIds]:Array(firstBattleFighters.filter(f=>f.kind==='enemy').length).fill('weak');
+ const members=partyBattle?[...partyBattle.members]:['riccardo'],enemyIds=isDungeonBattle()?[...partyBattle.enemyIds]:Array(firstBattleFighters.filter(f=>f.kind==='enemy').length).fill('weak');
  const before=Object.fromEntries(members.map(id=>[id,{exp:partyMembers[id].exp||0,level:partyMembers[id].level}]));
  const total=partyBattle?partyBattle.rewardExp:(nightState.firstVictoryReward?0:60);
  victoryRewards={epoch,phase:'poses',members,before,total,reports:[],won:0,items:{},claimed:false,rows:[],itemRows:[]};
@@ -3198,9 +3240,17 @@ async function advanceRewards(){
 rewardsScreen.onclick=()=>void advanceRewards();rewardsScreen.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();void advanceRewards();}};
 // A tap anywhere on the victory screen opens the reward page; no click-through into it.
 battleScreen.addEventListener('click',e=>{if(victoryRewards?.phase==='banner'){e.preventDefault();e.stopImmediatePropagation();void openVictoryRewards();}},true);
-runCommand.onclick=async()=>{if(partyBattle?.kind!=='mart'||firstBattlePhase!=='command'||menuFadeBusy)return;const epoch=firstBattleEpoch;firstBattlePhase='acting';paintFirstBattle();const escaped=Math.random()<.7;let loss=0;if(escaped){loss=Math.floor(won*.02);won-=loss;renderMenu();}
+runCommand.onclick=async()=>{if(!isDungeonBattle()||firstBattlePhase!=='command'||menuFadeBusy)return;const epoch=firstBattleEpoch;firstBattlePhase='acting';paintFirstBattle();const escaped=Math.random()<.7;let loss=0;if(escaped){loss=Math.floor(won*.02);won-=loss;renderMenu();}
  battleHint(tr(escaped?'Escaped!':'Could not escape!')+(escaped?' −'+loss.toLocaleString('en-US')+' WON':''));if(!await battlePause(600,epoch))return;
- if(escaped){await fadeMenuPage(()=>{closeFirstBattle();afterDungeonBattle();});}else await partyFinishAction(epoch);
+ if(escaped){
+  const f=currentPartyFighter();
+  if(f?.member&&nightState.sewers?.poison[f.member])await tickSewerPoison(f,epoch);
+  if(!battleAlive(epoch))return;
+  if(partyHeroes().every(hero=>hero.hp()<=0)){
+   f.skipPoison=true;await partyFinishAction(epoch);return;
+  }
+  await fadeMenuPage(()=>{closeFirstBattle();afterDungeonBattle();});
+ }else await partyFinishAction(epoch);
 };
 [['YOU WIN','승리'],['Open battle rewards','전투 보상 열기'],['BATTLE RESULTS','전투 결과'],['ITEMS OBTAINED','획득 아이템'],['LEVEL UP!','레벨 업!'],['TAP TO CONTINUE','터치하여 계속'],['Tap to skip','터치하여 건너뛰기'],['Unable to load rewards. Tap to retry.','보상을 불러올 수 없습니다. 터치하여 다시 시도하세요.'],['Staff Meal','직원 식사'],['Espresso Shot','에스프레소 샷'],['Emergency Snack','비상 간식']].forEach(p=>bilingual(...p));
 window.TaraiRewards={rules:ENEMY_REWARDS,roll:rollEnemyRewards,getState:()=>victoryRewards?{phase:victoryRewards.phase,won:victoryRewards.won,items:{...victoryRewards.items},claimed:victoryRewards.claimed}:null};
@@ -3215,7 +3265,11 @@ loadPartyBattle=async function(kind){
  const [assets]=await Promise.all([loadBeforeWarehouse(kind),loadWarehouseBattleBackground()]);
  return assets;
 };
-const buildBeforeWarehouse=buildPartyFighters;buildPartyFighters=async function(){await buildBeforeWarehouse();if(partyBattle?.kind==='mart')$('battleBackground').src=warehouseBattleImage.src;};
+const buildBeforeWarehouse=buildPartyFighters;buildPartyFighters=async function(){await buildBeforeWarehouse();if(partyBattle?.kind==='mart')$('battleBackground').src=warehouseBattleImage.src;
+ if(partyBattle?.kind!=='sewers')for(const f of partyHeroes()){
+  if(nightState.sewers?.poison[f.member])setSewerAilment(f,'poison');
+ }
+};
 const roster=document.createElement('div');roster.id='battleRoster';$('battleStatus').append(roster);const rosterRows=new Map();
 function battlePartyIds(){return(partyBattle?.members||['riccardo']).filter(id=>partyMembers[id]).slice(0,4);}
 function paintPartyRoster(){const ids=battlePartyIds();for(const[id,row]of rosterRows)if(!ids.includes(id)){row.node.remove();rosterRows.delete(id);}
@@ -3418,7 +3472,7 @@ function openBattleSkills(){
  })),'No techniques learned yet.');
 }
 itemCommand.onclick=()=>{
- if(partyBattle?.kind!=='mart'||firstBattlePhase!=='command')return;
+ if(!isDungeonBattle()||firstBattlePhase!=='command')return;
  const rows=[];
  for(const [id,count] of Object.entries(inventory)){
   const item=ITEM_CATALOG[id];
@@ -4515,7 +4569,7 @@ async function managerTurn(user,targets,target,epoch){
   battleHint(actionSentence(user,'Mirror Guard'));
   await drawBattlePose(user,'idle',true);
   await battlePause(580,epoch);
- }else if(action===1||action===4)await managerVolley(user,targets,epoch);
+ }else if(action===1||action===4){stageEnemyAtTarget(user,target);try{await managerVolley(user,targets,epoch);}finally{if(battleAlive(epoch))positionBattleFighter(user);}}
  else await partyMelee(user,target,null,epoch);
  if(battleAlive(epoch)&&shieldWasRaised&&action!==2&&--user.mirrorTurns===0)
   await drawBattlePose(user,'idle',true);
@@ -5861,6 +5915,754 @@ advanceSpeech=function(){
  if(partyDialogueScene?.busy)return;
  return advanceBeforePartyDialogue();
 };
+
+const SEWER_MAP_FILES={
+ "Fogne_A_Acqua.gif": "file_00000000e92481fdbaec919feb66ad40.gif",
+ "Fogne_A_Condotte_iniziali.png": "file_0000000090dc81fd8738b04cc7c27c46.png",
+ "Fogne_B_Acqua.gif": "file_00000000021881fd94ccba8d2c182deb.gif",
+ "Fogne_B_Grata_chiusa.png": "file_0000000038f881fda1b9d3df4bc5893e.png",
+ "Fogne_B_Vasche_di_decantazione.png": "file_00000000627481fd813789d3926b6fa7.png",
+ "Fogne_C_Acqua.gif": "file_00000000974081fd844b80673819db9c.gif",
+ "Fogne_C_Impianti_di_drenaggio.png": "file_000000001ac081fd964fe8e7eb49e127.png",
+ "Fogne_C_Spia_acqua_alta.png": "file_00000000a15081fd8bdf63979ab7e314.png",
+ "Fogne_C_Spia_acqua_bassa.png": "file_000000002b0481fd897afc3ac8493855.png",
+ "Fogne_D_Acqua_alta.gif": "file_00000000072481fdbbb5bda80acba1e8.gif",
+ "Fogne_D_Acqua_bassa.gif": "file_000000004d2881fda40675052ded3a0a.gif",
+ "Fogne_D_Gallerie_allagate.png": "file_00000000510c81fd87588cc03d7f1531.png",
+ "Fogne_D_Passerella_emersa.png": "file_00000000b72c81fd8e2e0fd5e6dd04ff.png",
+ "Fogne_E_Porta_F_chiusa.png": "file_0000000082f481f5996cefb4143fa0ae.png",
+ "Fogne_E_Porta_G_chiusa.png": "file_00000000195481fdb37fa63ce8d37400.png",
+ "Fogne_E_Sala_di_controllo.png": "file_000000003fa481fdb8f08a49e636dc28.png",
+ "Fogne_F_Condotte_di_servizio.png": "file_00000000aa5081fda04c3cda7a0c632e.png",
+ "Fogne_F_Porta_G_chiusa.png": "file_00000000c7f481fd94d82288a14cda56.png",
+ "Fogne_G_Acqua.gif": "Fogne_G_Acqua-1.gif",
+ "Fogne_G_Argano_spia_1_verde.png": "Fogne_G_Argano_spia_1_verde.png",
+ "Fogne_G_Argano_spia_2_verde.png": "Fogne_G_Argano_spia_2_verde.png",
+ "Fogne_G_Argano_spia_3_verde.png": "Fogne_G_Argano_spia_3_verde.png",
+ "Fogne_G_Deposito_sommerso.png": "Fogne_G_Deposito_sommerso.png",
+ "Fogne_G_Grata_chiusa.png": "Fogne_G_Grata_chiusa.png",
+ "Fogne_G_Terminale_1_verde.png": "Fogne_G_Terminale_1_verde.png",
+ "Fogne_G_Terminale_2_verde.png": "Fogne_G_Terminale_2_verde.png",
+ "Fogne_G_Terminale_3_verde.png": "Fogne_G_Terminale_3_verde.png"
+};
+const SEWER_ENEMY_FILES={
+ "fogne_addetto_condotte_attacco_da_zero.gif": "file_00000000c9a882098d2a947f6f7a637e.gif",
+ "fogne_addetto_condotte_danno.gif": "fogne_addetto_condotte_danno.gif",
+ "fogne_addetto_condotte_guardia.gif": "fogne_addetto_condotte_guardia.gif",
+ "fogne_addetto_condotte_low_sweep.gif": "file_00000000b1e081fd893da8aa42bdb394.gif",
+ "fogne_donna_del_richiamo_attacco_da_zero.gif": "file_000000007990820980aa1381b1f721fe.gif",
+ "fogne_donna_del_richiamo_danno.gif": "fogne_donna_del_richiamo_danno.gif",
+ "fogne_donna_del_richiamo_guardia.gif": "fogne_donna_del_richiamo_guardia.gif",
+ "fogne_donna_del_richiamo_piercing_call.gif": "file_000000002d5081fda6e84dd0dec3c344.gif",
+ "fogne_fuggitiva_attacco_da_zero.gif": "file_00000000b4fc820987213664368738a0.gif",
+ "fogne_fuggitiva_danno.gif": "fogne_fuggitiva_danno.gif",
+ "fogne_fuggitiva_guardia.gif": "fogne_fuggitiva_guardia.gif",
+ "fogne_fuggitiva_toxic_splash.gif": "file_00000000c8a081fdbee264ed250e2049.gif",
+ "fogne_guardiano_della_grata_attacco_da_zero.gif": "file_00000000c9e48209b2014840258acf18.gif",
+ "fogne_guardiano_della_grata_danno.gif": "fogne_guardiano_della_grata_danno.gif",
+ "fogne_guardiano_della_grata_guardia.gif": "fogne_guardiano_della_grata_guardia.gif",
+ "fogne_guardiano_della_grata_shoulder_charge.gif": "file_0000000036188209ae72ea1a0c157091.gif",
+ "fogne_low_sweep_getto_acqua.gif": "fogne_low_sweep_getto_acqua.gif",
+ "fogne_pendolare_attacco_da_zero.gif": "file_0000000002d08209997660b1ea27b4fa.gif",
+ "fogne_pendolare_danno.gif": "fogne_pendolare_danno.gif",
+ "fogne_pendolare_guardia.gif": "fogne_pendolare_guardia.gif",
+ "fogne_piercing_call_onda_sonora.gif": "file_000000007ae481fd8cd7de08fcd5a08f.gif",
+ "fogne_strisciante_attacco_da_zero.gif": "file_00000000ab4082119293fe8f6be24bf1.gif",
+ "fogne_strisciante_danno.gif": "fogne_strisciante_danno.gif",
+ "fogne_strisciante_guardia.gif": "fogne_strisciante_guardia.gif",
+ "fogne_strisciante_sudden_lunge.gif": "file_0000000010708209843eb3c5a91e2371.gif",
+ "fogne_toxic_splash_schizzo_veleno.gif": "file_00000000f24c81fd9b413d25c88dd951.gif"
+};
+const SEWER_ENEMY_ANIMATION={
+ "fogne_fuggitiva_toxic_splash.gif": {
+  "foot": 198.0,
+  "ground": 434,
+  "duration": 950,
+  "impact": 480
+ },
+ "fogne_addetto_condotte_low_sweep.gif": {
+  "foot": 218.5,
+  "ground": 434,
+  "duration": 700,
+  "impact": 330
+ },
+ "fogne_addetto_condotte_attacco_da_zero.gif": {
+  "foot": 220.5,
+  "ground": 434,
+  "duration": 820,
+  "impact": 410
+ },
+ "fogne_guardiano_della_grata_shoulder_charge.gif": {
+  "foot": 200.0,
+  "ground": 434,
+  "duration": 890,
+  "impact": 420
+ },
+ "fogne_pendolare_attacco_da_zero.gif": {
+  "foot": 197.5,
+  "ground": 434,
+  "duration": 710,
+  "impact": 330
+ },
+ "fogne_strisciante_sudden_lunge.gif": {
+  "foot": 204.0,
+  "ground": 434,
+  "duration": 710,
+  "impact": 340
+ },
+ "fogne_donna_del_richiamo_piercing_call.gif": {
+  "foot": 219.0,
+  "ground": 434,
+  "duration": 980,
+  "impact": 440
+ },
+ "fogne_donna_del_richiamo_attacco_da_zero.gif": {
+  "foot": 207.0,
+  "ground": 434,
+  "duration": 650,
+  "impact": 300
+ },
+ "fogne_guardiano_della_grata_attacco_da_zero.gif": {
+  "foot": 216.0,
+  "ground": 434,
+  "duration": 770,
+  "impact": 350
+ },
+ "fogne_fuggitiva_attacco_da_zero.gif": {
+  "foot": 173.5,
+  "ground": 434,
+  "duration": 640,
+  "impact": 300
+ },
+ "fogne_strisciante_attacco_da_zero.gif": {
+  "foot": 209.0,
+  "ground": 434,
+  "duration": 530,
+  "impact": 240
+ },
+ "fogne_pendolare_danno.gif": {
+  "foot": 143.0,
+  "ground": 434,
+  "duration": 500,
+  "impact": 200
+ },
+ "fogne_fuggitiva_danno.gif": {
+  "foot": 134.0,
+  "ground": 434,
+  "duration": 480,
+  "impact": 190
+ },
+ "fogne_addetto_condotte_danno.gif": {
+  "foot": 161.0,
+  "ground": 434,
+  "duration": 510,
+  "impact": 210
+ },
+ "fogne_donna_del_richiamo_danno.gif": {
+  "foot": 155.0,
+  "ground": 434,
+  "duration": 490,
+  "impact": 190
+ },
+ "fogne_guardiano_della_grata_danno.gif": {
+  "foot": 161.0,
+  "ground": 434,
+  "duration": 500,
+  "impact": 200
+ },
+ "fogne_strisciante_danno.gif": {
+  "foot": 156.0,
+  "ground": 434,
+  "duration": 520,
+  "impact": 210
+ },
+ "fogne_pendolare_guardia.gif": {
+  "foot": 143.0,
+  "ground": 434,
+  "duration": 1040,
+  "impact": 520
+ },
+ "fogne_fuggitiva_guardia.gif": {
+  "foot": 134.0,
+  "ground": 434,
+  "duration": 970,
+  "impact": 490
+ },
+ "fogne_addetto_condotte_guardia.gif": {
+  "foot": 161.0,
+  "ground": 434,
+  "duration": 1040,
+  "impact": 520
+ },
+ "fogne_donna_del_richiamo_guardia.gif": {
+  "foot": 155.0,
+  "ground": 434,
+  "duration": 980,
+  "impact": 490
+ },
+ "fogne_guardiano_della_grata_guardia.gif": {
+  "foot": 161.0,
+  "ground": 434,
+  "duration": 1070,
+  "impact": 540
+ },
+ "fogne_strisciante_guardia.gif": {
+  "foot": 156.0,
+  "ground": 434,
+  "duration": 1040,
+  "impact": 510
+ }
+};
+
+/* Fogne: coordinates are on a 512-pixel-wide reference of each room. */
+const SEWER_ROOT='Fogne dungeon and enemies/';
+const SEWER_ROOMS={
+ a:{name:'Initial Conduits',map:'Fogne_A_Condotte_iniziali.png',layers:['Fogne_A_Acqua.gif'],
+  floor:[[19,155,66,180],[48,132,219,226],[219,154,288,179],[288,132,460,226],[456,155,496,180],
+   [78,64,125,140],[377,65,426,140],[129,222,172,280]],
+  obstacles:[[54,188,84,217],[117,154,145,177],[361,140,387,158]]},
+ b:{name:'Settling Tanks',map:'Fogne_B_Vasche_di_decantazione.png',layers:['Fogne_B_Acqua.gif','Fogne_B_Grata_chiusa.png'],
+  floor:[[24,91,104,118],[42,79,104,145],[104,88,414,103],[388,81,472,99],[408,89,435,193],
+   [410,180,482,267],[437,252,466,278],[83,134,103,231],[85,199,144,243],[143,211,319,225],[318,185,378,242]]},
+ c:{name:'Drainage Works',map:'Fogne_C_Impianti_di_drenaggio.png',layers:['Fogne_C_Acqua.gif','Fogne_C_Spia_acqua_alta.png','Fogne_C_Spia_acqua_bassa.png'],
+  floor:[[50,41,151,120],[124,100,197,231],[183,74,348,230],[210,29,278,110],[331,112,479,128],
+   [390,119,481,165],[407,158,449,270],[436,87,461,126],[350,178,412,196],[40,169,105,242],[92,224,136,242]],
+  obstacles:[[186,98,316,164]]},
+ d:{name:'Flooded Galleries',map:'Fogne_D_Gallerie_allagate.png',layers:['Fogne_D_Acqua_alta.gif','Fogne_D_Acqua_bassa.gif','Fogne_D_Passerella_emersa.png'],
+  floor:[[43,66,133,118],[88,111,145,249],[45,147,91,178],[44,222,92,244],[80,240,107,263],
+   [366,72,448,132],[356,96,411,249],[401,137,467,174],[410,209,471,245],[405,241,432,281]],
+  bridge:[115,148,396,164]},
+ e:{name:'Control Room',map:'Fogne_E_Sala_di_controllo.png',layers:['Fogne_E_Porta_F_chiusa.png','Fogne_E_Porta_G_chiusa.png'],
+  floor:[[58,101,410,204],[73,191,225,260],[113,240,147,286],[277,190,399,265],[408,145,466,186],
+   [374,114,423,201],[308,73,374,115],[330,38,363,82],[224,202,286,243]],
+  obstacles:[[165,127,245,181],[348,216,393,245]]},
+ f:{name:'Service Tunnels',map:'Fogne_F_Condotte_di_servizio.png',layers:['Fogne_F_Porta_G_chiusa.png'],
+  floor:[[15,77,278,110],[265,105,414,129],[291,121,474,160],[358,150,424,297],[294,205,362,261],
+   [368,263,484,292],[399,283,453,312],[445,158,475,177],[463,235,487,276]]},
+ g:{name:'Sunken Reservoir',map:'Fogne_G_Deposito_sommerso.png',
+  layers:['Fogne_G_Acqua.gif','Fogne_G_Grata_chiusa.png',
+   ...[1,2,3].map(i=>'Fogne_G_Terminale_'+i+'_verde.png'),...[1,2,3].map(i=>'Fogne_G_Argano_spia_'+i+'_verde.png')],
+  floor:[[35,38,449,59],[69,17,87,44],[410,17,427,44],[63,55,76,260],[64,250,432,263],[425,97,439,258],
+   [132,91,435,105],[124,100,139,202],[132,195,355,209],[350,137,364,203],[293,132,358,144],
+   [215,130,302,169],[250,141,266,157],
+   [49,258,67,265],[34,257,53,278],[435,192,460,200],[456,188,472,206],
+   [172,202,180,226],[162,220,181,238]]}
+};
+const SEWER_LINKS=[
+ ['a',[485,168],'b',[49,107]],['b',[451,258],'c',[58,50]],['c',[448,100],'d',[93,252]],
+ ['d',[419,257],'e',[347,60]],['e',[452,162],'f',[30,91],'f'],
+ ['e',[129,264],'g',[78,44],'g'],['f',[427,288],'g',[419,44],'g']
+];
+const SEWER_START=[33,168],SEWER_STAIRS=[258,158],SEWER_TERMINALS=[[45,266],[463,195],[170,230]];
+const SEWER_SURFACE={id:'hongdeon',x:1360,y:1925,direction:'up'};
+const SEWER_ENEMIES={
+ sewer_pendolare:{name:'Commuter',level:5,hp:65,attack:22,defense:4,speed:12,exp:120,slug:'pendolare'},
+ sewer_addetto:{name:'Maintenance Worker',level:6,hp:86,attack:25,defense:7,speed:8,exp:135,slug:'addetto_condotte',skill:{id:'low_sweep',name:'Low Sweep',power:.83,status:'blind',effect:'sewer_water'}},
+ sewer_fuggitiva:{name:'Fugitive',level:7,hp:74,attack:26,defense:5,speed:15,exp:145,slug:'fuggitiva',skill:{id:'toxic_splash',name:'Toxic Splash',power:1,status:'poison',effect:'sewer_toxic'}},
+ sewer_donna:{name:'Calling Woman',level:7,hp:78,attack:24,defense:5,speed:11,exp:145,slug:'donna_del_richiamo',skill:{id:'piercing_call',name:'Piercing Call',power:1,status:'confusion',effect:'sewer_sound'}},
+ sewer_strisciante:{name:'Crawler',level:8,hp:92,attack:30,defense:6,speed:17,exp:165,slug:'strisciante',skill:{id:'sudden_lunge',name:'Sudden Lunge',power:1,status:'stop'}},
+ sewer_guardiano:{name:'Gatekeeper',level:9,hp:118,attack:36,defense:10,speed:7,exp:200,slug:'guardiano_della_grata',skill:{id:'shoulder_charge',name:'Shoulder Charge',power:1.4,status:'confusion'}}
+};
+
+const SEWER_REWARD_RULES=Object.fromEntries(Object.entries(SEWER_ENEMIES).map(([id,foe])=>
+ [id,{won:foe.level*27,item:foe.skill?.status==='poison'?'espresso_shot':'staff_meal',chance:.12}]));
+const SEWER_POOLS={
+ a:['sewer_pendolare','sewer_addetto','sewer_fuggitiva'],
+ b:['sewer_pendolare','sewer_addetto','sewer_fuggitiva'],
+ c:['sewer_addetto','sewer_pendolare','sewer_donna'],
+ d:['sewer_fuggitiva','sewer_donna','sewer_strisciante'],
+ e:['sewer_addetto','sewer_donna','sewer_strisciante'],
+ f:['sewer_addetto','sewer_strisciante','sewer_guardiano'],
+ g:['sewer_fuggitiva','sewer_donna','sewer_strisciante','sewer_guardiano']
+};
+const sewerRoomKey=()=>isSewerRoom(locationId)?locationId.slice(6):null;
+function isSewerRoom(id){return /^sewer-[a-g]$/.test(id||'');}
+function sewerProgress(){
+ return nightState.sewers??={grate:false,drained:false,circuit:'off',fuse:false,terminals:0,complete:false,poison:{}};
+}
+function atSewerSavePoint(){
+ if(!isSewerRoom(locationId)||nightState.mart?.test||sewerTestReturn)return false;
+ const key=sewerRoomKey();
+ if(key!=='g'||!sewerFinalGrateOpen())return false;
+ const at=sewerPoint('g',SEWER_STAIRS);
+ return Math.hypot(player.x-at.x,player.y-at.y)*zoom<110;
+}
+const sewerFinalGrateOpen=()=>sewerProgress().terminals===7;
+function sewerEnabled(circuit,state=sewerProgress()){return !circuit||state.circuit===circuit;}
+const sewerScale=id=>id==='g'?6:3;
+function sewerPoint(id,[x,y]){const scale=sewerScale(id);return {x:x*scale,y:y*scale};}
+const sewerImages=new Map();
+function sewerImage(name){
+ if(!sewerImages.has(name)){
+  const load=loadDungeonImage(SEWER_ROOT+'Map/'+SEWER_MAP_FILES[name]);
+  sewerImages.set(name,load.catch(error=>{sewerImages.delete(name);throw error;}));
+ }
+ return sewerImages.get(name);
+}
+function loadSewerRoom(id){
+ const {map,layers}=SEWER_ROOMS[id];
+ return Promise.all([map,...layers].map(sewerImage));
+}
+const sewerLayer=document.createElement('div');
+sewerLayer.id='sewerLayer';sewerLayer.hidden=true;scene.append(sewerLayer);
+let sewerBusy=false,sewerDistance=0,sewerEncounterAt=0,sewerLastPosition=null,sewerTestReturn=null;
+const sewerOverlays=new Map();
+function resetSewerEncounters(){
+ sewerDistance=0;sewerEncounterAt=720+Math.random()*440;sewerLastPosition={x:player.x,y:player.y};
+}
+function paintSewerLayers(){
+ const key=sewerRoomKey();
+ if(!key)return;
+ const state=sewerProgress();
+ for(const [name,image] of sewerOverlays){
+  let visible=true;
+  if(name==='Fogne_B_Grata_chiusa.png')visible=!state.grate;
+  if(name==='Fogne_C_Spia_acqua_alta.png'||name==='Fogne_D_Acqua_alta.gif')visible=!state.drained;
+  if(name==='Fogne_C_Spia_acqua_bassa.png'||name==='Fogne_D_Acqua_bassa.gif'||name==='Fogne_D_Passerella_emersa.png')visible=state.drained;
+  if(name==='Fogne_E_Porta_F_chiusa.png')visible=state.circuit!=='f';
+  if(name==='Fogne_E_Porta_G_chiusa.png'||name==='Fogne_F_Porta_G_chiusa.png')visible=state.circuit!=='g';
+  if(name==='Fogne_G_Grata_chiusa.png')visible=!sewerFinalGrateOpen();
+  const light=name.match(/_(?:Terminale|spia)_([123])_verde/);
+  if(light)visible=Boolean(state.terminals&(1<<(Number(light[1])-1)));
+  image.hidden=!visible;
+ }
+}
+function sewerContains(box,x,y){return x>=box[0]&&x<=box[2]&&y>=box[1]&&y<=box[3];}
+function sewerFloorAt(key,x,y,state){
+ const room=SEWER_ROOMS[key];
+ if(room.obstacles?.some(box=>sewerContains(box,x,y)))return false;
+ if(key==='b'&&!state.grate&&sewerContains([216,209,244,227],x,y))return false;
+ if(key==='e'&&state.circuit!=='f'&&sewerContains([417,142,436,189],x,y))return false;
+ if(key==='e'&&state.circuit!=='g'&&sewerContains([109,259,153,288],x,y))return false;
+ if(key==='f'&&state.circuit!=='g'&&sewerContains([396,289,456,313],x,y))return false;
+ if(key==='g'&&state.terminals!==7&&sewerContains([247,136,269,155],x,y))return false;
+ return room.floor.some(box=>sewerContains(box,x,y))||(state.drained&&!!room.bridge&&sewerContains(room.bridge,x,y));
+}
+const freeBeforeSewers=staticFree;
+staticFree=function(x,y,r=CONFIG.radius){
+ const key=sewerRoomKey();
+ if(!key)return freeBeforeSewers(x,y,r);
+ const scale=sewerScale(key),state=sewerProgress();
+ return [[0,0],[-r,0],[r,0],[0,-r],[0,r]].every(([dx,dy])=>sewerFloorAt(key,(x+dx)/scale,(y+dy)/scale,state));
+};
+const areaBeforeSewers=showLocation;
+showLocation=function(id){
+ if(!isSewerRoom(id)){
+  sewerLayer.hidden=true;sewerLayer.replaceChildren();sewerOverlays.clear();
+  if(isSewerRoom(locationId))$('editorOpen').hidden=false;
+  return areaBeforeSewers(id);
+ }
+ const key=id.slice(6),room=SEWER_ROOMS[key],scale=sewerScale(key);
+ if(MAP_EDITOR_REGISTRY.has(locationId))persistEditableMap();
+ for(const n of npcs)n.actor.node.hidden=true;
+ for(const actor of [...chaosActors,...vehicles])actor.actor.node.hidden=true;
+ for(const actor of [seoyoonNpc,seonHouseNpc,storyEnemy])if(actor)actor.actor.node.hidden=true;
+ npcs.splice(0);clearHongDepth();clearRoomDoors();clearMarkers();
+ depthNodes.forEach(n=>n.remove());depthNodes=[];
+ doorButton.hidden=portalButton.hidden=dungeonLayer.hidden=true;
+ houseCat.hidden=houseTV.hidden=storyNightLighting.hidden=true;
+ scene.classList.remove('story-night','seon-house');
+ $('trainWindow').hidden=true;$('editorOpen').hidden=true;
+ locationId=id;world={collisions:[],depth:[]};
+ CONFIG.width=512*scale;CONFIG.height=key==='g'?2048:1024;
+ scene.style.width=mapImage.style.width=CONFIG.width+'px';
+ scene.style.height=mapImage.style.height=CONFIG.height+'px';
+ mapImage.onload=null;mapImage.style.imageRendering='pixelated';
+ mapImage.src=SEWER_ROOT+'Map/'+SEWER_MAP_FILES[room.map];
+ sewerLayer.replaceChildren();sewerOverlays.clear();
+ for(const name of room.layers){
+  const image=new Image();image.alt='';image.draggable=false;
+  image.src=SEWER_ROOT+'Map/'+SEWER_MAP_FILES[name];
+  sewerOverlays.set(name,image);sewerLayer.append(image);
+ }
+ sewerLayer.hidden=false;paintSewerLayers();
+ document.querySelector('.eyebrow').textContent=tr('Sewers');
+ refreshNightObjective();
+};
+const cameraBeforeSewers=updateCamera;
+updateCamera=function(){
+ if(!sewerRoomKey())return cameraBeforeSewers();
+ zoom=.95;
+ const w=viewWidth/zoom,h=viewHeight/zoom;
+ camera.x=CONFIG.width>w?clamp(player.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;
+ camera.y=CONFIG.height>h?clamp(player.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;
+ scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';
+};
+const targetsBeforeSewers=allTargets;
+allTargets=function(){return sewerRoomKey()?[]:targetsBeforeSewers();};
+const statusBeforeSewers=updateStatus;
+updateStatus=function(){
+ const room=SEWER_ROOMS[sewerRoomKey()];
+ if(room)setTextIfChanged('status',tr(room.name));
+ else statusBeforeSewers();
+};
+const sewerObjectiveBefore=refreshNightObjective;
+refreshNightObjective=function(){
+ if(!sewerRoomKey()){
+  if(locationId==='hongdeon'&&nightState.cucchiaioReturnSeen){
+   setTextIfChanged('objective',nightState.sewers?.complete?'':tr('Find the sewer entrance.'));
+   return;
+  }
+  return sewerObjectiveBefore();
+ }
+ const state=sewerProgress();
+ const objective=sewerRoomKey()==='g'?(sewerFinalGrateOpen()?'Climb to the surface.':'Activate the three terminals.'):
+  state.fuse&&sewerRoomKey()==='e'?'Route power to the reservoir.':'Explore the sewers.';
+ setTextIfChanged('objective',tr(objective));
+};
+const lockBeforeSewers=locked;
+locked=function(){return sewerBusy||lockBeforeSewers();};
+
+async function changeSewerArea(id,point,options={}){
+ if(sewerBusy||firstBattleActive)return false;
+ sewerBusy=true;resetInput();
+ const fade=$('fade'),duration=mapFadeDuration(),epoch=sceneEpoch;
+ const style={transition:fade.style.transition,zIndex:fade.style.zIndex};
+ fade.style.transition='opacity '+duration+'ms ease-in-out';fade.style.zIndex='45';fade.classList.add('black');
+ try{
+  await Promise.all([wait(duration+16),isSewerRoom(id)?loadSewerRoom(id.slice(6)):id==='hongdeon'?loadHongdeonMap():null]);
+  if(epoch!==sceneEpoch)return false;
+  if(options.surface)sewerProgress().complete=true;
+  if(MAP_EDITOR_REGISTRY.has(locationId))persistEditableMap();
+  else if(locationId==='hongdeon')hongWorld=world;
+  else if(locationId==='city')cityWorld=world;
+  else if(locationId==='office')officeWorld=world;
+  else if(isInterior(locationId))interiorWorlds[locationId]=world;
+  showLocation(id);
+  Object.assign(player,point,{moving:false,direction:point.direction||'down'});
+  nearestFree(player);updateCamera();drawPlayer();resetSewerEncounters();
+  await new Promise(requestAnimationFrame);
+  return true;
+ }catch(error){
+  console.error(error);openMartNotice(tr('Unable to enter this area.'));return false;
+ }finally{
+  fade.classList.remove('black');await wait(duration+16);
+  fade.style.transition=style.transition;fade.style.zIndex=style.zIndex;
+  sewerBusy=false;resetInput();updateInteractionUI();
+ }
+}
+
+function sewerExits(key){
+ return SEWER_LINKS.flatMap(([a,from,b,to,circuit])=>key===a?[{to:b,at:from,spawn:to,circuit}]:
+  key===b?[{to:a,at:to,spawn:from,circuit}]:[]);
+}
+const sewerMarkers=new Map();
+function showSewerMarker(key,id,p,label,onClick,{range=35,offset=0}={}){
+ const at=sewerPoint(key,p);
+ if(Math.hypot(player.x-at.x,player.y-at.y)*zoom>range)return;
+ let button=sewerMarkers.get(id);
+ if(!button){
+  button=document.createElement('button');button.type='button';button.className='marker object';button.dataset.sewerAction=id;
+  const image=new Image();image.src=UI_ASSETS.exclamation;image.alt='';
+  button.append(image);$('interactions').append(button);sewerMarkers.set(id,button);
+ }
+ const screen=screenPosition({x:at.x,y:at.y-46/zoom});
+ button.style.left=clamp(screen.x+offset,18,viewWidth-18)+'px';
+ button.style.top=clamp(screen.y,50,viewHeight-22)+'px';
+ button.hidden=false;button.setAttribute('aria-label',tr(label));button.title=tr(label);
+ button.onclick=event=>{
+  event.stopPropagation();
+  if(!locked()&&!dialogue&&Math.hypot(player.x-at.x,player.y-at.y)*zoom<=range)onClick();
+ };
+}
+function sewerMechanismChanged(){schematicLocation='';paintSewerLayers();refreshNightObjective();updateInteractionUI();}
+function enterSewersFromSurface(){
+ sewerProgress();
+ return changeSewerArea('sewer-a',{...sewerPoint('a',SEWER_START),direction:'right'});
+}
+function paintSewerMarkers(){
+ for(const marker of sewerMarkers.values())marker.hidden=true;
+ if(!ready||intro||locked()||dialogue||editor.open||!partyNotice.hidden)return;
+ const key=sewerRoomKey(),state=nightState.sewers;
+ if(!key){
+  if(locationId==='hongdeon'&&nightState.cucchiaioReturnSeen&&!state?.complete){
+   if(Math.hypot(player.x-SEWER_SURFACE.x,player.y-SEWER_SURFACE.y)*zoom<=85){
+    warehouseMarker('sewer-story-entrance',{x:SEWER_SURFACE.x,y:SEWER_SURFACE.y-50},()=>void enterSewersFromSurface(),'Enter the sewers');
+    visibleWarehouseMarkers.add('sewer-story-entrance');
+   }
+  }
+  return;
+ }
+ for(const exit of sewerExits(key)){
+  const open=sewerEnabled(exit.circuit),at=exit.at;
+  showSewerMarker(key,'exit-'+exit.to,at,open?SEWER_ROOMS[exit.to].name:'Closed bulkhead',()=>{
+   if(!open){openMartNotice(tr('The control room circuit controls this bulkhead.'));return;}
+   void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn));
+  },{range:exit.circuit?115:72});
+ }
+ if(key==='a')showSewerMarker(key,'street',SEWER_START,'Return to the street',()=>void leaveSewers(false));
+ if(key==='b'&&!state.grate)showSewerMarker(key,'valve',[409,82],'Open the shortcut grate',()=>{
+  state.grate=true;sewerMechanismChanged();
+ });
+ if(key==='c')showSewerMarker(key,'pump',[302,168],state.drained?'Raise the water':'Drain the galleries',()=>{
+  state.drained=!state.drained;sewerMechanismChanged();
+ });
+ if(key==='e')showSewerMarker(key,'circuit',[206,188],state.circuit==='f'?'Switch to reservoir circuit':'Switch to service circuit',()=>{
+  if(state.circuit==='f'&&!state.fuse){openMartNotice(tr('The reservoir circuit needs a fuse from the service tunnels.'));return;}
+  state.circuit=state.circuit==='f'?'g':'f';sewerMechanismChanged();
+ },{range:62});
+ if(key==='f'&&!state.fuse)showSewerMarker(key,'fuse',[388,132],'Take the fuse',()=>{
+  state.fuse=true;sewerMechanismChanged();openMartNotice(tr('Fuse obtained. Return to the control room.'));
+ },{range:52});
+ if(key==='g'){
+  if(atSewerSavePoint())showSewerMarker(key,'save',SEWER_STAIRS,'Open menu to save',()=>openMenu(),{range:110,offset:36});
+  SEWER_TERMINALS.forEach((position,index)=>{
+   if(state.terminals&(1<<index))return;
+   showSewerMarker(key,'terminal-'+index,position,'Activate terminal '+(index+1),()=>{
+    state.terminals|=1<<index;sewerMechanismChanged();
+    if(sewerFinalGrateOpen())openMartNotice(tr('The winch has opened the final grate.'));
+   },{range:62});
+  });
+  showSewerMarker(key,'surface',SEWER_STAIRS,'Climb to the surface',()=>{
+   if(!sewerFinalGrateOpen()){openMartNotice(tr('The winch needs power from all three terminals.'));return;}
+   void leaveSewers(true);
+  },{range:54});
+ }
+}
+async function leaveSewers(surface){
+ const start=sewerTestReturn||SEWER_SURFACE;
+ const destination=surface?SEWER_SURFACE:start;
+ if(await changeSewerArea(destination.id,destination,{surface}))sewerTestReturn=null;
+}
+const travelBeforeSewers=updateTravel;
+updateTravel=function(dt){
+ travelBeforeSewers(dt);
+ const key=sewerRoomKey();
+ if(!key||locked()||dialogue||intro||editor.open||!player.moving)return;
+ const distance=Math.hypot(player.x-sewerLastPosition.x,player.y-sewerLastPosition.y)*zoom;
+ sewerLastPosition={x:player.x,y:player.y};
+ if(distance>45)return;
+ sewerDistance+=distance;
+ if(sewerDistance<sewerEncounterAt)return;
+ const nearDoor=sewerExits(key).some(exit=>{const at=sewerPoint(key,exit.at);return Math.hypot(player.x-at.x,player.y-at.y)*zoom<110;});
+ if(!nearDoor){resetSewerEncounters();void startSewerEncounter(key);}
+};
+const uiBeforeSewers=updateInteractionUI;
+updateInteractionUI=function(){
+ uiBeforeSewers();
+ if(sewerRoomKey())doorButton.hidden=portalButton.hidden=bedMarker.hidden=true;
+ paintSewerMarkers();
+};
+const schematicBeforeSewers=buildSchematic;
+buildSchematic=function(){
+ const key=sewerRoomKey();
+ if(!key)return schematicBeforeSewers();
+ schematic.width=CONFIG.width;schematic.height=CONFIG.height;
+ const ctx=schematic.getContext('2d'),room=SEWER_ROOMS[key],state=sewerProgress(),scale=sewerScale(key);
+ ctx.fillStyle='#101e30';ctx.fillRect(0,0,CONFIG.width,CONFIG.height);
+ const paint=([x,y,right,bottom])=>ctx.fillRect(x*scale,y*scale,(right-x)*scale,(bottom-y)*scale);
+ ctx.fillStyle='#8d9dab';room.floor.forEach(paint);
+ if(room.bridge&&state.drained)paint(room.bridge);
+ ctx.fillStyle='#24394f';room.obstacles?.forEach(paint);
+ schematicLocation=locationId;schematicWorld=world;
+};
+
+/* Combat uses the shared party turn order, damage effects and victory screen. */
+function sewerFoe(id){return SEWER_ENEMIES[id];}
+function isDungeonBattle(){return ['mart','sewers'].includes(partyBattle?.kind);}
+for(const [id,profile] of Object.entries(SEWER_ENEMIES)){
+ const {slug,skill}=profile;
+ DUNGEON_COMBAT_FILES[id]=Object.fromEntries(Object.entries({
+  idle:'fogne_'+slug+'_guardia.gif',attack:'fogne_'+slug+'_attacco_da_zero.gif',
+  hurt:'fogne_'+slug+'_danno.gif',...(skill?{skill:'fogne_'+slug+'_'+skill.id+'.gif'}:{})
+ }).map(([pose,name])=>[pose,SEWER_ROOT+'Enemies/'+SEWER_ENEMY_FILES[name]]));
+ if(skill){
+  Object.assign(skill,{type:'physical',guaranteed:true});
+  if(skill.status==='stop')skill.stopChance=.35;
+ }
+}
+for(const [profile,effect,name] of [
+ ['sewer_addetto','sewer_water','fogne_low_sweep_getto_acqua.gif'],
+ ['sewer_fuggitiva','sewer_toxic','fogne_toxic_splash_schizzo_veleno.gif'],
+ ['sewer_donna','sewer_sound','fogne_piercing_call_onda_sonora.gif']
+])DUNGEON_COMBAT_FX[profile]={[effect]:SEWER_ROOT+'Enemies/'+SEWER_ENEMY_FILES[name]};
+for(const [file,meta] of Object.entries(SEWER_ENEMY_ANIMATION)){
+ ENEMY_ASSET_META[SEWER_ROOT+'Enemies/'+SEWER_ENEMY_FILES[file]]=meta;
+}
+const sewerBattleLoadBefore=loadPartyBattle;
+loadPartyBattle=async function(kind){
+ if(kind!=='sewers')return sewerBattleLoadBefore(kind);
+ const [assets]=await Promise.all([sewerBattleLoadBefore(kind),loadDungeonCombat(partyBattle.enemyIds)]);
+ return assets;
+};
+const sewerBattleBuildBefore=buildPartyFighters;
+buildPartyFighters=async function(){
+ if(partyBattle?.kind!=='sewers')return sewerBattleBuildBefore();
+ const stage=$('battleStage'),height=stage.clientHeight;
+ stage.replaceChildren();
+ // Use the current room artwork until a dedicated combat background is supplied.
+ const background=$('battleBackground');
+ const room=SEWER_ROOMS[sewerRoomKey()];
+ background.src=SEWER_ROOT+'Map/'+SEWER_MAP_FILES[room.map];
+ const positions=[{x:22,y:64},{x:36,y:91},{x:15,y:98}];
+ const foes=partyBattle.enemyIds.map((id,i)=>{
+  const {name,hp,attack,defense,speed,level}=sewerFoe(id);
+  const stats={profile:id,name,hp,maxHp:hp,attack,defense,speed,level,accuracy:95,resistance:defense};
+  return makePartyFighter('enemy','sewer-foe-'+(i+1),positions[i],height*FIRST_BATTLE.enemyHeight/100,stats);
+ });
+ const homes=partyBattlePositions(partyBattle.members.length);
+ const heroes=partyBattle.members.map((id,i)=>makePartyFighter(id,id,homes[i],height*FIRST_BATTLE.heroHeight/100));
+ firstBattleFighters=[...foes,...heroes];firstBattleEnemy=foes[0].stats;
+ for(const f of heroes)if(sewerProgress().poison[f.member])setSewerAilment(f,'poison');
+ await Promise.all(firstBattleFighters.map(f=>drawBattlePose(f,'idle',true)));
+};
+const SEWER_STATUS_NAMES={poison:'POISON',blind:'BLIND',confusion:'CONFUSION'};
+function setSewerAilment(f,status){
+ f.statuses??=new Set();f.statusIcons??=new Map();
+ f.statuses.add(status);
+ if(!f.statusIcons.has(status)){
+  const badge=document.createElement('span');
+  badge.className='sewer-status '+status;
+  badge.textContent=tr(SEWER_STATUS_NAMES[status]);
+  f.node.append(badge);f.statusIcons.set(status,badge);
+ }
+ if(status==='poison')sewerProgress().poison[f.member]=true;
+ else if(status==='blind')f.blindTurns=2;
+ else if(status==='confusion')f.confusionTurns=1;
+}
+const cleanseBeforeSewers=clearSeonAilments;
+clearSeonAilments=function(f,statuses){
+ cleanseBeforeSewers(f,statuses);
+ if(f.member&&statuses.includes('poison')&&nightState.sewers)delete nightState.sewers.poison[f.member];
+};
+const sewerStatsBefore=partyStats;
+partyStats=function(f){
+ const stats=sewerStatsBefore(f);
+ return f.blindTurns>0?{...stats,accuracy:Math.max(0,(stats.accuracy??100)-35)}:stats;
+};
+const sewerHitBefore=partyHit;
+partyHit=async function(user,target,skill,epoch){
+ const hp=target.hp();
+ await sewerHitBefore(user,target,skill,epoch);
+ if(battleAlive(epoch)&&sewerFoe(user.stats?.profile)&&target.member&&target.hp()>0&&target.hp()<hp&&skill?.status&&skill.status!=='stop'&&Math.random()<(skill.status==='poison'?.5:.35)){
+  setSewerAilment(target,skill.status);
+  announceBattleEffect(fighterDisplayName(target)+' · '+tr(SEWER_STATUS_NAMES[skill.status]));
+ }
+};
+async function tickSewerPoison(f,epoch){
+ if(!f?.member||f.hp()<=0||!sewerProgress().poison[f.member]||godMode)return;
+ const damage=Math.max(1,Math.floor(partyMembers[f.member].maxHp/16));
+ partySetHP(f,f.hp()-damage);floatBattleDamage(f,damage);battleImpact(f);
+ announceBattleEffect(fighterDisplayName(f)+' · '+tr('POISON'));
+ paintFirstBattle();await battlePause(380,epoch);
+}
+const finishBeforeSewerPoison=partyFinishAction;
+partyFinishAction=async function(epoch){
+ if(!battleAlive(epoch))return;
+ const f=currentPartyFighter();
+ if(f?.blindTurns>0&&--f.blindTurns===0)clearSeonAilments(f,['blind']);
+ if(f?.member&&nightState.sewers?.poison[f.member]&&!f.skipPoison)await tickSewerPoison(f,epoch);
+ if(f)f.skipPoison=false;
+ return finishBeforeSewerPoison(epoch);
+};
+function stageEnemyAtTarget(user,target){
+ const stage=$('battleStage');
+ const shift=(user.height*.46+target.height*.26)/stage.clientWidth*100;
+ positionBattleFighter(user,Math.max(7,target.x-shift),target.y);
+}
+async function playSewerAttack(user,target,skill,epoch){
+ battleHint(actionSentence(user,skill?.name||'ATK'));
+ const pose=skill?'skill':'attack',asset=dungeonCombatAssets.enemies[user.stats.profile][pose];
+ user.node.classList.add('sewer-materializing');
+ stageEnemyAtTarget(user,target);
+ let effect=null;
+ try{
+  if(!await drawBattlePose(user,pose,true)||!battleAlive(epoch))return;
+  const duration=asset.duration;
+  const impact=asset.impact;
+  const start=performance.now();
+  if(!await battlePause(impact,epoch))return;
+  if(skill?.effect){
+   const fx=dungeonCombatAssets.fx[skill.effect],to=bodyPoint(target),size=target.height*(skill.effect==='sewer_sound'?2.1:1.7);
+   effect=effectImage(fx,{left:(to.x-size/2)+'px',top:(to.y-size/2)+'px',width:size+'px',height:size+'px'});
+  }
+  await partyHit(user,target,skill,epoch);
+  if(!battleAlive(epoch))return;
+  const hitAt=performance.now();
+  if(!await battlePause(Math.max(0,duration-20-(hitAt-start)),epoch))return;
+  positionBattleFighter(user);
+  user.node.classList.remove('sewer-materializing');
+  await drawBattlePose(user,'idle',true);
+  await battlePause(Math.max(0,fighterReactionMs(target)-(performance.now()-hitAt)),epoch);
+ }finally{
+  effect?.remove();
+  if(battleAlive(epoch)){positionBattleFighter(user);user.node.classList.remove('sewer-materializing');}
+ }
+}
+async function confusePartyTurn(f,epoch){
+ if(!f.confusionTurns)return false;
+ if(--f.confusionTurns===0)clearSeonAilments(f,['confusion']);
+ if(Math.random()>=.5)return false;
+ f.guard=false;
+ const allies=partyHeroes().filter(ally=>ally.hp()>0&&ally!==f);
+ const target=allies.length?allies[Math.floor(Math.random()*allies.length)]:f;
+ firstBattlePhase='acting';paintFirstBattle();
+ await partyMelee(f,target,null,epoch);
+ if(battleAlive(epoch))await partyFinishAction(epoch);
+ return true;
+}
+function startSewerEncounter(room){
+ resetSewerEncounters();
+ const pool=SEWER_POOLS[room],first=pool[Math.floor(Math.random()*pool.length)];
+ const others=pool.filter(id=>id!=='sewer_guardiano');
+ const sample=()=>others[Math.floor(Math.random()*others.length)];
+ const ids=[first,sample()];
+ if(Math.random()<.35)ids.push(sample());
+ return startRescueBattle({kind:'sewers',enemyIds:ids,rewardExp:ids.reduce((sum,id)=>sum+sewerFoe(id).exp,0)});
+}
+const sewerRetryBefore=$('battleRetry').onclick;
+$('battleRetry').onclick=function(){
+ if(partyBattle?.kind==='sewers'&&partyBattle.poisonAtStart)sewerProgress().poison={...partyBattle.poisonAtStart};
+ return sewerRetryBefore();
+};
+const sewerGameOverBefore=gameOverCheckpoint;
+gameOverCheckpoint=function(){
+ if(partyBattle?.kind==='sewers'&&(nightState.mart?.test||sewerTestReturn))return null;
+ return sewerGameOverBefore();
+};
+const sewerAfterBattle=afterDungeonBattle;
+afterDungeonBattle=function(){
+ if(!sewerRoomKey())return sewerAfterBattle();
+ resetSewerEncounters();resetInput();refreshNightObjective();updateInteractionUI();
+};
+
+const sewerButton=document.createElement('button');
+sewerButton.type='button';sewerButton.dataset.checkpoint='sewers';sewerButton.textContent='Fogne';
+checkpointOptions.append(sewerButton);
+const sewerCheckpointBefore=checkpointOptions.onclick;
+checkpointOptions.onclick=event=>{
+ if(event.target.closest('[data-checkpoint]')?.dataset.checkpoint!=='sewers')return sewerCheckpointBefore(event);
+ setCheckpointOptions(false);
+ if(sewerRoomKey()||sewerBusy||firstBattleActive)return;
+ if(!intro&&partyMembers.michael.joined){
+  sewerTestReturn={id:locationId,x:player.x,y:player.y,direction:player.direction};
+  void enterSewersFromSurface();
+ }else void enterDungeonTest(null,null,'sewers');
+};
+const resetBeforeSewers=beginIntro;
+beginIntro=function(){
+ if(sewerRoomKey())showLocation('city');
+ sewerTestReturn=null;sewerLastPosition=null;
+ return resetBeforeSewers();
+};
+[
+ ['Sewers','하수도'],['Initial Conduits','초입 수로'],['Settling Tanks','침전조'],['Drainage Works','배수 시설'],
+ ['Flooded Galleries','침수 통로'],['Control Room','제어실'],['Service Tunnels','정비 통로'],['Sunken Reservoir','침수 저장조'],
+ ['Find the sewer entrance.','하수도 입구를 찾으세요.'],['Explore the sewers.','하수도를 탐색하세요.'],['Enter the sewers','하수도 진입'],['Return to the street','거리로 돌아가기'],
+ ['Open menu to save','메뉴를 열어 저장하기'],['Climb to the surface.','지상으로 올라가세요.'],['Climb to the surface','지상으로 올라가기'],
+ ['Closed bulkhead','닫힌 차단문'],['The control room circuit controls this bulkhead.','제어실 회로가 이 차단문을 제어합니다.'],
+ ['Open the shortcut grate','지름길 철문 열기'],['Raise the water','수위 높이기'],['Drain the galleries','통로 배수하기'],
+ ['Route power to the reservoir.','저장조에 전력을 공급하세요.'],['Switch to reservoir circuit','저장조 회로로 전환'],
+ ['Switch to service circuit','정비 통로 회로로 전환'],['The reservoir circuit needs a fuse from the service tunnels.','저장조 회로에는 정비 통로의 퓨즈가 필요합니다.'],
+ ['Take the fuse','퓨즈 챙기기'],['Fuse obtained. Return to the control room.','퓨즈를 얻었습니다. 제어실로 돌아가세요.'],
+ ['Activate the three terminals.','단말기 세 개를 작동시키세요.'],['Activate terminal 1','단말기 1 작동'],['Activate terminal 2','단말기 2 작동'],
+ ['Activate terminal 3','단말기 3 작동'],['The winch has opened the final grate.','윈치가 마지막 철문을 열었습니다.'],
+ ['The winch needs power from all three terminals.','윈치에는 단말기 세 개의 전력이 필요합니다.'],
+ ['Commuter','통근자'],['Maintenance Worker','시설 관리인'],['Fugitive','도망자'],['Calling Woman','외치는 여자'],
+ ['Crawler','기어 다니는 자'],['Gatekeeper','철문 수호자'],['Low Sweep','낮은 휩쓸기'],['Toxic Splash','독액 튀기기'],
+ ['Piercing Call','날카로운 외침'],['Sudden Lunge','기습 돌진'],['Shoulder Charge','어깨 돌격'],
+ ['POISON','중독'],['BLIND','실명'],['CONFUSION','혼란']
+].forEach(pair=>bilingual(...pair));
 
 pendingNightSave=readRpgSave();
 
