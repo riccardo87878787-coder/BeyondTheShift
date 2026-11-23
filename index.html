@@ -6669,7 +6669,7 @@ function startSewerEncounter(room){
  const sample=()=>others[Math.floor(Math.random()*others.length)];
  const ids=[first,sample()];
  if(Math.random()<.35)ids.push(sample());
- return startRescueBattle({kind:'sewers',enemyIds:ids,rewardExp:ids.reduce((sum,id)=>sum+sewerFoe(id).exp,0)});
+ return startRescueBattle({kind:'sewers',enemyIds:ids,rewardExp:ids.reduce((sum,id)=>sum+sewerFoe(id).exp,0)*3.5});
 }
 const sewerRetryBefore=$('battleRetry').onclick;
 $('battleRetry').onclick=function(){
