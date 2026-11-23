@@ -6551,10 +6551,10 @@ buildPartyFighters=async function(){
  if(partyBattle?.kind!=='sewers')return sewerBattleBuildBefore();
  const stage=$('battleStage'),height=stage.clientHeight;
  stage.replaceChildren();
- // Use the current room artwork until a dedicated combat background is supplied.
- const background=$('battleBackground');
- const room=SEWER_ROOMS[sewerRoomKey()];
- background.src=SEWER_ROOT+'Map/'+SEWER_MAP_FILES[room.map];
+ 
+const background=$('battleBackground');
+background.src='Fogne dungeon and enemies/Map/file_00000000f6f88211ac8bca2f0d2a58a8.png';
+
  const positions=[{x:22,y:64},{x:36,y:91},{x:15,y:98}];
  const foes=partyBattle.enemyIds.map((id,i)=>{
   const {name,hp,attack,defense,speed,level}=sewerFoe(id);
