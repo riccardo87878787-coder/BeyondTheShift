@@ -2990,7 +2990,7 @@ nextPartyTurn=async function(epoch){
  const skill=f.stats.profile==='cashier'&&r<.3?PRICE_CHECK:f.stats.profile==='stockkeeper'&&r<.5?HEAVY_DELIVERY:null;
  battleHint(partyName(f)+' · '+(skill?tr(skill.name):'ATK'));
  if(skill){
-  stageEnemyAtTarget(f,target);
+  if(skill!==PRICE_CHECK)stageEnemyAtTarget(f,target);
   try{
    if(skill===PRICE_CHECK)await enemyPriceCheck(f,target,epoch);
    else await enemyHeavyDelivery(f,target,epoch);
@@ -4571,7 +4571,7 @@ async function managerTurn(user,targets,target,epoch){
   battleHint(actionSentence(user,'Mirror Guard'));
   await drawBattlePose(user,'idle',true);
   await battlePause(580,epoch);
- }else if(action===1||action===4){stageEnemyAtTarget(user,target);try{await managerVolley(user,targets,epoch);}finally{if(battleAlive(epoch))positionBattleFighter(user);}}
+ }else if(action===1||action===4){try{await managerVolley(user,targets,epoch);}finally{if(battleAlive(epoch))positionBattleFighter(user);}}
  else await partyMelee(user,target,null,epoch);
  if(battleAlive(epoch)&&shieldWasRaised&&action!==2&&--user.mirrorTurns===0)
   await drawBattlePose(user,'idle',true);
