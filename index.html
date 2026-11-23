@@ -346,10 +346,10 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 <style>
 /* Door leaves disappear in one frame, without a fade. Fixed jambs never disappear. */
 .steel-door .door-leaf{transition:none!important;animation:none!important}
-#battleTargetHand{position:absolute;z-index:40;pointer-events:none;max-width:none;image-rendering:pixelated;animation:battleHandBob .7s ease-in-out infinite}
-#battleTargetHand[hidden]{display:none!important}
+#battleTargetHand,#battleTurnHand{position:absolute;z-index:40;pointer-events:none;max-width:none;image-rendering:pixelated;animation:battleHandBob .7s ease-in-out infinite}
+#battleTargetHand[hidden],#battleTurnHand[hidden]{display:none!important}
 @keyframes battleHandBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@media(prefers-reduced-motion:reduce){#battleTargetHand{animation:none}}
+@media(prefers-reduced-motion:reduce){#battleTargetHand,#battleTurnHand{animation:none}}
 
 </style>
 <style>
@@ -409,6 +409,7 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 <section id="editor" hidden role="dialog" aria-modal="true" aria-label="Editor mappa">
   <div id="toolbar">
     <button data-layer="collision">Collisioni</button><button data-layer="depth">Profondità</button>
+    <button data-layer="walkable" hidden>Camminabile</button><button data-layer="lowWater" hidden>Passerella a secco</button>
     <button data-tool="pan">Sposta mappa</button><button data-tool="edit">Modifica</button><button data-tool="draw">Nuova forma</button>
     <button id="editorFinish">Chiudi forma</button><button id="editorBase">Imposta base</button><button id="editorUndo">Annulla</button><button id="editorDelete">Elimina</button>
     <button id="editorPlus">+</button><button id="editorMinus">−</button><button id="editorFit">Mappa intera</button><button id="editorExport">Copia dati</button><button id="editorClose">Gioca</button>
@@ -969,19 +970,20 @@ function tick(now){
 /* 18 · EDITOR: STATO E DISEGNO */
 const editorCanvas=$("editorCanvas"),editorCtx=editorCanvas.getContext("2d");
 const editor={open:false,layer:"collision",tool:"pan",selected:-1,draft:[],history:[],drag:null,base:false,scale:1,x:0,y:0};
-const items=()=>editor.layer==="collision"?world.collisions:world.depth;
-const polygon=item=>editor.layer==="collision"?item:item.polygon;
-function setPolygon(i,p){if(editor.layer==="collision")world.collisions[i]=p;else world.depth[i].polygon=p;}
+const items=()=>editor.layer==='collision'?world.collisions:world[editor.layer];
+const polygon=item=>editor.layer==='depth'?item.polygon:item;
+function setPolygon(i,p){if(editor.layer==='depth')world.depth[i].polygon=p;else items()[i]=p;}
 function remember(s=JSON.stringify(world)){editor.history.push(s);if(editor.history.length>40)editor.history.shift();}
 function notice(t){$("editorHint").textContent=t;}
 function paintEditor(){
  if(!editor.open||!ready)return;const c=editorCtx,s=editor;c.setTransform(1,0,0,1,0,0);c.fillStyle="#10232d";c.fillRect(0,0,editorCanvas.width,editorCanvas.height);c.translate(s.x,s.y);c.scale(s.scale,s.scale);c.imageSmoothingEnabled=locationId==='hongdeon';c.drawImage(mapImage,0,0,CONFIG.width,CONFIG.height);
- items().forEach((item,i)=>{const p=polygon(item),sel=i===s.selected;polygonPath(c,p);c.fillStyle=sel?"#ffde7966":s.layer==="collision"?"#ff34545c":"#40bfff60";c.fill();c.lineWidth=1.5/s.scale;c.strokeStyle=sel?"#ffe08a":"#ffffff88";c.stroke();if(!sel)return;for(const [x,y]of p){c.fillStyle="white";c.fillRect(x-5/s.scale,y-5/s.scale,10/s.scale,10/s.scale);}if(s.layer==="depth"){const xs=p.map(v=>v[0]);c.beginPath();c.moveTo(Math.min(...xs)-15,item.baseY);c.lineTo(Math.max(...xs)+15,item.baseY);c.strokeStyle="#ffdf59";c.lineWidth=2/s.scale;c.stroke();c.fillStyle="#ffdf59";c.font=12/s.scale+"px Arial";c.fillText(item.name+" · BASE "+Math.round(item.baseY),Math.min(...xs),item.baseY-7/s.scale);}});
+ if(isSewerRoom(locationId))paintSewerEditorContext(c,s);
+ items().forEach((item,i)=>{const p=polygon(item),sel=i===s.selected;polygonPath(c,p);c.fillStyle=sel?"#ffde7966":s.layer==="collision"?"#ff34545c":s.layer==="depth"?"#40bfff60":"#52da8366";c.fill();c.lineWidth=1.5/s.scale;c.strokeStyle=sel?"#ffe08a":"#ffffff88";c.stroke();if(!sel)return;for(const [x,y]of p){c.fillStyle="white";c.fillRect(x-5/s.scale,y-5/s.scale,10/s.scale,10/s.scale);}if(s.layer==="depth"){const xs=p.map(v=>v[0]);c.beginPath();c.moveTo(Math.min(...xs)-15,item.baseY);c.lineTo(Math.max(...xs)+15,item.baseY);c.strokeStyle="#ffdf59";c.lineWidth=2/s.scale;c.stroke();c.fillStyle="#ffdf59";c.font=12/s.scale+"px Arial";c.fillText(item.name+" · BASE "+Math.round(item.baseY),Math.min(...xs),item.baseY-7/s.scale);}});
  if(s.draft.length){c.beginPath();s.draft.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.strokeStyle="#7dffff";c.lineWidth=2/s.scale;c.stroke();for(const [x,y]of s.draft){c.fillStyle="#7dffff";c.fillRect(x-4/s.scale,y-4/s.scale,8/s.scale,8/s.scale);}}
  for(const n of npcs){if(n.route){c.beginPath();c.moveTo(...n.route[0]);c.lineTo(...n.route[1]);c.strokeStyle="#ffe199";c.lineWidth=2/s.scale;c.stroke();}for(const p of feet(n)){c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle="#ffcc69";c.fill();}}
  for(const v of locationId==='city'?vehicles:[]){const b=vehicleBounds(v);c.fillStyle="#b78cffaa";c.fillRect(b.left,b.top,b.right-b.left,b.bottom-b.top);}c.beginPath();c.arc(player.x,player.y,7,0,Math.PI*2);c.fillStyle="white";c.fill();c.beginPath();c.arc(player.x,player.y,5,0,Math.PI*2);c.fillStyle="#ed243b";c.fill();
  document.querySelectorAll("[data-layer]").forEach(b=>b.classList.toggle("active",b.dataset.layer===s.layer));document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===s.tool));$("editorBase").disabled=s.layer!=="depth"||s.selected<0;
- notice((s.base?"Tocca l’altezza della base.":s.tool==="pan"?"Trascina la mappa. Usa + e −.":s.tool==="draw"?"Tocca gli angoli, poi Chiudi forma.":"Seleziona e trascina una forma o i punti bianchi.")+(s.layer==="depth"?" Blu: ritagli. Giallo: base.":" Rosso: ostacoli. Arancione: NPC. Linee: percorsi.")+(storageFailed?" Esporta i dati: salvataggio non disponibile.":""));
+ notice((s.base?"Tocca l’altezza della base.":s.tool==="pan"?"Trascina la mappa. Usa + e −.":s.tool==="draw"?"Tocca gli angoli, poi Chiudi forma.":"Seleziona e trascina una forma o i punti bianchi.")+(s.layer==="depth"?" Blu: ritagli. Giallo: base.":isSewerRoom(locationId)?" Verde: camminabile. Rosso: ostacoli. Ambra: paratia o grata chiusa.":" Rosso: ostacoli. Arancione: NPC. Linee: percorsi.")+(storageFailed?" Esporta i dati: salvataggio non disponibile.":""));
 }
 function resizeEditor(fit=false){if(!editor.open)return;editorCanvas.width=Math.max(1,$("editorView").clientWidth);editorCanvas.height=Math.max(1,$("editorView").clientHeight);if(fit){editor.scale=Math.min(editorCanvas.width/CONFIG.width,editorCanvas.height/CONFIG.height)*.97;editor.x=(editorCanvas.width-CONFIG.width*editor.scale)/2;editor.y=(editorCanvas.height-CONFIG.height*editor.scale)/2;}paintEditor();}
 new ResizeObserver(()=>resizeEditor()).observe($("editorView"));
@@ -998,7 +1000,7 @@ function shapeValid(p){
  for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];area+=a[0]*b[1]-b[0]*a[1];if(a[0]===b[0]&&a[1]===b[1])return false;for(let j=i+1;j<p.length;j++){if(j===i+1||(i===0&&j===p.length-1))continue;const c=p[j],d=p[(j+1)%p.length];const box=Math.max(Math.min(a[0],b[0]),Math.min(c[0],d[0]))<=Math.min(Math.max(a[0],b[0]),Math.max(c[0],d[0]))&&Math.max(Math.min(a[1],b[1]),Math.min(c[1],d[1]))<=Math.min(Math.max(a[1],b[1]),Math.max(c[1],d[1]));if(box&&orient(a,b,c)*orient(a,b,d)<=0&&orient(c,d,a)*orient(c,d,b)<=0)return false;}}
  return Math.abs(area)/2>3;
 }
-$("editorFinish").onclick=()=>{if(!shapeValid(editor.draft)){notice("Servono almeno tre punti e un contorno senza incroci.");return;}remember();if(editor.layer==="collision")world.collisions.push(copy(editor.draft));else world.depth.push({name:"Oggetto "+(world.depth.length+1),baseY:Math.max(...editor.draft.map(p=>p[1])),polygon:copy(editor.draft)});editor.selected=items().length-1;editor.draft=[];editor.tool="edit";saveWorld();paintEditor();};
+$("editorFinish").onclick=()=>{if(!shapeValid(editor.draft)){notice("Servono almeno tre punti e un contorno senza incroci.");return;}remember();if(editor.layer!=="depth")items().push(copy(editor.draft));else world.depth.push({name:"Oggetto "+(world.depth.length+1),baseY:Math.max(...editor.draft.map(p=>p[1])),polygon:copy(editor.draft)});editor.selected=items().length-1;editor.draft=[];editor.tool="edit";saveWorld();paintEditor();};
 $("editorBase").onclick=()=>{if(editor.layer!=="depth"||editor.selected<0)return;editor.base=true;paintEditor();};
 $("editorUndo").onclick=()=>{editor.base=false;if(editor.draft.length)editor.draft.pop();else if(editor.history.length){world=JSON.parse(editor.history.pop());editor.selected=-1;saveWorld();}paintEditor();};
 $("editorDelete").onclick=()=>{if(editor.selected<0)return;remember();items().splice(editor.selected,1);editor.selected=-1;editor.base=false;saveWorld();paintEditor();};
@@ -2294,7 +2296,7 @@ const attackBeforeSkills=performFirstBattleAttack;performFirstBattleAttack=async
  }
  const firm=skill.id==='firm_pan_strike'&&await loadFirmPanStrike();
  if(!battleAlive(epoch))return;
- if(!self)positionBattleFighter(hero,target.home.x+23,target.home.y);
+ if(!self)positionBattleFighter(hero,target.home.x+(firm?15:23),target.home.y);
  const customPose=firm&&await drawBattlePose(hero,'firmPan',true);
  if(!customPose)await drawBattlePose(hero,'attack',true);
  const impact=customPose?FIRM_PAN_TIMING.impact:t.impact,duration=customPose?FIRM_PAN_TIMING.duration:t.attack;
@@ -2922,7 +2924,7 @@ partyMelee=async function(user,target,skill,epoch){
  const enemy=user.kind==='enemy',profile=user.stats?.profile,t=FIRST_BATTLE.timing;
  const firm=skill?.id==='firm_pan_strike'&&await loadFirmPanStrike();
  if(!battleAlive(epoch))return;
- if(user!==target)positionBattleFighter(user,target.home.x+(enemy?-22:22),target.home.y);
+ if(user!==target)positionBattleFighter(user,target.home.x+(enemy?-22:firm?14:22),target.home.y);
  const customPose=firm&&await drawBattlePose(user,'firmPan',true);
  if(!customPose)await drawBattlePose(user,'attack',true);
  if(!battleAlive(epoch))return;
@@ -3317,7 +3319,7 @@ const DUNGEON_EDITABLE_SEED={"collisions":[[[1010.0,1518.0],[1010.0,15.0],[10.0,
 /* Registered maps share the same collision/depth editor by default. */
 const MAP_EDITOR_REGISTRY=new Map(),mapEditorWorlds=new Map();
 function registerEditableMap(config){if(!config?.id||!config.map||!Number.isFinite(config.width)||!Number.isFinite(config.height)||!validWorld(config.world))throw Error('Invalid editable map');const entry={...config,version:config.version||'editable-map-v1',key:config.key||'tarai-map-editor:'+config.id+':'+config.map};MAP_EDITOR_REGISTRY.set(entry.id,entry);mapEditorWorlds.delete(entry.id);return entry;}
-function editableMapWorld(id){if(mapEditorWorlds.has(id))return mapEditorWorlds.get(id);const config=MAP_EDITOR_REGISTRY.get(id);if(!config)return null;let value=copy(config.world);try{const saved=JSON.parse(localStorage.getItem(config.key));if(validWorld(saved?.world)){
+function editableMapWorld(id){if(mapEditorWorlds.has(id))return mapEditorWorlds.get(id);const config=MAP_EDITOR_REGISTRY.get(id);if(!config)return null;let value=copy(config.world);try{const saved=JSON.parse(localStorage.getItem(config.key));if(validWorld(saved?.world)&&(!config.validate||config.validate(saved.world))){
   if(saved.version===config.version)value=saved.world;
   else if(config.migrateWorld)value=config.migrateWorld(saved)||value;
  }}catch(_){}mapEditorWorlds.set(id,value);return value;}
@@ -3387,13 +3389,14 @@ bilingual('Choose a target','대상을 선택하세요');
 /* One cursor, anchored by its fingertip rather than the PNG's transparent margins. */
 const BATTLE_TARGET_HAND='Equip/Icone/file_00000000406082098c3100181e440d45.png';
 const targetHand=document.createElement('img');targetHand.id='battleTargetHand';targetHand.alt='';targetHand.draggable=false;targetHand.hidden=true;targetHand.setAttribute('aria-hidden','true');
+const turnHand=document.createElement('img');turnHand.id='battleTurnHand';turnHand.alt='';turnHand.draggable=false;turnHand.hidden=true;turnHand.setAttribute('aria-hidden','true');
 let targetHandAsset=null,targetHandLoad=null,battleTargetChoice=null;
 function loadTargetHand(){return targetHandLoad||(targetHandLoad=loadDungeonImage(BATTLE_TARGET_HAND).then(im=>{
  const canvas=document.createElement('canvas');canvas.width=im.naturalWidth;canvas.height=im.naturalHeight;const cx=canvas.getContext('2d');cx.drawImage(im,0,0);const pixels=cx.getImageData(0,0,canvas.width,canvas.height).data;let left=canvas.width,top=canvas.height,right=-1,bottom=-1;
  for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++)if(pixels[(y*canvas.width+x)*4+3]>32){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
  if(right<left)throw Error('Empty target cursor');const width=right-left+1,height=bottom-top+1;let sum=0,count=0;
  for(let y=Math.max(top,bottom-Math.ceil(height*.025));y<=bottom;y++)for(let x=left;x<=right;x++)if(pixels[(y*canvas.width+x)*4+3]>80){sum+=x-left;count++;}
- const crop=document.createElement('canvas');crop.width=width;crop.height=height;crop.getContext('2d').drawImage(im,left,top,width,height,0,0,width,height);targetHandAsset={width,height,tipX:count?sum/count:width/2};targetHand.src=crop.toDataURL('image/png');refreshTargetHand();
+ const crop=document.createElement('canvas');crop.width=width;crop.height=height;crop.getContext('2d').drawImage(im,left,top,width,height,0,0,width,height);targetHandAsset={width,height,tipX:count?sum/count:width/2};targetHand.src=crop.toDataURL('image/png');turnHand.src=targetHand.src;refreshTargetHand();refreshTurnHand();
 }).catch(e=>{targetHandLoad=null;console.error(e);return null;}));}
 function targetingActor(){return partyBattle?currentPartyFighter():firstBattleFighters.find(f=>f.kind==='riccardo');}
 function nearestBattleEnemy(actor){const stage=$('battleStage'),w=stage.clientWidth,h=stage.clientHeight,origin=actor?.home||FIRST_BATTLE.partyPositions[0];let best=null,distance=Infinity;
@@ -3411,10 +3414,23 @@ function refreshTargetHand(){
  const stage=$('battleStage');if(targetHand.parentNode!==stage)stage.append(targetHand);const height=clamp(stage.clientWidth*.085,26,42),scale=height/targetHandAsset.height,headX=selected.x/100*stage.clientWidth,headY=selected.y/100*stage.clientHeight-selected.height;
  Object.assign(targetHand.style,{height:height+'px',width:(targetHandAsset.width*scale)+'px',left:(headX-targetHandAsset.tipX*scale)+'px',top:(headY-height-8)+'px'});targetHand.dataset.target=selected.id||selected.kind;targetHand.hidden=false;
 }
+function refreshTurnHand(){
+ const actor=partyBattle?currentPartyFighter():firstBattleFighters.find(f=>f.kind==='riccardo');
+ const showing=firstBattleActive&&!battleScreen.hidden&&['command','target','acting'].includes(firstBattlePhase)&&actor&&actor.kind!=='enemy'&&actor.hp()>0;
+ if(!showing){turnHand.hidden=true;return;}
+ if(!targetHandAsset){turnHand.hidden=true;void loadTargetHand();return;}
+ const stage=$('battleStage');if(turnHand.parentNode!==stage)stage.append(turnHand);
+ const height=clamp(stage.clientWidth*.085,26,42),scale=height/targetHandAsset.height;
+ const headX=actor.x/100*stage.clientWidth,headY=actor.y/100*stage.clientHeight-actor.height;
+ Object.assign(turnHand.style,{height:height+'px',width:(targetHandAsset.width*scale)+'px',left:(headX-targetHandAsset.tipX*scale)+'px',top:(headY-height-8)+'px'});
+ turnHand.hidden=false;
+}
+const positionBeforeTurnHand=positionBattleFighter;
+positionBattleFighter=function(f,x=f.home.x,y=f.home.y){positionBeforeTurnHand(f,x,y);if(f===(partyBattle?currentPartyFighter():firstBattleFighters.find(hero=>hero.kind==='riccardo')))refreshTurnHand();};
 const paintBeforeTargetHand=paintFirstBattle;paintFirstBattle=function(){
  paintBeforeTargetHand();
  if(firstBattlePhase!=='command')closeBattleSkills();
- refreshTargetHand();
+ refreshTargetHand();refreshTurnHand();
 };
 const attackBeforeTargetHand=battleAttackButton.onclick;battleAttackButton.onclick=()=>{attackBeforeTargetHand();if(firstBattlePhase==='target'){battleHint(tr('Choose a target'));refreshTargetHand();}};
 $('battleStage').addEventListener('click',event=>{
@@ -3425,8 +3441,8 @@ $('battleStage').addEventListener('click',event=>{
  // on the enemy preselected by ATK; changing to someone else always needs two taps.
  targetHand.hidden=true;if(selectedBattleItem)void performCombatItem(selectedBattleItem,fighter);else void performFirstBattleAttack(fighter);
 },true);
-const closeBeforeTargetHand=closeFirstBattle;closeFirstBattle=function(){targetHand.hidden=true;battleTargetChoice=null;closeBeforeTargetHand();};
-window.addEventListener('resize',refreshTargetHand);void loadTargetHand();
+const closeBeforeTargetHand=closeFirstBattle;closeFirstBattle=function(){targetHand.hidden=true;turnHand.hidden=true;battleTargetChoice=null;closeBeforeTargetHand();};
+window.addEventListener('resize',refreshTargetHand);window.addEventListener('resize',refreshTurnHand);void loadTargetHand();
 
 /* Items and techniques share the list above the party status panel. */
 function openBattleChoiceList(mode,label,rows,emptyMessage){
@@ -6126,7 +6142,7 @@ const SEWER_ROOMS={
    [410,180,482,267],[437,252,466,278],[83,134,103,231],[85,199,144,243],[143,211,319,225],[318,185,378,242]]},
  c:{name:'Drainage Works',map:'Fogne_C_Impianti_di_drenaggio.png',layers:['Fogne_C_Acqua.gif','Fogne_C_Spia_acqua_alta.png','Fogne_C_Spia_acqua_bassa.png'],
   floor:[[50,41,151,120],[124,100,197,231],[183,74,348,230],[210,29,278,110],[331,112,479,128],
-   [390,119,481,165],[407,158,449,270],[436,87,461,126],[350,178,412,196],[40,169,105,242],[92,224,136,242]],
+   [390,119,481,165],[407,158,449,270],[436,87,461,126],[340,179,418,191],[40,169,105,242],[92,224,136,242]],
   obstacles:[[186,98,316,164]]},
  d:{name:'Flooded Galleries',map:'Fogne_D_Gallerie_allagate.png',layers:['Fogne_D_Acqua_alta.gif','Fogne_D_Acqua_bassa.gif','Fogne_D_Passerella_emersa.png'],
   floor:[[43,66,133,118],[88,111,145,249],[45,147,91,178],[44,222,92,244],[80,240,107,263],
@@ -6156,12 +6172,12 @@ const SEWER_LINKS=[
 const SEWER_START=[33,168],SEWER_STAIRS=[258,158],SEWER_TERMINALS=[[45,266],[463,195],[170,230]];
 const SEWER_SURFACE={id:'hongdeon',x:1360,y:1925,direction:'up'};
 const SEWER_ENEMIES={
- sewer_pendolare:{name:'Commuter',level:5,hp:65,attack:22,defense:4,speed:12,exp:120,slug:'pendolare'},
- sewer_addetto:{name:'Maintenance Worker',level:6,hp:86,attack:25,defense:7,speed:8,exp:135,slug:'addetto_condotte',skill:{id:'low_sweep',name:'Low Sweep',power:.83,status:'blind',effect:'sewer_water'}},
- sewer_fuggitiva:{name:'Fugitive',level:7,hp:74,attack:26,defense:5,speed:15,exp:145,slug:'fuggitiva',skill:{id:'toxic_splash',name:'Toxic Splash',power:1,status:'poison',effect:'sewer_toxic'}},
- sewer_donna:{name:'Calling Woman',level:7,hp:78,attack:24,defense:5,speed:11,exp:145,slug:'donna_del_richiamo',skill:{id:'piercing_call',name:'Piercing Call',power:1,status:'confusion',effect:'sewer_sound'}},
- sewer_strisciante:{name:'Crawler',level:8,hp:92,attack:30,defense:6,speed:17,exp:165,slug:'strisciante',skill:{id:'sudden_lunge',name:'Sudden Lunge',power:1,status:'stop'}},
- sewer_guardiano:{name:'Gatekeeper',level:9,hp:118,attack:36,defense:10,speed:7,exp:200,slug:'guardiano_della_grata',skill:{id:'shoulder_charge',name:'Shoulder Charge',power:1.4,status:'confusion'}}
+ sewer_pendolare:{name:'Commuter',level:5,hp:65,attack:22,defense:4,speed:12,exp:120*3.5,slug:'pendolare'},
+ sewer_addetto:{name:'Maintenance Worker',level:6,hp:86,attack:25,defense:7,speed:8,exp:135*3.5,slug:'addetto_condotte',skill:{id:'low_sweep',name:'Low Sweep',power:.83,status:'blind',effect:'sewer_water'}},
+ sewer_fuggitiva:{name:'Fugitive',level:7,hp:74,attack:26,defense:5,speed:15,exp:145*3.5,slug:'fuggitiva',skill:{id:'toxic_splash',name:'Toxic Splash',power:1,status:'poison',effect:'sewer_toxic'}},
+ sewer_donna:{name:'Calling Woman',level:7,hp:78,attack:24,defense:5,speed:11,exp:145*3.5,slug:'donna_del_richiamo',skill:{id:'piercing_call',name:'Piercing Call',power:1,status:'confusion',effect:'sewer_sound'}},
+ sewer_strisciante:{name:'Crawler',level:8,hp:92,attack:30,defense:6,speed:17,exp:165*3.5,slug:'strisciante',skill:{id:'sudden_lunge',name:'Sudden Lunge',power:1,status:'stop'}},
+ sewer_guardiano:{name:'Gatekeeper',level:9,hp:118,attack:36,defense:10,speed:7,exp:200*3.5,slug:'guardiano_della_grata',skill:{id:'shoulder_charge',name:'Shoulder Charge',power:1.4,status:'confusion'}}
 };
 
 const SEWER_REWARD_RULES=Object.fromEntries(Object.entries(SEWER_ENEMIES).map(([id,foe])=>
@@ -6205,7 +6221,7 @@ function loadSewerRoom(id){
 }
 const sewerLayer=document.createElement('div');
 sewerLayer.id='sewerLayer';sewerLayer.hidden=true;scene.append(sewerLayer);
-let sewerBusy=false,sewerDistance=0,sewerEncounterAt=0,sewerLastPosition=null,sewerTestReturn=null;
+let sewerBusy=false,sewerDistance=0,sewerEncounterAt=0,sewerLastPosition=null,sewerTestReturn=null,sewerExitReady=true;
 const sewerOverlays=new Map();
 function resetSewerEncounters(){
  sewerDistance=0;sewerEncounterAt=720+Math.random()*440;sewerLastPosition={x:player.x,y:player.y};
@@ -6227,23 +6243,82 @@ function paintSewerLayers(){
   image.hidden=!visible;
  }
 }
-function sewerContains(box,x,y){return x>=box[0]&&x<=box[2]&&y>=box[1]&&y<=box[3];}
-function sewerFloorAt(key,x,y,state){
- const room=SEWER_ROOMS[key];
- if(room.obstacles?.some(box=>sewerContains(box,x,y)))return false;
- if(key==='b'&&!state.grate&&sewerContains([216,209,244,227],x,y))return false;
- if(key==='e'&&state.circuit!=='f'&&sewerContains([417,142,436,189],x,y))return false;
- if(key==='e'&&state.circuit!=='g'&&sewerContains([109,259,153,288],x,y))return false;
- if(key==='f'&&state.circuit!=='g'&&sewerContains([396,289,456,313],x,y))return false;
- if(key==='g'&&state.terminals!==7&&sewerContains([247,136,269,155],x,y))return false;
- return room.floor.some(box=>sewerContains(box,x,y))||(state.drained&&!!room.bridge&&sewerContains(room.bridge,x,y));
+function sewerPolygon(key,[left,top,right,bottom]){
+ const scale=sewerScale(key);
+ return rect(left*scale,top*scale,(right-left)*scale,(bottom-top)*scale);
+}
+for(const [key,room] of Object.entries(SEWER_ROOMS)){
+ const scale=sewerScale(key);
+ registerEditableMap({
+  id:'sewer-'+key,map:SEWER_ROOT+'Map/'+SEWER_MAP_FILES[room.map],
+  width:512*scale,height:key==='g'?2048:1024,version:'sewer-navigation-v1',
+  world:{
+   walkable:room.floor.map(box=>sewerPolygon(key,box)),
+   lowWater:room.bridge?[sewerPolygon(key,room.bridge)]:[],
+   collisions:(room.obstacles||[]).map(box=>sewerPolygon(key,box)),depth:[]
+  },
+  validate:saved=>[saved.walkable,saved.lowWater].every(layer=>Array.isArray(layer)&&layer.every(validPolygon))
+ });
+}
+const SEWER_GATE_POLYGONS={
+ b:[sewerPolygon('b',[216,209,244,227])],
+ e:[sewerPolygon('e',[417,142,436,189]),sewerPolygon('e',[109,259,153,288])],
+ f:[sewerPolygon('f',[396,289,456,313])],
+ g:[sewerPolygon('g',[247,136,269,155])]
+};
+function closedSewerGates(key,state){
+ const gates=SEWER_GATE_POLYGONS[key];
+ if(key==='b'&&!state.grate||key==='f'&&state.circuit!=='g'||key==='g'&&state.terminals!==7)return gates;
+ if(key==='e')return gates.filter((_,index)=>state.circuit!==(index===0?'f':'g'));
+ return [];
+}
+function sewerCanOccupy(nav,gates,drained,x,y,r){
+ if(nav.collisions.some(p=>hitsPolygon(x,y,r,p))||gates.some(p=>hitsPolygon(x,y,r,p)))return false;
+ const floor=drained?[...nav.walkable,...nav.lowWater]:nav.walkable;
+ return [[0,0],[-r,0],[r,0],[0,-r],[0,r]].every(([dx,dy])=>floor.some(p=>pointInPolygon(x+dx,y+dy,p)));
 }
 const freeBeforeSewers=staticFree;
 staticFree=function(x,y,r=CONFIG.radius){
  const key=sewerRoomKey();
  if(!key)return freeBeforeSewers(x,y,r);
- const scale=sewerScale(key),state=sewerProgress();
- return [[0,0],[-r,0],[r,0],[0,-r],[0,r]].every(([dx,dy])=>sewerFloorAt(key,(x+dx)/scale,(y+dy)/scale,state));
+ const state=sewerProgress();
+ return x>=r&&y>=r&&x<=CONFIG.width-r&&y<=CONFIG.height-r&&
+  sewerCanOccupy(world,closedSewerGates(key,state),state.drained,x,y,r);
+};
+function paintSewerEditorContext(ctx,view){
+ for(const image of sewerOverlays.values()){
+  if(!image.hidden&&image.complete&&image.naturalWidth)ctx.drawImage(image,0,0,CONFIG.width,CONFIG.height);
+ }
+ function paint(polygons,color){
+  ctx.fillStyle=color;
+  for(const p of polygons){polygonPath(ctx,p);ctx.fill();}
+ }
+ if(view.layer!=='walkable')paint(world.walkable,'#52da8340');
+ if(view.layer!=='lowWater'&&sewerProgress().drained)paint(world.lowWater,'#5fe7c74d');
+ if(view.layer!=='collision')paint(world.collisions,'#ff345457');
+ paint(closedSewerGates(sewerRoomKey(),sewerProgress()),'#ffb13c86');
+}
+const openBeforeSewerEditor=$('editorOpen').onclick;
+$('editorOpen').onclick=function(){
+ const key=sewerRoomKey();
+ document.querySelector('[data-layer="walkable"]').hidden=!key;
+ document.querySelector('[data-layer="lowWater"]').hidden=key!=='d';
+ document.querySelector('[data-layer="depth"]').hidden=!!key;
+ document.querySelector('[data-layer="collision"]').textContent=key?'Ostacoli':'Collisioni';
+ if(key)editor.layer='walkable';
+ else if(editor.layer!=='collision'&&editor.layer!=='depth')editor.layer='collision';
+ return openBeforeSewerEditor();
+};
+const exportBeforeSewerEditor=$('editorExport').onclick;
+$('editorExport').onclick=function(){
+ const key=sewerRoomKey();
+ if(!key)return exportBeforeSewerEditor();
+ if(editor.draft.length){notice('Termina prima la forma.');return;}
+ const config=MAP_EDITOR_REGISTRY.get(locationId);
+ saveWorld();
+ $('exportData').value=JSON.stringify({map:config.map,room:locationId,version:config.version,
+  width:config.width,height:config.height,world},null,2);
+ $('exportPanel').hidden=false;$('exportCopy').textContent='Copia';
 };
 const areaBeforeSewers=showLocation;
 showLocation=function(id){
@@ -6262,8 +6337,8 @@ showLocation=function(id){
  doorButton.hidden=portalButton.hidden=dungeonLayer.hidden=true;
  houseCat.hidden=houseTV.hidden=storyNightLighting.hidden=true;
  scene.classList.remove('story-night','seon-house');
- $('trainWindow').hidden=true;$('editorOpen').hidden=true;
- locationId=id;world={collisions:[],depth:[]};
+ $('trainWindow').hidden=true;$('editorOpen').hidden=false;
+ locationId=id;world=editableMapWorld(id);
  CONFIG.width=512*scale;CONFIG.height=key==='g'?2048:1024;
  scene.style.width=mapImage.style.width=CONFIG.width+'px';
  scene.style.height=mapImage.style.height=CONFIG.height+'px';
@@ -6330,7 +6405,7 @@ async function changeSewerArea(id,point,options={}){
   else if(isInterior(locationId))interiorWorlds[locationId]=world;
   showLocation(id);
   Object.assign(player,point,{moving:false,direction:point.direction||'down'});
-  nearestFree(player);updateCamera();drawPlayer();resetSewerEncounters();
+  nearestFree(player);updateCamera();drawPlayer();resetSewerEncounters();sewerExitReady=!isSewerRoom(id);
   await new Promise(requestAnimationFrame);
   return true;
  }catch(error){
@@ -6383,13 +6458,6 @@ function paintSewerMarkers(){
   }
   return;
  }
- for(const exit of sewerExits(key)){
-  const open=sewerEnabled(exit.circuit),at=exit.at;
-  showSewerMarker(key,'exit-'+exit.to,at,open?SEWER_ROOMS[exit.to].name:'Closed bulkhead',()=>{
-   if(!open){openMartNotice(tr('The control room circuit controls this bulkhead.'));return;}
-   void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn));
-  },{range:exit.circuit?115:72});
- }
  if(key==='a')showSewerMarker(key,'street',SEWER_START,'Return to the street',()=>void leaveSewers(false));
  if(key==='b'&&!state.grate)showSewerMarker(key,'valve',[409,82],'Open the shortcut grate',()=>{
   state.grate=true;sewerMechanismChanged();
@@ -6429,6 +6497,13 @@ updateTravel=function(dt){
  travelBeforeSewers(dt);
  const key=sewerRoomKey();
  if(!key||locked()||dialogue||intro||editor.open||!player.moving)return;
+ const exits=sewerExits(key),distToExit=exit=>{const at=sewerPoint(key,exit.at);return Math.hypot(player.x-at.x,player.y-at.y)*zoom;};
+ // A new room starts inside its return doorway: leave that area before rearming exits.
+ if(!sewerExitReady&&exits.every(exit=>distToExit(exit)>105))sewerExitReady=true;
+ if(sewerExitReady){
+  const exit=exits.find(exit=>sewerEnabled(exit.circuit)&&distToExit(exit)<54);
+  if(exit){sewerExitReady=false;void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn));return;}
+ }
  const distance=Math.hypot(player.x-sewerLastPosition.x,player.y-sewerLastPosition.y)*zoom;
  sewerLastPosition={x:player.x,y:player.y};
  if(distance>45)return;
@@ -6448,12 +6523,12 @@ buildSchematic=function(){
  const key=sewerRoomKey();
  if(!key)return schematicBeforeSewers();
  schematic.width=CONFIG.width;schematic.height=CONFIG.height;
- const ctx=schematic.getContext('2d'),room=SEWER_ROOMS[key],state=sewerProgress(),scale=sewerScale(key);
+ const ctx=schematic.getContext('2d'),state=sewerProgress();
  ctx.fillStyle='#101e30';ctx.fillRect(0,0,CONFIG.width,CONFIG.height);
- const paint=([x,y,right,bottom])=>ctx.fillRect(x*scale,y*scale,(right-x)*scale,(bottom-y)*scale);
- ctx.fillStyle='#8d9dab';room.floor.forEach(paint);
- if(room.bridge&&state.drained)paint(room.bridge);
- ctx.fillStyle='#24394f';room.obstacles?.forEach(paint);
+ const paint=p=>{polygonPath(ctx,p);ctx.fill();};
+ ctx.fillStyle='#8d9dab';world.walkable.forEach(paint);
+ if(state.drained)world.lowWater.forEach(paint);
+ ctx.fillStyle='#24394f';world.collisions.forEach(paint);closedSewerGates(key,state).forEach(paint);
  schematicLocation=locationId;schematicWorld=world;
 };
 
@@ -6490,10 +6565,8 @@ buildPartyFighters=async function(){
  if(partyBattle?.kind!=='sewers')return sewerBattleBuildBefore();
  const stage=$('battleStage'),height=stage.clientHeight;
  stage.replaceChildren();
- // Use the current room artwork until a dedicated combat background is supplied.
  const background=$('battleBackground');
- const room=SEWER_ROOMS[sewerRoomKey()];
- background.src=SEWER_ROOT+'Map/'+SEWER_MAP_FILES[room.map];
+ background.src=SEWER_ROOT+'Map/file_00000000f6f88211ac8bca2f0d2a58a8.png';
  const positions=[{x:22,y:64},{x:36,y:91},{x:15,y:98}];
  const foes=partyBattle.enemyIds.map((id,i)=>{
   const {name,hp,attack,defense,speed,level}=sewerFoe(id);
