@@ -6221,7 +6221,7 @@ function loadSewerRoom(id){
 }
 const sewerLayer=document.createElement('div');
 sewerLayer.id='sewerLayer';sewerLayer.hidden=true;scene.append(sewerLayer);
-let sewerBusy=false,sewerDistance=0,sewerEncounterAt=0,sewerLastPosition=null,sewerTestReturn=null,sewerExitReady=true;
+let sewerBusy=false,sewerDistance=0,sewerEncounterAt=0,sewerLastPosition=null,sewerTestReturn=null,sewerReturnDoor=null;
 const sewerOverlays=new Map();
 function resetSewerEncounters(){
  sewerDistance=0;sewerEncounterAt=720+Math.random()*440;sewerLastPosition={x:player.x,y:player.y};
@@ -6405,7 +6405,7 @@ async function changeSewerArea(id,point,options={}){
   else if(isInterior(locationId))interiorWorlds[locationId]=world;
   showLocation(id);
   Object.assign(player,point,{moving:false,direction:point.direction||'down'});
-  nearestFree(player);updateCamera();drawPlayer();resetSewerEncounters();sewerExitReady=!isSewerRoom(id);
+  nearestFree(player);updateCamera();drawPlayer();resetSewerEncounters();sewerReturnDoor=isSewerRoom(id)&&options.from?{room:id,from:options.from}:null;
   await new Promise(requestAnimationFrame);
   return true;
  }catch(error){
@@ -6498,12 +6498,14 @@ updateTravel=function(dt){
  const key=sewerRoomKey();
  if(!key||locked()||dialogue||intro||editor.open||!player.moving)return;
  const exits=sewerExits(key),distToExit=exit=>{const at=sewerPoint(key,exit.at);return Math.hypot(player.x-at.x,player.y-at.y)*zoom;};
- // A new room starts inside its return doorway: leave that area before rearming exits.
- if(!sewerExitReady&&exits.every(exit=>distToExit(exit)>105))sewerExitReady=true;
- if(sewerExitReady){
-  const exit=exits.find(exit=>sewerEnabled(exit.circuit)&&distToExit(exit)<54);
-  if(exit){sewerExitReady=false;void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn));return;}
+ // Block only the door we just came through; other exits stay active.
+ if(sewerReturnDoor?.room===locationId){
+  const back=exits.find(exit=>exit.to===sewerReturnDoor.from);
+  if(!back||distToExit(back)>120)sewerReturnDoor=null;
  }
+ const exit=exits.find(exit=>sewerEnabled(exit.circuit)&&
+  !(sewerReturnDoor?.room===locationId&&sewerReturnDoor.from===exit.to)&&distToExit(exit)<100);
+ if(exit){void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn),{from:key});return;}
  const distance=Math.hypot(player.x-sewerLastPosition.x,player.y-sewerLastPosition.y)*zoom;
  sewerLastPosition={x:player.x,y:player.y};
  if(distance>45)return;
@@ -6715,7 +6717,7 @@ checkpointOptions.onclick=event=>{
 const resetBeforeSewers=beginIntro;
 beginIntro=function(){
  if(sewerRoomKey())showLocation('city');
- sewerTestReturn=null;sewerLastPosition=null;
+ sewerTestReturn=null;sewerLastPosition=null;sewerReturnDoor=null;
  return resetBeforeSewers();
 };
 [
