@@ -3084,9 +3084,9 @@ window.addEventListener('pointerup',e=>{if(e.target?.closest?.('#testDungeonButt
 async function enterDungeonTest(saved=null,beforeRestore=null,checkpoint='dungeon'){
  if(dungeonJumping||(firstBattleActive&&!beforeRestore))return false;dungeonJumping=true;resetInput();paintTestShortcuts();
  try{
- const sewerCheckpoint=checkpoint==='sewers',afterRecruitment=checkpoint==='hongdeon-recruited'||sewerCheckpoint;
- const roomId=sewerCheckpoint?'sewer-a':afterRecruitment?'hongdeon':isMartRoom(saved?.location)?saved.location:checkpoint==='boss'?'mart-e':'mart-a';
- const areaLoad=sewerCheckpoint?loadSewerRoom('a'):afterRecruitment?Promise.all([loadHongdeonMap(),loadChaosImage(),loadChaosActors()]):loadMartRoom(roomId);
+ const sewerCheckpoint=checkpoint==='sewers',mangwonCheckpoint=checkpoint==='mangwon',fourMemberCheckpoint=sewerCheckpoint||mangwonCheckpoint,afterRecruitment=checkpoint==='hongdeon-recruited'||fourMemberCheckpoint;
+ const roomId=mangwonCheckpoint?'mangwon-street':sewerCheckpoint?'sewer-a':afterRecruitment?'hongdeon':isMartRoom(saved?.location)?saved.location:checkpoint==='boss'?'mart-e':'mart-a';
+ const areaLoad=mangwonCheckpoint?loadMangwonArea(roomId):sewerCheckpoint?loadSewerRoom('a'):afterRecruitment?Promise.all([loadHongdeonMap(),loadChaosImage(),loadChaosActors()]):loadMartRoom(roomId);
  await Promise.all([areaLoad,loadWorkUniform(),loadSeoyoon()]);const fade=$('fade');fade.style.zIndex='40';fade.style.transition='opacity 400ms linear';fade.classList.add('black');await wait(430);
  beforeRestore?.();
  sceneEpoch++;storyEpoch++;nightEpoch++;morningEpoch++;chaosEpoch++;trainRun++;for(const m of morningMotions.values())m.resolve(false);morningMotions.clear();morningMotion=null;morningRunner=null;morningBusy=false;
@@ -3106,15 +3106,16 @@ async function enterDungeonTest(saved=null,beforeRestore=null,checkpoint='dungeo
   nightState.mart.dungeon={...dungeonState,opened:[...dungeonState.opened]};
   void loadCucchiaioReturnAssets().catch(()=>{});
  }
- if(sewerCheckpoint){
+ if(fourMemberCheckpoint){
   partyMembers.michael.joined=true;partySlots[3]='michael';
   equipState.owned.worn_kitchen_knife=1;equipmentFor('michael').weapon='worn_kitchen_knife';
   for(const member of partySlots){
-   setCharacterLevel(member,6);syncMemberProgression(member,{refill:true});
+   setCharacterLevel(member,mangwonCheckpoint?8:6);syncMemberProgression(member,{refill:true});
   }
-  nightState.cucchiaioReturnSeen=true;sewerTestReturn=SEWER_SURFACE;
+  nightState.cucchiaioReturnSeen=true;sewerTestReturn=mangwonCheckpoint?null:SEWER_SURFACE;
+  if(mangwonCheckpoint)Object.assign(sewerProgress(),{grate:true,drained:true,circuit:'g',fuse:true,fuseInstalled:true,terminals:7,complete:true});
  }
- showLocation(roomId);const spawn=sewerCheckpoint?{...sewerPoint('a',SEWER_START),direction:'right'}:afterRecruitment?{x:1360,y:1925,direction:'up'}:checkpoint==='boss'?{x:768,y:418,direction:'down'}:martRoomEntry(roomId),position=saved?.location===roomId?saved.player:null;Object.assign(player,spawn,position,{direction:Object.hasOwn(VECTORS,position?.direction)?position.direction:spawn.direction,moving:false});if(!nearestFree(player))Object.assign(player,spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;if(sewerCheckpoint)resetSewerEncounters();updateCamera();drawPlayer();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';
+ showLocation(roomId);const spawn=mangwonCheckpoint?{...mangwonPoint(roomId,MANGWON_ENTRY),direction:'up'}:sewerCheckpoint?{...sewerPoint('a',SEWER_START),direction:'right'}:afterRecruitment?{x:1360,y:1925,direction:'up'}:checkpoint==='boss'?{x:768,y:418,direction:'down'}:martRoomEntry(roomId),position=saved?.location===roomId?saved.player:null;Object.assign(player,spawn,position,{direction:Object.hasOwn(VECTORS,position?.direction)?position.direction:spawn.direction,moving:false});if(!nearestFree(player))Object.assign(player,spawn);dungeonLastPosition={x:player.x,y:player.y};dungeonGrace=200;if(fourMemberCheckpoint)resetSewerEncounters();updateCamera();drawPlayer();renderMenu();refreshNightObjective();clearMarkers();resetInput();await wait(50);fade.classList.remove('black');await wait(430);fade.style.transition='';fade.style.zIndex='';
  }catch(e){console.error(e);notice(e.message);$('fade').classList.remove('black');$('fade').style.zIndex='';$('fade').style.transition='';return false;}
  finally{dungeonJumping=false;paintTestShortcuts();updateInteractionUI();}
  return true;
@@ -6538,10 +6539,11 @@ function paintSewerMarkers(){
   });
  }
 }
-async function leaveSewers(surface){
- const start=sewerTestReturn||SEWER_SURFACE;
- const destination=surface?SEWER_SURFACE:start;
- if(await changeSewerArea(destination.id,destination,{surface}))sewerTestReturn=null;
+async function leaveSewers(){
+ // Only the entrance of room A can return the party to Hongdeon.
+ if(locationId!=='sewer-a')return false;
+ const destination=sewerTestReturn||SEWER_SURFACE;
+ if(await changeSewerArea(destination.id,destination))sewerTestReturn=null;
 }
 const SEWER_EXIT_LAYOUT={
  'a:b':['right',485,158,176],'a:street':['left',27,157,178],
@@ -6551,7 +6553,7 @@ const SEWER_EXIT_LAYOUT={
  'e:d':['up',52,332,362],'e:f':['right',450,149,182],'e:g':['down',270,117,143],
  'f:e':['left',35,77,110],'f:g':['down',299,407,449],
  'g:e':['up',31,70,86],'g:f':['up',31,412,426],
- 'g:surface':['up',148,251,265]
+ 'g:mangwon-street':['up',148,251,265]
 };
 function sewerPortal(key,exit){
  const [dir,threshold,low,high]=SEWER_EXIT_LAYOUT[key+':'+exit.to],scale=sewerScale(key);
@@ -6569,13 +6571,13 @@ function sewerPortalSpawn(key,exit){
 function updateSewerCrossing(key,old){
  const exits=sewerExits(key);
  if(key==='a')exits.push({to:'street'});
- if(key==='g'&&sewerFinalGrateOpen())exits.push({to:'surface'});
+ if(key==='g'&&sewerFinalGrateOpen())exits.push({to:'mangwon-street'});
  for(const exit of exits){
   if(!sewerEnabled(exit.circuit))continue;
   const portal=sewerPortal(key,exit);
   if(!reachedMartExit(portal,player,old))continue;
-  if(exit.to==='surface')void enterMangwonFromSewers();
-  else if(exit.to==='street')void leaveSewers(false);
+  if(exit.to==='mangwon-street')void enterMangwonFromSewers();
+  else if(exit.to==='street')void leaveSewers();
   else void changeSewerArea('sewer-'+exit.to,sewerPortalSpawn(key,exit));
   return true;
  }
@@ -6988,7 +6990,7 @@ function mangwonTween(duration,draw){
  });
 }
 async function enterMangwonFromSewers(){
- if(sewerBusy||mangwonAnimating)return;
+ if(locationId!=='sewer-g'||!sewerFinalGrateOpen()||sewerBusy||mangwonAnimating)return;
  mangwonAnimating=true;resetInput();
  // The player's feet visibly rise as the ladder is climbed.
  const from={x:player.x,y:player.y},target=sewerPoint('g',[258,119]);mangwonStairDirection='up';
@@ -7197,6 +7199,9 @@ const checkpointBeforeMangwon=gameOverCheckpoint;
 gameOverCheckpoint=function(){if(isMangwonArea(locationId)){const save=readRpgSave();if(save&&isMangwonArea(save.location))return {save,test:false};}return checkpointBeforeMangwon();};
 const afterBeforeMangwon=afterDungeonBattle;
 afterDungeonBattle=function(){if(locationId==='mangwon-street'){resetSewerEncounters();resetInput();updateInteractionUI();return;}return afterBeforeMangwon();};
+const mangwonTestButton=document.createElement('button');
+mangwonTestButton.type='button';mangwonTestButton.dataset.checkpoint='mangwon';mangwonTestButton.textContent='Mangwon-dong';
+checkpointOptions.append(mangwonTestButton);
 const beginBeforeMangwon=beginIntro;
 beginIntro=function(){if(isMangwonArea(locationId))showLocation('city');return beginBeforeMangwon();};
 
