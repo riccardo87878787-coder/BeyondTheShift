@@ -116,7 +116,7 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .member-card:is([data-member="seon_jong"],[data-member="michael"]){isolation:isolate;background:radial-gradient(ellipse at 53% 40%,#f7ead6,#efdec3)}
 .member-card:is([data-member="seon_jong"],[data-member="michael"])::before{content:"";position:absolute;z-index:-1;inset:4px;border:3px double #b99655;border-radius:7px;box-shadow:0 0 0 1px #d4b770,inset 0 0 7px #a5874f4d;pointer-events:none}
 .member-card:is([data-member="seon_jong"],[data-member="michael"])::after{content:"";position:absolute;inset:7px auto 7px 8px;width:2.5%;border-radius:4px 0 0 4px;background:#3c7478;pointer-events:none}
-.member-card:is([data-member="seon_jong"],[data-member="michael"])>img{position:absolute;bottom:5px;left:5%;width:38%;height:calc(100% - 11px);object-fit:contain;object-position:center bottom}
+.member-card:is([data-member="seon_jong"],[data-member="michael"])>img{position:absolute;bottom:-2%;left:-2%;width:50%;height:108%;object-fit:contain;object-position:center bottom}
 #equipPortrait:is([data-member="seon_jong"],[data-member="michael"]){background-size:contain;background-position:center bottom}
 .seon-TV{position:absolute;left:583px;top:612px;width:25px;height:114px;clip-path:polygon(7% 0,64% 12%,100% 89%,66% 100%,7% 89%);background:#9de6ff5c;pointer-events:none;z-index:72700}
 #rewardContinue{position:absolute;bottom:0;left:3%;right:3%;height:7.3%;display:grid;place-items:center;color:#f5ead5;font-size:3.8cqw}
@@ -164,6 +164,26 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 .sewer-status.confusion{bottom:2.7em;background:#56431a}
 @media(prefers-reduced-motion:reduce){.battle-fighter.sewer-materializing{animation:none}}
 
+
+#sewerLayer .sewer-lever{image-rendering:pixelated}
+#sewerLayer[data-room="g"] img{image-rendering:auto}
+button.sewer-fuse-glow{transform:translate(-50%,-50%);background:none!important;border:0!important;box-shadow:none!important}
+button.sewer-fuse-glow::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:11px;transform:translate(-50%,-50%);background:#fff;clip-path:polygon(50% 0,61% 38%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 38%);filter:drop-shadow(0 0 3px #fff);animation:fuse-glint 1.35s ease-in-out infinite}
+@keyframes fuse-glint{0%,100%{opacity:.35}50%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}}
+#battleStage .battle-status-strip{position:absolute;z-index:3;left:50%;bottom:100%;transform:translate(-50%,-4px);display:flex;gap:3px;pointer-events:none}
+#battleStage .battle-status-strip:empty{display:none}
+#battleStage .battle-status-strip>.sewer-status,#battleStage .battle-status-strip>.stop-status-icon{position:static;transform:none;display:grid;place-items:center;width:clamp(15px,3.8cqw,22px);height:clamp(15px,3.8cqw,22px);box-sizing:border-box;border:1px solid #e0d4ab;border-radius:3px;color:#fff;opacity:1;background:#262e42;padding:0;font:bold 12px monospace;text-shadow:1px 1px #172129;image-rendering:pixelated}
+#battleStage .battle-status-strip>.sewer-status::after{content:"";width:13px;height:13px;background-size:contain;background-position:center;background-repeat:no-repeat;image-rendering:pixelated}
+#battleStage .battle-status-strip>.poison::after{background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAfklEQVR4nGNgGPTAyEf1P0WaF12L+o/PECayTSdkgJGP6v+CLlMGBgYGhoIuU5xewWqAkY/q/12bu1DEcBmC1wtemqH4pLEbgOx0dIDNFRQHIgsuiW3XVxNlAPWj8dyW24wTyk5jVTyh7DTDuS23GZHFGLGqZMCehNE1Dw4AAMs8KNmNn7AnAAAAAElFTkSuQmCC")}
+#battleStage .battle-status-strip>.blind::after{background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAsklEQVR4nGNgGHngycbs/8h8RlwKxRX1/6OLnZ1gA2fL+E9lxGoATOO5I/tRxP+fqcXQzMDAwMCCrhlZY27DMgYGBgaGST7XEU42aWYQVzzy/+X9i4wMDAwMTLg0wwC6ZnTAiE8zsrPRNRvZODK8vH+RkYmBgYHh5f2LjEY2jjg1523RxKoZxQvIhuDTjNULyAA5nrE5G2YZVgOQNRsXHMGwDVkjhgHImpHjmSSAnkzpAgCnYlCAxtyr0gAAAABJRU5ErkJggg==")}
+#battleStage .battle-status-strip>.confusion::after{background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAT0lEQVR4nGNgGPKAEZvg/6cL/uPUIJ2AooeJFM3Y5FmItQmX4RgGYNOID2B4ARfA5TWCtqFrRHchzjDAsAmH14j2As0A3jBA9v/g9QLFAACDPBub/FgvggAAAABJRU5ErkJggg==")}
+#battleStage .battle-status-strip>.poison{background:#58426d;color:#d9f285}
+#battleStage .battle-status-strip>.blind{background:#303747;color:#e1eaf6}
+#battleStage .battle-status-strip>.confusion{background:#685338;color:#fff2ba}
+#battleStage .battle-status-strip>.stop-status-icon{object-fit:contain}
+#battleStage .confusion-turn{animation:confusion-spin .24s linear 2}
+@keyframes confusion-spin{0%,100%{transform:scaleX(1)}25%,75%{transform:scaleX(.08)}50%{transform:scaleX(-1)}}
+@media(prefers-reduced-motion:reduce){button.sewer-fuse-glow::after,#battleStage .confusion-turn{animation:none}}
 </style>
 <style>
 #equipPage{position:absolute;inset:0;z-index:30;background:#182e2f;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;color:#3b2414;font-family:Georgia,'Noto Sans KR',serif}
@@ -459,7 +479,7 @@ const CONFIG={
 };
 const CITY_PLAY_ZOOM=1.05;
 // Nuova versione: applica una volta le nuove coordinate ufficiali.
-const WORLD_VERSION="seoul-dialogues-2026-11-05-05",STORAGE_KEY="tarai-rpg-world-v3";
+const WORLD_VERSION="seoul-dialogues-2026-11-25-06",STORAGE_KEY="tarai-rpg-world-v3";
 const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function setTextIfChanged(id,text){const node=$(id);if(node.textContent!==text)node.textContent=text;}
 const random=(a,b)=>a+Math.random()*(b-a),copy=v=>JSON.parse(JSON.stringify(v));
@@ -498,53 +518,8 @@ const NPC_DATA=[
 const BUS_FILES=["Vetturegif/Bus_blu_ruote_animate.gif","Vetturegif/Bus_rosso_8100_ruote_animate.gif","Vetturegif/Bus_verde_4312_ruote_animate.gif"];
 const CAR_FILES=["Vetturegif/01_utilitaria_rossa_ruote_animate.gif","Vetturegif/02_berlina_argento_ruote_animate.gif","Vetturegif/03_suv_blu_ruote_animate.gif","Vetturegif/04_taxi_arancione_ruote_animate.gif","Vetturegif/05_furgoncino_bianco_ruote_animate.gif"];
 /* 08 · COLLISIONI DEFINITIVE */
-const DEFAULT_COLLISIONS=[
- [[0,0],[1024,0],[1024,385],[0,385]],[[0,385],[98,385],[98,591],[0,591]],
- [[976,394],[1024,385],[1024,591],[991,566]],[[98,385],[133,385],[133,486],[98,486]],
- [[170,433],[255,435],[254,491],[173,491]],[[768,436],[870,432],[868,492],[767,496]],
- [[166,517],[298,517],[288,556],[163,553]],[[720,517],[865,517],[861,556],[721,555]],
- [[887,448],[896,448],[896,493],[887,493]],[[909,448],[918,448],[918,493],[909,493]],
- [[301,563],[313,563],[313,577],[301,577]],[[717,563],[729,563],[729,577],[717,577]],
- [[331,541],[346,541],[346,574],[331,574]],[[391,541],[406,541],[406,574],[391,574]],
- [[451,541],[466,541],[466,574],[451,574]],[[565,541],[580,541],[580,574],[565,574]],
- [[625,541],[640,541],[640,574],[625,574]],[[685,541],[700,541],[700,574],[685,574]],
- [[0,596],[433,596],[433,733],[0,733]],[[586,600],[1003,593],[1006,733],[589,716]],
- [[0,759],[384,755],[386,1086],[0,1086]],[[0,1111],[380,1111],[376,1479],[0,1479]],
- [[553,783],[1024,761],[1014,1089],[548,1085]],[[382,874],[448,874],[435,955],[385,950]],
- [[525,1056],[551,1056],[551,1083],[525,1083]],[[600,1097],[626,1097],[626,1115],[600,1115]],
- [[550,1192],[595,1192],[595,1179],[1024,1179],[1024,1464],[805,1464],[774,1463],[738,1461],[710,1464],[550,1464]],
- [[548,1435],[685,1435],[685,1470],[548,1470]],[[835,1435],[1024,1435],[1024,1470],[835,1470]],
- [[174,1430],[327,1430],[327,1480],[174,1480]],[[358,1432],[378,1432],[378,1470],[358,1470]],
- [[554,1017],[528,1018],[527,959],[552,958]],[[926,493],[929,460],[927,452],[941,452],[938,495],[927,493]],
- [[946,493],[948,456],[958,452],[958,494],[949,494]],[[967,457],[968,495],[965,492],[961,457]],
- [[534,1350],[498,1348],[503,1408],[536,1407]],[[552,1483],[509,1480],[521,1446],[554,1430]],
- [[297,549],[296,532],[309,531],[312,553]],[[190,1087],[191,1112],[0,1111],[0,1088]],
- [[944,1161],[947,1123],[1014,1125],[1012,1160]],[[385,1084],[410,1089],[410,1018],[385,1012]],
- [[983,1532],[986,1480],[987,1474],[1024,1472]],[[942,1096],[1020,1094],[1020,1135],[948,1122]],
- [[630,729],[664,741],[652,706]]
-];
-/* 09 · PROFONDITÀ */
-const zone=(name,baseY,polygon)=>({name,baseY,polygon});
-const DEFAULT_DEPTH=[
- zone("Lampione stazione sinistro",551,[[296,550],[296,414],[299,408],[326,405],[331,411],[328,418],[307,420],[307,550]]),
- zone("Albero stazione sinistro",489,[[143,358],[150,333],[176,319],[188,304],[216,308],[231,321],[250,330],[253,354],[270,367],[257,393],[234,410],[220,423],[217,457],[240,463],[245,489],[175,489],[177,460],[199,455],[199,420],[179,409],[157,392],[146,375]]),
- zone("Albero stazione destro",489,[[755,355],[764,331],[790,313],[816,307],[838,320],[860,329],[865,350],[881,366],[868,392],[850,408],[831,424],[828,456],[851,463],[857,489],[784,489],[786,461],[809,455],[808,422],[786,412],[766,393]]),
- zone("Panchina sinistra",551,rect(236,519,52,32)),zone("Panchina destra",551,rect(747,519,50,32)),
- zone("Fioriera sinistra",557,rect(164,514,70,43)),zone("Fioriera destra",557,rect(797,513,72,44)),
- zone("Lampione attraversamento sinistro",743,[[372,742],[372,635],[376,626],[393,620],[409,619],[414,625],[411,632],[384,637],[384,742]]),
- zone("Albero strada sinistro",725,[[17,584],[28,569],[42,574],[55,567],[78,574],[91,590],[104,609],[99,631],[80,647],[69,650],[65,706],[89,710],[89,725],[37,725],[38,708],[53,706],[54,650],[34,641],[18,623],[13,603]]),
- zone("Albero strada destro",729,[[902,592],[916,575],[931,567],[940,550],[972,547],[996,576],[1002,599],[991,610],[968,621],[964,648],[963,702],[980,694],[987,729],[933,729],[939,695],[953,697],[954,655],[955,624],[932,615]]),
- zone("Palo elettrico",1117,[[602,1116],[600,836],[585,829],[585,817],[576,817],[576,803],[592,803],[592,784],[573,782],[573,770],[603,770],[603,753],[622,753],[623,771],[636,773],[636,786],[621,787],[621,805],[630,805],[630,833],[620,837],[622,1116]]),
- zone("Fioriera MART",1091,rect(377,1023,37,68)),zone("Fioriera GIMBAP",1089,rect(526,1013,31,76)),
- zone("Edificio MART",1086,[[0,743],[192,743],[192,766],[371,766],[386,790],[386,1086],[0,1086]]),
- zone("Edifici GIMBAP e farmacia",1089,[[553,786],[789,786],[789,758],[936,758],[936,746],[1024,746],[1024,1089],[548,1085]]),
- zone("Edifici REAL ESTATE",1479,[[0,1056],[190,1056],[190,1106],[345,1106],[376,1130],[376,1479],[0,1479]]),
- zone("Edificio JOB CENTER",1464,[[550,1192],[595,1192],[595,1179],[936,1179],[936,1149],[1024,1149],[1024,1464],[805,1464],[769,1457],[733,1458],[710,1464],[550,1464]]),
- zone("Oggetto 20",769,[[216,731],[262,738],[259,769],[211,763]]),
- zone("Oggetto 21",781,[[735,781],[748,761],[764,741],[790,726],[811,735],[829,744],[838,757]]),
- zone("Lampione attraversamento destro",744,[[612,622],[618,618],[625,618],[635,621],[638,626],[643,625],[649,627],[650,638],[649,737],[651,742],[641,744],[641,736],[642,669],[641,632],[633,632],[625,635],[616,634],[612,627]]),
- zone("Lampione stazione destro",553,[[731,420],[724,426],[713,427],[705,419],[704,409],[707,406],[736,407],[739,409],[739,418],[737,420],[737,505],[739,508],[739,546],[739,549],[733,553],[726,549],[726,543],[728,505],[731,505],[730,445]])
-];
+const DEFAULT_COLLISIONS=[[[0,0],[1024,0],[1024,385],[0,385]],[[0,385],[98,385],[98,591],[0,591]],[[976,394],[1024,385],[1024,591],[991,566]],[[98,385],[133,385],[133,486],[98,486]],[[170,433],[255,435],[254,491],[173,491]],[[768,436],[870,432],[868,492],[767,496]],[[166,517],[298,517],[288,556],[163,553]],[[720,517],[865,517],[861,556],[721,555]],[[899,457],[905,458],[904,491],[898,492]],[[919,457],[924,457],[924,491],[918,491]],[[301,563],[313,563],[313,577],[301,577]],[[717,563],[729,563],[729,577],[717,577]],[[331,541],[346,541],[346,574],[331,574]],[[391,541],[406,541],[406,574],[391,574]],[[451,541],[466,541],[466,574],[451,574]],[[565,541],[580,541],[580,574],[565,574]],[[625,541],[640,541],[640,574],[625,574]],[[685,541],[700,541],[700,574],[685,574]],[[0,596],[433,596],[433,733],[0,733]],[[586,600],[1003,593],[1006,733],[589,716]],[[0,759],[384,755],[386,1086],[0,1086]],[[0,1111],[380,1111],[376,1479],[0,1479]],[[553,786],[1008,788],[1014,1092],[548,1088]],[[390,883],[434,881],[433,953],[386,952]],[[525,1056],[551,1056],[551,1083],[525,1083]],[[600,1097],[626,1097],[626,1115],[600,1115]],[[550,1192],[595,1192],[595,1179],[1024,1179],[1024,1464],[805,1464],[774,1463],[738,1461],[710,1464],[550,1464]],[[548,1435],[685,1435],[685,1470],[548,1470]],[[835,1435],[1024,1435],[1024,1470],[835,1470]],[[174,1430],[327,1430],[326,1466],[178,1458]],[[358,1432],[378,1432],[378,1470],[358,1470]],[[549,1021],[526,1025],[526,958],[550,958]],[[938,491],[939,465],[939,458],[944,458],[944,491],[941,490]],[[957,487],[957,458],[962,459],[963,493],[958,491]],[[974,442],[976,497],[968,497],[968,442]],[[535,1351],[512,1348],[509,1407],[534,1406]],[[552,1483],[509,1480],[521,1446],[554,1430]],[[297,549],[296,532],[309,531],[312,553]],[[190,1087],[191,1112],[0,1111],[0,1088]],[[944,1161],[947,1123],[1014,1125],[1012,1160]],[[385,1084],[410,1089],[410,1018],[385,1012]],[[983,1532],[986,1480],[987,1474],[1024,1472]],[[942,1096],[1020,1094],[1020,1135],[948,1122]],[[886,441],[892,441],[891,496],[882,498],[882,493],[885,440]],[[880,438],[977,441],[978,437]],[[642,741],[641,734],[641,719],[649,719],[650,734],[651,738],[648,742],[642,742]],[[728,788],[729,767],[765,767],[798,768],[831,766],[856,781]],[[854,780],[859,779],[861,759],[934,759],[935,782]],[[934,757],[934,747],[1019,748]],[[390,883],[389,862],[435,861],[433,881]],[[410,1018],[412,1021],[412,1025],[412,1028],[411,1034],[413,1036],[412,1040],[415,1043],[415,1047],[415,1050],[415,1057],[415,1060],[415,1063],[414,1065],[412,1066],[411,1072],[410,1075],[410,1079],[410,1084],[410,1090],[384,1090],[384,1083],[384,1079]],[[526,1025],[523,1027],[522,1029],[521,1031],[522,1033],[523,1036],[521,1038],[520,1041],[518,1044],[519,1047],[518,1049],[519,1052],[522,1054],[525,1055],[524,1083],[548,1083],[549,1022]],[[760,1090],[761,1095],[765,1098],[767,1099],[771,1098],[773,1097],[774,1094],[774,1091]],[[780,1090],[780,1094],[783,1098],[786,1099],[788,1098],[793,1096],[795,1095],[794,1091]],[[378,1265],[392,1266],[391,1354],[376,1354]],[[393,1266],[394,1219],[374,1219]],[[377,1378],[377,1369],[386,1370],[390,1376],[390,1382],[391,1386],[392,1395],[390,1401],[389,1406],[385,1416],[381,1425],[379,1436],[383,1454],[382,1470],[376,1477]],[[520,1348],[522,1341],[520,1339],[516,1334],[509,1334],[504,1323],[504,1319],[513,1314],[521,1311],[526,1308],[526,1303],[527,1297],[529,1286],[529,1275],[527,1266],[529,1258],[528,1244],[525,1230],[528,1220],[529,1215],[531,1212],[536,1205],[535,1192],[550,1193],[548,1305],[548,1351]],[[265,1536],[273,1521],[271,1516],[273,1513],[274,1508],[272,1504],[274,1500],[277,1497],[279,1495],[281,1492],[279,1487],[280,1485],[281,1483],[281,1480],[276,1477],[258,1475],[241,1478],[229,1511]]];
+const DEFAULT_DEPTH=[{"name":"Lampione stazione sinistro","baseY":551,"polygon":[[296,550],[296,414],[299,408],[326,405],[331,411],[328,418],[307,420],[307,550]]},{"name":"Albero stazione sinistro","baseY":489,"polygon":[[143,358],[150,333],[176,319],[188,304],[216,308],[231,321],[250,330],[253,354],[270,367],[257,393],[234,410],[220,423],[217,457],[240,463],[245,489],[175,489],[177,460],[199,455],[199,420],[179,409],[157,392],[146,375]]},{"name":"Albero stazione destro","baseY":489,"polygon":[[755,355],[764,331],[790,313],[816,307],[838,320],[860,329],[865,350],[881,366],[868,392],[850,408],[831,424],[828,456],[851,463],[857,489],[784,489],[786,461],[809,455],[808,422],[786,412],[766,393]]},{"name":"Panchina sinistra","baseY":551,"polygon":[[236,519],[288,519],[288,551],[236,551]]},{"name":"Panchina destra","baseY":551,"polygon":[[747,519],[797,519],[797,551],[747,551]]},{"name":"Fioriera sinistra","baseY":557,"polygon":[[164,514],[234,514],[234,557],[164,557]]},{"name":"Fioriera destra","baseY":557,"polygon":[[797,513],[869,513],[869,557],[797,557]]},{"name":"Lampione attraversamento sinistro","baseY":743,"polygon":[[372,742],[372,635],[376,626],[393,620],[409,619],[414,625],[411,632],[384,637],[384,742]]},{"name":"Albero strada sinistro","baseY":725,"polygon":[[17,584],[28,569],[42,574],[55,567],[78,574],[91,590],[104,609],[99,631],[80,647],[69,650],[65,706],[89,710],[89,725],[37,725],[38,708],[53,706],[54,650],[34,641],[18,623],[13,603]]},{"name":"Albero strada destro","baseY":729,"polygon":[[902,592],[916,575],[931,567],[940,550],[972,547],[996,576],[1002,599],[991,610],[968,621],[964,648],[963,702],[980,694],[987,729],[933,729],[939,695],[953,697],[954,655],[955,624],[932,615]]},{"name":"Palo elettrico","baseY":1117,"polygon":[[602,1116],[600,836],[585,829],[585,817],[576,817],[576,803],[592,803],[592,784],[573,782],[573,770],[603,770],[603,753],[622,753],[623,771],[636,773],[636,786],[621,787],[621,805],[630,805],[630,833],[620,837],[622,1116]]},{"name":"Fioriera GIMBAP","baseY":1089,"polygon":[[526,1013],[557,1013],[557,1089],[526,1089]]},{"name":"Edificio MART","baseY":1084,"polygon":[[0,764],[193,741],[192,764],[371,764],[386,788],[386,1084],[0,1084]]},{"name":"Edifici GIMBAP e farmacia","baseY":1089,"polygon":[[551,786],[787,786],[787,758],[935,759],[934,746],[1022,746],[1022,1089],[546,1085]]},{"name":"Edifici REAL ESTATE","baseY":1479,"polygon":[[0,1056],[190,1056],[190,1106],[345,1106],[376,1130],[376,1479],[0,1479]]},{"name":"Edificio JOB CENTER","baseY":1464,"polygon":[[550,1192],[595,1192],[595,1179],[936,1179],[936,1149],[1024,1149],[1024,1464],[805,1464],[769,1457],[733,1458],[710,1464],[550,1464]]},{"name":"Oggetto 20","baseY":772,"polygon":[[219,735],[269,735],[268,755],[219,756]]},{"name":"Oggetto 21","baseY":781,"polygon":[[735,781],[748,761],[764,741],[790,726],[811,735],[829,744],[838,757]]},{"name":"Lampione attraversamento destro","baseY":744,"polygon":[[612,622],[618,618],[625,618],[635,621],[638,626],[643,625],[649,627],[650,638],[649,737],[651,742],[641,744],[641,736],[642,669],[641,632],[633,632],[625,635],[616,634],[612,627]]},{"name":"Lampione stazione destro","baseY":553,"polygon":[[731,420],[724,426],[713,427],[705,419],[704,409],[707,406],[736,407],[739,409],[739,418],[737,420],[737,505],[739,508],[739,546],[739,549],[733,553],[726,549],[726,543],[728,505],[731,505],[730,445]]},{"name":"Oggetto 22","baseY":440,"polygon":[[980,407],[980,440],[877,442],[878,407]]},{"name":"Oggetto 23","baseY":497,"polygon":[[882,496],[884,441],[891,441],[892,497]]},{"name":"Oggetto 24","baseY":496,"polygon":[[968,441],[975,440],[976,496],[966,495],[968,442]]},{"name":"Oggetto 25","baseY":763,"polygon":[[860,758],[862,754],[933,754],[935,756],[935,759],[933,761],[931,763]]},{"name":"Oggetto 26","baseY":763,"polygon":[[33,763],[34,741],[160,741],[192,741]]},{"name":"Oggetto 27","baseY":868,"polygon":[[399,867],[399,861],[396,858],[394,861],[389,861],[386,856],[387,788],[384,784],[387,782],[388,779],[390,777],[392,778],[394,779],[395,777],[394,774],[396,773],[399,773],[400,775],[403,776],[401,774],[402,772],[403,768],[404,766],[406,765],[409,766],[411,767],[413,768],[416,769],[418,770],[420,771],[419,773],[422,773],[424,774],[424,777],[422,779],[423,782],[426,781],[426,778],[428,776],[431,775],[434,775],[434,778],[435,780],[438,781],[437,784],[438,786],[439,788],[439,791],[437,794],[436,797],[433,798],[431,800],[429,798],[426,796],[427,800],[430,801],[432,803],[434,802],[436,800],[437,802],[440,801],[444,801],[445,804],[446,806],[449,806],[448,810],[449,814],[448,817],[445,817],[443,819],[440,819],[437,820],[439,821],[442,821],[444,823],[447,823],[449,826],[449,829],[450,832],[449,834],[448,838],[446,836],[444,835],[443,838],[439,838],[441,841],[443,843],[443,846],[439,848],[436,850],[432,849],[433,853],[434,855],[432,858],[428,857],[426,856],[425,858],[423,859],[421,860],[418,859],[416,860],[415,865],[415,868],[412,865],[411,862],[413,858],[415,856],[416,854],[415,849],[413,850],[412,852],[408,852],[405,852],[402,852],[398,851],[398,855],[400,856],[402,857],[403,860],[401,864],[400,866],[399,868]]},{"name":"Oggetto 28","baseY":882,"polygon":[[402,881],[402,871],[400,869],[400,866],[402,862],[404,859],[403,852],[410,852],[411,857],[410,860],[411,862],[412,865],[413,868],[412,871],[412,874],[412,877],[413,881],[402,882]]},{"name":"Oggetto 29","baseY":953,"polygon":[[544,953],[541,952],[542,947],[539,945],[537,943],[536,941],[536,945],[534,946],[532,948],[528,949],[528,945],[525,946],[523,943],[523,940],[525,938],[527,937],[526,935],[523,934],[524,929],[520,932],[518,933],[516,930],[517,926],[515,923],[514,921],[515,918],[519,917],[522,916],[521,914],[519,915],[515,916],[513,914],[512,912],[510,908],[510,905],[512,904],[513,902],[513,899],[515,897],[519,898],[523,895],[527,897],[530,896],[530,892],[528,891],[526,892],[524,890],[523,887],[521,884],[520,881],[518,877],[520,875],[522,871],[526,870],[530,871],[533,873],[535,869],[532,867],[532,864],[533,861],[531,860],[531,857],[534,855],[536,854],[538,852],[540,851],[543,852],[545,853],[547,855],[549,852],[547,953]]},{"name":"Oggetto 29","baseY":1246,"polygon":[[376,1244],[378,1241],[380,1242],[380,1245],[385,1246],[386,1243],[384,1241],[382,1236],[386,1236],[389,1239],[391,1238],[393,1234],[396,1234],[397,1231],[394,1229],[396,1227],[397,1225],[396,1223],[390,1222],[391,1218],[393,1219],[396,1217],[399,1218],[402,1219],[405,1218],[404,1216],[403,1213],[404,1211],[406,1213],[409,1210],[408,1206],[407,1203],[402,1201],[401,1199],[403,1197],[407,1196],[404,1193],[403,1190],[402,1188],[399,1189],[397,1191],[395,1190],[392,1190],[386,1189],[385,1182],[388,1186],[390,1183],[393,1184],[395,1181],[394,1179],[395,1177],[398,1175],[397,1172],[395,1169],[393,1167],[391,1166],[389,1164],[385,1164],[384,1166],[383,1168],[379,1166],[376,1164],[379,1162],[381,1159],[380,1157],[380,1154],[378,1150],[375,1152],[360,1184],[357,1211]]},{"name":"Oggetto 30","baseY":1429,"polygon":[[376,1379],[381,1379],[380,1372],[385,1372],[385,1379],[390,1376],[390,1382],[387,1388],[388,1390],[385,1394],[392,1393],[392,1396],[391,1399],[388,1401],[388,1407],[384,1411],[382,1408],[383,1417],[379,1420],[375,1421],[378,1423],[370,1429],[354,1418],[349,1394]]},{"name":"Oggetto 31","baseY":1350,"polygon":[[522,1350],[521,1339],[517,1333],[513,1336],[508,1333],[503,1332],[504,1324],[501,1324],[501,1318],[502,1316],[498,1313],[498,1308],[503,1304],[500,1305],[497,1301],[503,1297],[495,1296],[500,1285],[502,1282],[506,1284],[512,1285],[511,1281],[504,1275],[501,1273],[501,1268],[500,1265],[504,1261],[508,1255],[507,1252],[502,1248],[505,1244],[511,1248],[516,1247],[516,1241],[520,1238],[515,1234],[518,1227],[514,1223],[518,1218],[518,1214],[527,1212],[530,1211],[536,1211],[536,1219]]}];
 /* 10 · SALVATAGGIO E STATO */
 function validPolygon(p){return Array.isArray(p)&&p.length>=3&&p.every(v=>Array.isArray(v)&&v.length===2&&v.every(Number.isFinite));}
 function validWorld(w){return w&&Array.isArray(w.collisions)&&w.collisions.every(validPolygon)&&Array.isArray(w.depth)&&w.depth.every(z=>z&&Number.isFinite(z.baseY)&&validPolygon(z.polygon));}
@@ -607,18 +582,19 @@ function loadAsset(file,fixed=false,child=false){
  const promise=new Promise(resolve=>{
   const image=new Image();image.onload=()=>{
    const w=image.naturalWidth,h=image.naturalHeight;
-   let b={x:0,y:0,w,h},freeze=null;
+   let b={x:0,y:0,w,h},freeze=null,visibleBody=null;
    try{
     const c=document.createElement("canvas");c.width=w;c.height=h;
     const ctx=c.getContext("2d",{willReadFrequently:true});ctx.drawImage(image,0,0);
     freeze=c.toDataURL("image/png");
-    if(!fixed){
-     const data=ctx.getImageData(0,0,w,h).data;let l=w,t=h,r=-1,d=-1;
-     for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>=100){l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);d=Math.max(d,y);}
-     if(r>=l)b={x:l,y:t,w:r-l+1,h:d-t+1};
+    const data=ctx.getImageData(0,0,w,h).data;let l=w,t=h,r=-1,d=-1;
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>=100){l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);d=Math.max(d,y);}
+    if(r>=l){
+     if(!fixed)b={x:l,y:t,w:r-l+1,h:d-t+1};
+     visibleBody=Math.max(1,(fixed?h*292/304:d+1)-t);
     }
    }catch(_){}
-   missing.delete(file);resolve({key,file,image,b,fixed,body:child?236:280,foot:fixed?h*292/304:b.y+b.h,freeze});
+   missing.delete(file);resolve({key,file,image,b,fixed,body:child?236:280,foot:fixed?h*292/304:b.y+b.h,visibleBody,freeze});
   };
   image.onerror=()=>{missing.add(file);resolve(null);};image.src=file;
  });cache.set(key,promise);return promise;
@@ -629,26 +605,31 @@ function createActor(height=54,width=null){
 }
 function setAsset(actor,asset,paused=false){
  if(!asset)return;
- const height=actor===player.actor?56*1.05/zoom:actor.height;
+ const uniform=actor.width==null&&!actor.child;
+ const height=uniform?56*1.05/zoom:actor.height;
  if(actor.active===asset&&actor.paused===paused&&actor.renderedHeight===height){actor.node.hidden=false;return;}
  actor.renderedHeight=height;
  const key=asset.key+(paused&&asset.freeze?"|pause":"");let image=actor.images.get(key);
  if(!image){image=document.createElement("img");image.src=paused&&asset.freeze?asset.freeze:asset.file;image.alt="";image.draggable=false;actor.images.set(key,image);actor.node.appendChild(image);}
  for(const im of actor.images.values())im.hidden=im!==image;
- const b=asset.b,scale=actor.width?actor.width/b.w:height/(actor===player.actor?Math.max(1,asset.foot-b.y):asset.fixed?asset.body:b.h);
+ const b=asset.b,scale=actor.width?actor.width/b.w:height/(uniform?(asset.visibleBody??Math.max(1,asset.foot-b.y)):asset.fixed?asset.body:b.h);
  const originX=asset.fixed?asset.image.naturalWidth/2:b.x+b.w/2;
  const horizontalScale=scale*(actor.horizontalScale||1);
  image.style.width=asset.image.naturalWidth*horizontalScale+"px";image.style.height=asset.image.naturalHeight*scale+"px";
  image.style.left=-originX*horizontalScale+"px";image.style.top=-asset.foot*scale+"px";
- actor.visibleHeight=(asset.foot-b.y)*scale;actor.active=asset;actor.paused=paused;actor.node.hidden=false;
+ actor.visibleHeight=uniform?height:(asset.foot-b.y)*scale;actor.active=asset;actor.paused=paused;actor.node.hidden=false;
 }
-function place(actor,x,y,priority=10){actor.node.style.left=x+"px";actor.node.style.top=y+"px";actor.node.style.zIndex=Math.round(y*100+priority);}
+function place(actor,x,y,priority=10){
+ const offset=actor===player.actor&&locationId==='sewer-d'?sewerBridgeOffset(x/3,y/3,sewerProgress().drained):0;
+ actor.node.style.left=x+'px';actor.node.style.top=(y+offset)+'px';actor.node.style.zIndex=Math.round((y+offset)*100+priority);
+}
 player.actor=createActor(CONFIG.spriteHeight);
 async function loadCharacters(){
  const jobs=[];
  for(const mode of ["idle","walk"])for(const d of Object.keys(IT))jobs.push(loadAsset(PLAYER_FILES[mode][d]).then(a=>playerAssets[mode][d]=a));
  for(const data of NPC_DATA){
   const n={...data,actor:createActor(data.height),animation:null,idleAssets:{},walkAssets:{},target:1,wait:data.dog?0:random(.2,1.5),blocked:0,moving:false,talking:false};npcs.push(n);
+  n.actor.child=!!data.child;
   const fixed=!data.old;
   for(const d of Object.keys(IT))jobs.push(loadAsset(data.idle[d],fixed,!!data.child).then(a=>n.idleAssets[d]=a));
   if(data.route){
@@ -2264,7 +2245,7 @@ function openProgressionPage(view){if(autoMenu)return;progressionView=view;reset
 $('progressionBack').onclick=()=>{progressionPage.hidden=true;$('menuNav').querySelector('[data-menu-index="'+(progressionView==='skills'?1:3)+'"]')?.focus();};
 const menuBeforeProgression=renderMenu;renderMenu=function(){menuBeforeProgression();for(const [index,view] of [[1,'skills'],[3,'status']])$('menuNav').querySelector('[data-menu-index="'+index+'"]')?.addEventListener('click',()=>openProgressionPage(view));const save=$('menuNav').querySelector('[data-menu-index="5"]');if(save){save.disabled=!(nearMartSavePoint()||atSewerSavePoint());save.onclick=()=>{if(autoMenu||save.disabled||!(nearMartSavePoint()||atSewerSavePoint()))return;save.textContent=tr(saveRpgGame()?'Saved':'Save failed');};}if(!progressionPage.hidden)renderProgressionPage();};
 const closeBeforeProgression=closeMenu;closeMenu=function(){if(!autoMenu)progressionPage.hidden=true;closeBeforeProgression();};
-function saveRpgGame(){if(!menuOpen||autoMenu||!(nearMartSavePoint()||atSewerSavePoint()))return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
+function saveRpgGame(){if(!menuOpen||autoMenu||!(nearMartSavePoint()||atSewerSavePoint()))return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='sewer-g')data.sewerMapScale=sewerScale('g');if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
 function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-dungeon'].includes(data.location)||isMartShop(data.location)||isMartRoom(data.location)||isSewerRoom(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
 const beginBeforeProgression=beginIntro;beginIntro=function(){progressionPage.hidden=true;for(const id of ['seon_jong','michael']){partyMembers[id].joined=false;const slot=partySlots.indexOf(id);if(slot>=0)partySlots[slot]=null;}beginBeforeProgression();resetProgression();equipSeoyoonStarter();renderMenu();};
 resetProgression();equipSeoyoonStarter();
@@ -2296,7 +2277,7 @@ const attackBeforeSkills=performFirstBattleAttack;performFirstBattleAttack=async
  }
  const firm=skill.id==='firm_pan_strike'&&await loadFirmPanStrike();
  if(!battleAlive(epoch))return;
- if(!self)positionBattleFighter(hero,target.home.x+23,target.home.y);
+ if(!self)positionBattleFighter(hero,target.home.x+(firm?12:23),target.home.y);
  const customPose=firm&&await drawBattlePose(hero,'firmPan',true);
  if(!customPose)await drawBattlePose(hero,'attack',true);
  const impact=customPose?FIRM_PAN_TIMING.impact:t.impact,duration=customPose?FIRM_PAN_TIMING.duration:t.attack;
@@ -2407,6 +2388,10 @@ async function resumeNightGame(beforeRestore=null){
    x:Number(data.player?.x)||CUCCHIAIO[data.location]?.start.x||1360,
    y:Number(data.player?.y)||CUCCHIAIO[data.location]?.start.y||1950
   };
+  if(data.location==='sewer-g'){
+   const ratio=sewerScale('g')/(data.sewerMapScale||6);
+   savedPosition.x*=ratio;savedPosition.y*=ratio;
+  }
   Object.assign(player,savedPosition,{direction:Object.hasOwn(VECTORS,data.player?.direction)?data.player.direction:'down',moving:false});if(!nearestFree(player)&&isMartRoom(data.location))Object.assign(player,martRoomEntry(data.location));if(isSewerRoom(data.location))resetSewerEncounters();updateCamera();drawPlayer();syncNightSeoyoon();renderMenu();refreshNightObjective();bedDismissed=nearFirstBed();if(nightState.phase==='morning')void startMorningScene();
   if(!await nightWait(50,epoch))return false;fade.style.transition='opacity 650ms linear';fade.classList.remove('black');if(!await nightWait(700,epoch))return false;fade.style.transition='';fade.style.zIndex='';nightTransition=false;updateInteractionUI();return true;
  }catch(e){if(epoch===nightEpoch){nightTransition=false;fade.classList.remove('black');fade.style.transition='';fade.style.zIndex='';notice('Unable to resume: '+e.message);}return false;}
@@ -2726,8 +2711,14 @@ async function loadChaosActors(){if(chaosActors.length)return chaosActors;if(cha
 const CIVILIAN_MOTION={"Npc/file_000000000c4c81fda7d862734d1541d2.gif":{"duration":5120,"bounds":[[71,533,250,912],[67,499,247,893],[72,481,249,881],[74,481,250,860],[71,468,248,850],[71,450,252,831],[68,423,249,819],[70,426,249,798],[71,409,250,788],[67,375,247,769],[72,357,249,757],[74,357,250,736],[71,344,248,726],[71,326,252,707],[68,299,249,695],[70,302,249,674],[71,285,250,664],[67,251,247,645],[72,233,249,633],[74,233,250,612],[71,220,248,602],[71,202,252,583],[68,175,249,571],[70,178,249,550],[71,161,250,540],[67,127,247,521],[72,109,249,509],[74,109,250,488],[71,96,248,478],[71,78,252,459],[68,51,249,447],[70,54,249,426],[60,37,261,432],[60,46,261,443],[60,63,260,463],[60,80,261,472],[60,108,262,494],[60,112,261,505],[60,135,260,525],[60,152,261,534],[60,161,261,556],[60,170,261,567],[60,187,260,587],[60,204,261,596],[60,232,262,618],[60,236,261,629],[60,259,260,649],[60,276,261,658],[60,285,261,680],[60,294,261,691],[60,311,260,711],[60,328,261,720],[60,356,262,742],[60,360,261,753],[60,383,260,773],[60,400,261,782],[60,409,261,804],[60,418,261,815],[60,435,260,835],[60,452,261,844],[60,480,262,866],[60,484,261,877],[60,507,260,897],[60,524,261,906]]},"Npc/file_00000000f9608212a185e7ce98e4f087.gif":{"duration":5120,"bounds":[[68,521,257,912],[68,501,257,893],[69,481,257,881],[68,474,257,860],[68,460,257,850],[68,440,257,831],[69,421,257,819],[68,407,258,798],[68,397,257,788],[68,377,257,769],[69,357,257,757],[68,350,257,736],[68,336,257,726],[68,316,257,707],[69,297,257,695],[68,283,258,674],[68,273,257,664],[68,253,257,645],[69,233,257,633],[68,226,257,612],[68,212,257,602],[68,192,257,583],[69,173,257,571],[68,159,258,550],[68,149,257,540],[68,129,257,521],[69,109,257,509],[68,102,257,488],[68,88,257,478],[68,68,257,459],[69,49,257,447],[68,35,258,426],[51,59,256,432],[52,65,257,443],[49,73,253,463],[51,87,254,472],[51,94,254,494],[51,112,256,505],[52,131,256,525],[52,141,256,534],[51,183,256,556],[52,189,257,567],[49,197,253,587],[51,211,254,596],[51,218,254,618],[51,236,256,629],[52,255,256,649],[52,265,256,658],[51,307,256,680],[52,313,257,691],[49,321,253,711],[51,335,254,720],[51,342,254,742],[51,360,256,753],[52,379,256,773],[52,389,256,782],[51,431,256,804],[52,437,257,815],[49,445,253,835],[51,459,254,844],[51,466,254,866],[51,484,256,877],[52,503,256,897],[52,513,256,906]]},"Npc/file_000000001d0481f5aa8f124182dde37b.gif":{"duration":5120,"bounds":[[61,25,291,412],[80,16,311,408],[101,37,330,412],[122,8,349,406],[140,12,369,412],[158,15,387,408],[177,43,408,412],[197,19,428,406],[216,25,446,412],[235,16,466,408],[256,37,485,412],[277,8,504,406],[295,12,524,412],[313,15,542,408],[332,43,563,412],[352,19,583,406],[371,25,601,412],[390,16,621,408],[410,37,639,412],[432,8,659,406],[450,12,679,412],[467,15,696,408],[487,43,718,412],[507,19,738,406],[526,25,756,412],[545,16,776,408],[565,37,794,412],[587,8,814,406],[605,12,834,412],[622,15,851,408],[642,43,873,412],[662,19,893,406],[669,25,899,412],[649,16,880,408],[630,37,859,412],[611,8,838,406],[591,12,820,412],[573,15,802,408],[552,43,783,412],[532,19,763,406],[514,25,744,412],[494,16,725,408],[475,37,704,412],[456,8,683,406],[436,12,665,412],[418,15,647,408],[397,43,628,412],[377,19,608,406],[359,25,589,412],[339,16,570,408],[321,37,550,412],[301,8,528,406],[281,12,510,412],[264,15,493,408],[242,43,473,412],[222,19,453,406],[204,25,434,412],[184,16,415,408],[166,37,395,412],[146,8,373,406],[126,12,355,412],[109,15,338,408],[87,43,318,412],[67,19,298,406]]},"Npc/file_00000000ab1c81f590bbf056d011526d.gif":{"duration":6400,"bounds":[[70,12,289,412],[89,21,307,408],[102,15,328,412],[127,31,345,406],[146,22,365,412],[165,18,386,408],[186,22,405,412],[203,37,423,406],[225,12,444,412],[244,21,462,408],[257,15,483,412],[282,31,500,406],[301,22,520,412],[320,18,541,408],[341,22,560,412],[358,37,578,406],[380,12,599,412],[399,21,617,408],[411,15,637,412],[437,31,655,406],[456,22,675,412],[474,18,695,408],[496,22,715,412],[513,37,733,406],[535,12,754,412],[554,21,772,408],[566,15,792,412],[592,31,810,406],[611,22,830,412],[629,18,850,408],[651,22,870,412],[668,37,888,406],[671,12,890,412],[653,21,871,408],[632,15,858,412],[615,31,833,406],[595,22,814,412],[574,18,795,408],[555,22,774,412],[537,37,757,406],[516,12,735,412],[498,21,716,408],[477,15,703,412],[460,31,678,406],[440,22,659,412],[419,18,640,408],[400,22,619,412],[382,37,602,406],[361,12,580,412],[343,21,561,408],[323,15,549,412],[305,31,523,406],[285,22,504,412],[265,18,486,408],[245,22,464,412],[227,37,447,406],[206,12,425,412],[188,21,406,408],[168,15,394,412],[150,31,368,406],[130,22,349,412],[110,18,331,408],[90,22,309,412],[72,37,292,406]]}};
 function chaosFoot(a){const m=CIVILIAN_MOTION[a.file];if(!m)return{x:a.x,y:a.y,headY:a.y-a.height};const i=Math.floor(((performance.now()-(a.started||0))%m.duration)/m.duration*m.bounds.length),b=m.bounds[i],first=m.bounds[0];return{x:a.x+((b[0]+b[2]-first[0]-first[2])/2)*a.scale,y:a.y+(b[3]-first[3])*a.scale,headY:a.y+(b[1]-first[3])*a.scale};}
 function chaosActor(id){return chaosActors.find(a=>a.id===id);}
-function syncChaosActors(){const active=locationId==='hongdeon'&&chaosEnabled(),stage=chaosProgress().stage;for(const a of chaosActors){a.actor.node.hidden=!active||(a.id==='rescue-enemy'&&['rescued','done'].includes(stage));place(a.actor,a.x,a.y);}}
-const chaosDrawNpcBefore=drawNpc;drawNpc=function(n){if(n&&chaosActors.includes(n)){place(n.actor,n.x,n.y);return;}if(n?.id==='seoyoon'&&chaosCompanionVisible&&locationId==='hongdeon'){n.height=HONGDEON.playerHeight*1.25;n.actor.height=n.height;const a=n.moving?n.walkAssets[n.direction]:n.idleAssets[n.direction];setAsset(n.actor,a||n.idleAssets.down);place(n.actor,n.x,n.y);return;}return chaosDrawNpcBefore(n);};
+function normalizeChaosAppearance(a){
+ const height=56*1.05/zoom,b=a.asset.b,scale=height/b.h;
+ if(a.scale===scale)return;
+ Object.assign(a.im.style,{width:a.asset.image.naturalWidth*scale+'px',height:a.asset.image.naturalHeight*scale+'px',left:-(b.x+b.w/2)*scale+'px',top:-(b.y+b.h)*scale+'px'});
+ a.scale=scale;a.height=a.actor.visibleHeight=height;
+}
+function syncChaosActors(){const active=locationId==='hongdeon'&&chaosEnabled(),stage=chaosProgress().stage;for(const a of chaosActors){a.actor.node.hidden=!active||(a.id==='rescue-enemy'&&['rescued','done'].includes(stage));if(active)normalizeChaosAppearance(a);place(a.actor,a.x,a.y);}}
+const chaosDrawNpcBefore=drawNpc;drawNpc=function(n){if(n&&chaosActors.includes(n)){normalizeChaosAppearance(n);place(n.actor,n.x,n.y);return;}if(n?.id==='seoyoon'&&chaosCompanionVisible&&locationId==='hongdeon'){n.height=HONGDEON.playerHeight*1.25;n.actor.height=n.height;const a=n.moving?n.walkAssets[n.direction]:n.idleAssets[n.direction];setAsset(n.actor,a||n.idleAssets.down);place(n.actor,n.x,n.y);return;}return chaosDrawNpcBefore(n);};
 const chaosShowBefore=showLocation;showLocation=function(id){chaosShowBefore(id);if(id==='hongdeon'&&chaosEnabled()){if(chaosImage){hongMapImage=chaosImage;mapImage.src=chaosImage.src;rebuildDepth();}void Promise.all([loadChaosImage(),loadChaosActors()]).then(([im])=>{if(locationId!=='hongdeon'||!chaosEnabled())return;hongMapImage=im;mapImage.src=im.src;rebuildDepth();syncChaosActors();}).catch(e=>notice(e.message));}syncChaosActors();};
 // Only the added obstructions change collision; buildings retain existing geometry.
 const CHAOS_BLOCKS=[rect(1630,2715,418,357),rect(0,2700,235,372),rect(655,1310,215,125),rect(1255,1985,110,65)];
@@ -2924,7 +2915,7 @@ partyMelee=async function(user,target,skill,epoch){
  const enemy=user.kind==='enemy',profile=user.stats?.profile,t=FIRST_BATTLE.timing;
  const firm=skill?.id==='firm_pan_strike'&&await loadFirmPanStrike();
  if(!battleAlive(epoch))return;
- if(user!==target)positionBattleFighter(user,target.home.x+(enemy?-22:22),target.home.y);
+ if(user!==target)positionBattleFighter(user,target.home.x+(enemy?-22:firm?12:22),target.home.y);
  const customPose=firm&&await drawBattlePose(user,'firmPan',true);
  if(!customPose)await drawBattlePose(user,'attack',true);
  if(!battleAlive(epoch))return;
@@ -3403,15 +3394,25 @@ function nearestBattleEnemy(actor){const stage=$('battleStage'),w=stage.clientWi
 }
 function refreshTargetHand(){
  const choosing=firstBattleActive&&!battleScreen.hidden&&firstBattlePhase==='target',actor=targetingActor(),key=firstBattleEpoch+':'+(actor?.id||actor?.kind||'')+':'+(selectedBattleItem?'item:'+selectedBattleItem:selectedBattleSkill?.id||'atk');
- if(!choosing){battleTargetChoice=null;targetHand.hidden=true;for(const f of firstBattleFighters)f.node.removeAttribute('aria-pressed');return;}
+ if(!choosing){
+  battleTargetChoice=null;for(const f of firstBattleFighters)f.node.removeAttribute('aria-pressed');
+  const command=firstBattleActive&&!battleScreen.hidden&&firstBattlePhase==='command';
+  if(command&&actor&&actor.kind!=='enemy'&&actor.hp()>0)placeBattleHand(actor,'turn');
+  else targetHand.hidden=true;
+  return;
+ }
  if(!battleTargetChoice||battleTargetChoice.key!==key||!firstBattleFighters.includes(battleTargetChoice.fighter)||!canChooseBattleTarget(battleTargetChoice.fighter)){
   const enemy=selectedBattleItem||['ally','all-allies','fallen-ally'].includes(selectedBattleSkill?.target)?null:nearestBattleEnemy(actor);
   battleTargetChoice={key,fighter:enemy||(canChooseBattleTarget(actor)?actor:firstBattleFighters.find(canChooseBattleTarget))};
  }
  const selected=battleTargetChoice.fighter;for(const f of firstBattleFighters)f.node.setAttribute('aria-pressed',String(f===selected));
+ placeBattleHand(selected,'target');
+}
+function placeBattleHand(selected,mode){
  if(!selected||!targetHandAsset){targetHand.hidden=true;void loadTargetHand();return;}
+ targetHand.dataset.mode=mode;
  const stage=$('battleStage');if(targetHand.parentNode!==stage)stage.append(targetHand);const height=clamp(stage.clientWidth*.085,26,42),scale=height/targetHandAsset.height,headX=selected.x/100*stage.clientWidth,headY=selected.y/100*stage.clientHeight-selected.height;
- Object.assign(targetHand.style,{height:height+'px',width:(targetHandAsset.width*scale)+'px',left:(headX-targetHandAsset.tipX*scale)+'px',top:(headY-height-8)+'px'});targetHand.dataset.target=selected.id||selected.kind;targetHand.hidden=false;
+ Object.assign(targetHand.style,{height:height+'px',width:(targetHandAsset.width*scale)+'px',left:(headX-targetHandAsset.tipX*scale)+'px',top:(headY-height-8-(selected.node.querySelector('.battle-status-strip:not(:empty)')?26:0))+'px'});targetHand.dataset.target=selected.id||selected.kind;targetHand.hidden=false;
 }
 const paintBeforeTargetHand=paintFirstBattle;paintFirstBattle=function(){
  paintBeforeTargetHand();
@@ -3626,7 +3627,7 @@ function martRoomWorld({floor,props}){
  return {collisions,depth};
 }
 for(const [id,room] of Object.entries(MART_ROOMS))
- registerEditableMap({id,map:room.map,width:MART_WIDTH,height:MART_HEIGHT,version:'mart-rooms-v1',world:martRoomWorld(room)});
+ registerEditableMap({id,map:room.map,width:MART_WIDTH,height:MART_HEIGHT,version:id==='mart-e'?'mart-rooms-v2':'mart-rooms-v1',world:id==='mart-e'?{"collisions":[[[0,0],[1536,0],[1536,22],[0,22]],[[0,22],[716,22],[716,218],[0,218]],[[818,22],[1536,22],[1536,218],[818,218]],[[0,218],[150,218],[150,230],[0,230]],[[1390,218],[1536,218],[1536,230],[1390,230]],[[0,230],[150,230],[150,885],[0,885]],[[1390,230],[1536,230],[1536,885],[1390,885]],[[0,885],[1536,885],[1536,1024],[0,1024]],[[143,203],[282,218],[282,328],[149,328]],[[266,212],[339,202],[338,275],[262,285]],[[150,658],[239,658],[239,700],[150,700]],[[155,842],[431,842],[431,884],[155,884]],[[615,842],[916,842],[916,884],[615,884]],[[1109,844],[1389,844],[1389,886],[1109,886]],[[1298,247],[1372,247],[1371,377],[1297,377]],[[162,326],[168,356],[184,358],[197,362],[201,368],[206,376],[208,400],[209,422],[207,444],[223,456],[225,482],[226,508],[226,528],[222,551],[227,572],[224,596],[214,614],[206,629],[215,635],[237,637],[246,654],[247,674],[245,696],[243,704],[210,708],[216,728],[256,731],[261,761],[267,786],[317,786],[322,836],[298,849],[173,859]],[[343,839],[342,825],[341,808],[330,799],[334,787],[342,780],[347,778],[354,791],[357,798],[356,811],[358,818],[366,824],[373,832],[427,836],[429,848]],[[1105,883],[1106,863],[1102,848],[1102,845],[1103,842],[1105,837],[1108,838],[1110,829],[1110,811],[1110,804],[1153,805],[1157,839],[1167,843],[1169,810],[1171,786],[1203,788],[1210,826],[1221,827],[1219,759],[1286,757],[1285,750],[1293,745],[1301,744],[1297,707],[1319,704],[1387,705],[1383,848]],[[1364,704],[1364,652],[1342,646],[1342,596],[1318,594],[1317,540],[1319,535],[1333,534],[1337,461],[1351,448],[1357,385],[1388,384],[1383,529]],[[1294,281],[1220,280],[1216,218],[1313,206]],[[1359,648],[1339,710],[1386,709],[1383,634]]],"depth":[{"name":"Prop 1","baseY":328,"polygon":[[151,193],[284,193],[284,328],[151,328]]},{"name":"Prop 2","baseY":280,"polygon":[[295,226],[333,226],[333,280],[295,280]]},{"name":"Prop 3","baseY":704,"polygon":[[139,342],[200,352],[190,682],[139,704]]},{"name":"Prop 4","baseY":882,"polygon":[[149,700],[299,807],[425,882],[149,882]]},{"name":"Prop 5","baseY":884,"polygon":[[615,800],[916,800],[916,884],[615,884]]},{"name":"Prop 6","baseY":888,"polygon":[[1199,806],[1389,705],[1389,888],[1109,888]]},{"name":"Prop 7","baseY":703,"polygon":[[1360,427],[1389,377],[1389,703],[1348,669]]},{"name":"Prop 8","baseY":383,"polygon":[[1213,190],[1383,190],[1383,383],[1304,282]]}]}:martRoomWorld(room)});
 
 Object.assign(EQUIP_ITEMS,{
  mart_iron_pan:{name:'Cast-Iron Pan',description:'A heavy pan with a reinforced handle.',owner:'riccardo',slot:'weapon',attack:9,icon:EQUIP_ITEMS.chipped_pan.icon},
@@ -4138,7 +4139,7 @@ const saveBeforeMiniMap=saveWorld;saveWorld=function(){saveBeforeMiniMap();schem
 
 /* MART chamber encounter and manager's combat actions. */
 const MART_MANAGER={
- x:768,y:490,height:72,range:96,vanish:2400,
+ x:768,y:490,height:56,range:96,vanish:2400,
  down:'Enemy/boss-mart-mappa-sud.png',up:'Enemy/boss-mart-mappa-nord.png',
  stats:{name:'MART Manager',profile:'manager',hp:380,maxHp:380,attack:38,defense:10,resistance:13,speed:9,accuracy:90,exp:480}
 };
@@ -4920,7 +4921,9 @@ drawBattlePose=async function(f,pose,restart=false){
  if(!f.stopIcon){
   const icon=document.createElement('img');
   icon.className='stop-status-icon active';icon.src='icons/status_stop.png';icon.alt=tr('STOP');
-  f.node.append(icon);f.stopIcon=icon;
+  let strip=f.node.querySelector('.battle-status-strip');
+  if(!strip){strip=document.createElement('span');strip.className='battle-status-strip';f.node.append(strip);}
+  strip.append(icon);f.stopIcon=icon;
  }
  return drawn;
 };
@@ -6118,6 +6121,9 @@ const SEWER_ENEMY_ANIMATION={
 
 /* Fogne: coordinates are on a 512-pixel-wide reference of each room. */
 const SEWER_ROOT='Fogne dungeon and enemies/';
+const SEWER_LEVER_FILES={off:'IMG-20261125-WA0007.jpg',on:'IMG-20261125-WA0006.jpg'};
+const SEWER_PUMP=[302,168],SEWER_FUSE=[436,218];
+const SEWER_LEVER_RECT={left:SEWER_PUMP[0]*3-22,top:SEWER_PUMP[1]*3-46/.95,width:44,height:33};
 const SEWER_ROOMS={
  a:{name:'Initial Conduits',map:'Fogne_A_Condotte_iniziali.png',layers:['Fogne_A_Acqua.gif'],
   floor:[[19,155,66,180],[48,132,219,226],[219,154,288,179],[288,132,460,226],[456,155,496,180],
@@ -6127,7 +6133,7 @@ const SEWER_ROOMS={
   floor:[[24,91,104,118],[42,79,104,145],[104,88,414,103],[388,81,472,99],[408,89,435,193],
    [410,180,482,267],[437,252,466,278],[83,134,103,231],[85,199,144,243],[143,211,319,225],[318,185,378,242]]},
  c:{name:'Drainage Works',map:'Fogne_C_Impianti_di_drenaggio.png',layers:['Fogne_C_Acqua.gif','Fogne_C_Spia_acqua_alta.png','Fogne_C_Spia_acqua_bassa.png'],
-  floor:[[50,41,151,120],[124,100,197,231],[183,74,348,230],[210,29,278,110],[331,112,479,128],
+  floor:[[73,28,102,58],[50,41,151,120],[124,100,197,231],[183,74,348,230],[210,29,278,110],[331,112,479,128],
    [390,119,481,165],[407,158,449,270],[436,87,461,126],[340,179,418,191],[40,169,105,242],[92,224,136,242]],
   obstacles:[[186,98,316,164]]},
  d:{name:'Flooded Galleries',map:'Fogne_D_Gallerie_allagate.png',layers:['Fogne_D_Acqua_alta.gif','Fogne_D_Acqua_bassa.gif','Fogne_D_Passerella_emersa.png'],
@@ -6140,7 +6146,7 @@ const SEWER_ROOMS={
   obstacles:[[165,127,245,181],[348,216,393,245]]},
  f:{name:'Service Tunnels',map:'Fogne_F_Condotte_di_servizio.png',layers:['Fogne_F_Porta_G_chiusa.png'],
   floor:[[15,77,278,110],[265,105,414,129],[291,121,474,160],[358,150,424,297],[294,205,362,261],
-   [368,263,484,292],[399,283,453,312],[445,158,475,177],[463,235,487,276]]},
+   [403,230,487,276],[368,263,484,292],[399,283,453,312],[445,158,475,177],[463,235,487,276]]},
  g:{name:'Sunken Reservoir',map:'Fogne_G_Deposito_sommerso.png',
   layers:['Fogne_G_Acqua.gif','Fogne_G_Grata_chiusa.png',
    ...[1,2,3].map(i=>'Fogne_G_Terminale_'+i+'_verde.png'),...[1,2,3].map(i=>'Fogne_G_Argano_spia_'+i+'_verde.png')],
@@ -6151,7 +6157,7 @@ const SEWER_ROOMS={
    [172,202,180,226],[162,220,181,238]]}
 };
 const SEWER_LINKS=[
- ['a',[485,168],'b',[49,107]],['b',[451,258],'c',[58,50]],['c',[448,100],'d',[93,252]],
+ ['a',[485,168],'b',[49,107]],['b',[451,258],'c',[86,48]],['c',[448,100],'d',[93,252]],
  ['d',[419,257],'e',[347,60]],['e',[452,162],'f',[30,91],'f'],
  ['e',[129,264],'g',[78,44],'g'],['f',[427,288],'g',[419,44],'g']
 ];
@@ -6191,7 +6197,15 @@ function atSewerSavePoint(){
 }
 const sewerFinalGrateOpen=()=>sewerProgress().terminals===7;
 function sewerEnabled(circuit,state=sewerProgress()){return !circuit||state.circuit===circuit;}
-const sewerScale=id=>id==='g'?6:3;
+const sewerScale=id=>id==='g'?4.5:3;
+const sewerMapHeight=id=>Math.round(1024*sewerScale(id)/3);
+function resizeSewerEditorWorld(saved,ratio){
+ if(!saved||!Array.isArray(saved.walkable)||!Array.isArray(saved.lowWater))return null;
+ const scalePolygon=p=>p.map(([x,y])=>[x*ratio,y*ratio]);
+ return {walkable:saved.walkable.map(scalePolygon),lowWater:saved.lowWater.map(scalePolygon),
+  collisions:saved.collisions.map(scalePolygon),
+  depth:saved.depth.map(z=>({...z,baseY:z.baseY*ratio,polygon:scalePolygon(z.polygon)}))};
+}
 function sewerPoint(id,[x,y]){const scale=sewerScale(id);return {x:x*scale,y:y*scale};}
 const sewerImages=new Map();
 function sewerImage(name){
@@ -6203,14 +6217,14 @@ function sewerImage(name){
 }
 function loadSewerRoom(id){
  const {map,layers}=SEWER_ROOMS[id];
- return Promise.all([map,...layers].map(sewerImage));
+ return Promise.all([map,...layers].map(sewerImage).concat(id==='c'?Object.values(SEWER_LEVER_FILES).map(file=>loadDungeonImage(SEWER_ROOT+'Map/'+file)):[]));
 }
 const sewerLayer=document.createElement('div');
 sewerLayer.id='sewerLayer';sewerLayer.hidden=true;scene.append(sewerLayer);
 let sewerBusy=false,sewerDistance=0,sewerEncounterAt=0,sewerLastPosition=null,sewerTestReturn=null;
 const sewerOverlays=new Map();
 function resetSewerEncounters(){
- sewerDistance=0;sewerEncounterAt=720+Math.random()*440;sewerLastPosition={x:player.x,y:player.y};
+ sewerDistance=0;sewerEncounterAt=(720+Math.random()*440)*(sewerRoomKey()==='g'?.75:1);sewerLastPosition={x:player.x,y:player.y};
 }
 function paintSewerLayers(){
  const key=sewerRoomKey();
@@ -6226,6 +6240,8 @@ function paintSewerLayers(){
   if(name==='Fogne_G_Grata_chiusa.png')visible=!sewerFinalGrateOpen();
   const light=name.match(/_(?:Terminale|spia)_([123])_verde/);
   if(light)visible=Boolean(state.terminals&(1<<(Number(light[1])-1)));
+  if(name==='lever-off')visible=!state.drained;
+  if(name==='lever-on')visible=state.drained;
   image.hidden=!visible;
  }
 }
@@ -6237,7 +6253,17 @@ for(const [key,room] of Object.entries(SEWER_ROOMS)){
  const scale=sewerScale(key);
  registerEditableMap({
   id:'sewer-'+key,map:SEWER_ROOT+'Map/'+SEWER_MAP_FILES[room.map],
-  width:512*scale,height:key==='g'?2048:1024,version:'sewer-navigation-v1',
+  width:512*scale,height:sewerMapHeight(key),version:key==='g'?'sewer-navigation-v2':key==='c'||key==='f'?'sewer-navigation-v2':'sewer-navigation-v1',
+  migrateWorld:saved=>{
+   if(saved.version!=='sewer-navigation-v1')return null;
+   if(key==='g')return resizeSewerEditorWorld(saved.world,.75);
+   if(key==='c'||key==='f'){
+    const world=resizeSewerEditorWorld(saved.world,1);
+    if(world)world.walkable.push(sewerPolygon(key,key==='c'?[73,28,102,58]:[403,230,487,276]));
+    return world;
+   }
+   return null;
+  },
   world:{
    walkable:room.floor.map(box=>sewerPolygon(key,box)),
    lowWater:room.bridge?[sewerPolygon(key,room.bridge)]:[],
@@ -6273,7 +6299,11 @@ staticFree=function(x,y,r=CONFIG.radius){
 };
 function paintSewerEditorContext(ctx,view){
  for(const image of sewerOverlays.values()){
-  if(!image.hidden&&image.complete&&image.naturalWidth)ctx.drawImage(image,0,0,CONFIG.width,CONFIG.height);
+  if(!image.hidden&&image.complete&&image.naturalWidth){
+   if(image.classList.contains('sewer-lever')){
+    const {left,top,width,height}=SEWER_LEVER_RECT;ctx.drawImage(image,left,top,width,height);
+   }else ctx.drawImage(image,0,0,CONFIG.width,CONFIG.height);
+  }
  }
  function paint(polygons,color){
   ctx.fillStyle=color;
@@ -6325,10 +6355,10 @@ showLocation=function(id){
  scene.classList.remove('story-night','seon-house');
  $('trainWindow').hidden=true;$('editorOpen').hidden=false;
  locationId=id;world=editableMapWorld(id);
- CONFIG.width=512*scale;CONFIG.height=key==='g'?2048:1024;
+ CONFIG.width=512*scale;CONFIG.height=sewerMapHeight(key);
  scene.style.width=mapImage.style.width=CONFIG.width+'px';
  scene.style.height=mapImage.style.height=CONFIG.height+'px';
- mapImage.onload=null;mapImage.style.imageRendering='pixelated';
+ mapImage.onload=null;mapImage.style.imageRendering=key==='g'?'auto':'pixelated';
  mapImage.src=SEWER_ROOT+'Map/'+SEWER_MAP_FILES[room.map];
  sewerLayer.replaceChildren();sewerOverlays.clear();
  for(const name of room.layers){
@@ -6336,7 +6366,15 @@ showLocation=function(id){
   image.src=SEWER_ROOT+'Map/'+SEWER_MAP_FILES[name];
   sewerOverlays.set(name,image);sewerLayer.append(image);
  }
- sewerLayer.hidden=false;paintSewerLayers();
+ if(key==='c'){
+  for(const [mode,file] of Object.entries(SEWER_LEVER_FILES)){
+   const image=new Image();image.alt='';image.className='sewer-lever';image.src=SEWER_ROOT+'Map/'+file;
+   for(const [property,value] of Object.entries(SEWER_LEVER_RECT))image.style[property]=value+'px';
+   image.style.right=image.style.bottom='auto';
+   sewerOverlays.set('lever-'+mode,image);sewerLayer.append(image);
+  }
+ }
+ sewerLayer.dataset.room=key;sewerLayer.hidden=false;paintSewerLayers();
  document.querySelector('.eyebrow').textContent=tr('Sewers');
  refreshNightObjective();
 };
@@ -6408,18 +6446,20 @@ function sewerExits(key){
   key===b?[{to:a,at:to,spawn:from,circuit}]:[]);
 }
 const sewerMarkers=new Map();
-function showSewerMarker(key,id,p,label,onClick,{range=35,offset=0}={}){
+function showSewerMarker(key,id,p,label,onClick,{range=35,offset=0,glow=false}={}){
  const at=sewerPoint(key,p);
- if(Math.hypot(player.x-at.x,player.y-at.y)*zoom>range)return;
+ if(!glow&&Math.hypot(player.x-at.x,player.y-at.y)*zoom>range)return;
  let button=sewerMarkers.get(id);
  if(!button){
   button=document.createElement('button');button.type='button';button.className='marker object';button.dataset.sewerAction=id;
-  const image=new Image();image.src=UI_ASSETS.exclamation;image.alt='';
-  button.append(image);$('interactions').append(button);sewerMarkers.set(id,button);
+  if(glow)button.classList.add('sewer-fuse-glow');
+  else {const image=new Image();image.src=UI_ASSETS.exclamation;image.alt='';button.append(image);}
+  $('interactions').append(button);sewerMarkers.set(id,button);
  }
- const screen=screenPosition({x:at.x,y:at.y-46/zoom});
- button.style.left=clamp(screen.x+offset,18,viewWidth-18)+'px';
- button.style.top=clamp(screen.y,50,viewHeight-22)+'px';
+ const screen=screenPosition({x:at.x,y:at.y-(glow?0:46/zoom)});
+ if(glow&&(screen.x<0||screen.x>viewWidth||screen.y<0||screen.y>viewHeight))return;
+ button.style.left=(glow||id==='pump'?screen.x:clamp(screen.x+offset,18,viewWidth-18))+'px';
+ button.style.top=(glow||id==='pump'?screen.y:clamp(screen.y,50,viewHeight-22))+'px';
  button.hidden=false;button.setAttribute('aria-label',tr(label));button.title=tr(label);
  button.onclick=event=>{
   event.stopPropagation();
@@ -6444,27 +6484,19 @@ function paintSewerMarkers(){
   }
   return;
  }
- for(const exit of sewerExits(key)){
-  const open=sewerEnabled(exit.circuit),at=exit.at;
-  showSewerMarker(key,'exit-'+exit.to,at,open?SEWER_ROOMS[exit.to].name:'Closed bulkhead',()=>{
-   if(!open){openMartNotice(tr('The control room circuit controls this bulkhead.'));return;}
-   void changeSewerArea('sewer-'+exit.to,sewerPoint(exit.to,exit.spawn));
-  },{range:exit.circuit?115:72});
- }
- if(key==='a')showSewerMarker(key,'street',SEWER_START,'Return to the street',()=>void leaveSewers(false));
  if(key==='b'&&!state.grate)showSewerMarker(key,'valve',[409,82],'Open the shortcut grate',()=>{
   state.grate=true;sewerMechanismChanged();
  });
- if(key==='c')showSewerMarker(key,'pump',[302,168],state.drained?'Raise the water':'Drain the galleries',()=>{
+ if(key==='c')showSewerMarker(key,'pump',SEWER_PUMP,state.drained?'Raise the water':'Drain the galleries',()=>{
   state.drained=!state.drained;sewerMechanismChanged();
  });
  if(key==='e')showSewerMarker(key,'circuit',[206,188],state.circuit==='f'?'Switch to reservoir circuit':'Switch to service circuit',()=>{
   if(state.circuit==='f'&&!state.fuse){openMartNotice(tr('The reservoir circuit needs a fuse from the service tunnels.'));return;}
   state.circuit=state.circuit==='f'?'g':'f';sewerMechanismChanged();
  },{range:62});
- if(key==='f'&&!state.fuse)showSewerMarker(key,'fuse',[388,132],'Take the fuse',()=>{
+ if(key==='f'&&!state.fuse)showSewerMarker(key,'fuse',SEWER_FUSE,'Take the fuse',()=>{
   state.fuse=true;sewerMechanismChanged();openMartNotice(tr('Fuse obtained. Return to the control room.'));
- },{range:52});
+ },{range:70,glow:true});
  if(key==='g'){
   if(atSewerSavePoint())showSewerMarker(key,'save',SEWER_STAIRS,'Open menu to save',()=>openMenu(),{range:110,offset:36});
   SEWER_TERMINALS.forEach((position,index)=>{
@@ -6474,10 +6506,6 @@ function paintSewerMarkers(){
     if(sewerFinalGrateOpen())openMartNotice(tr('The winch has opened the final grate.'));
    },{range:62});
   });
-  showSewerMarker(key,'surface',SEWER_STAIRS,'Climb to the surface',()=>{
-   if(!sewerFinalGrateOpen()){openMartNotice(tr('The winch needs power from all three terminals.'));return;}
-   void leaveSewers(true);
-  },{range:54});
  }
 }
 async function leaveSewers(surface){
@@ -6485,14 +6513,60 @@ async function leaveSewers(surface){
  const destination=surface?SEWER_SURFACE:start;
  if(await changeSewerArea(destination.id,destination,{surface}))sewerTestReturn=null;
 }
+const SEWER_EXIT_LAYOUT={
+ 'a:b':['right',485,158,176],'a:street':['left',27,157,178],
+ 'b:a':['left',31,94,116],'b:c':['down',263,440,463],
+ 'c:b':['up',39,79,97],'c:d':['up',94,439,458],
+ 'd:c':['down',253,83,105],'d:e':['down',270,409,429],
+ 'e:d':['up',52,332,362],'e:f':['right',450,149,182],'e:g':['down',270,117,143],
+ 'f:e':['left',25,81,102],'f:g':['down',299,407,449],
+ 'g:e':['up',31,70,86],'g:f':['up',31,412,426],
+ 'g:surface':['up',148,251,265]
+};
+function sewerPortal(key,exit){
+ const [dir,threshold,low,high]=SEWER_EXIT_LAYOUT[key+':'+exit.to],scale=sewerScale(key);
+ const horizontal=dir==='left'||dir==='right';
+ const portal={dir,span:[low*scale,high*scale],to:exit.to,circuit:exit.circuit};
+ portal[horizontal?'x':'y']=threshold*scale;
+ return portal;
+}
+function sewerPortalSpawn(key,exit){
+ const destination=SEWER_EXIT_LAYOUT[exit.to+':'+key][0];
+ const inward={up:'down',down:'up',left:'right',right:'left'}[destination];
+ const vector=VECTORS[inward],p=sewerPoint(exit.to,exit.spawn),scale=sewerScale(exit.to);
+ return {x:p.x+vector.x*6*scale,y:p.y+vector.y*6*scale,direction:inward};
+}
+function updateSewerCrossing(key,old){
+ const exits=sewerExits(key);
+ if(key==='a')exits.push({to:'street'});
+ if(key==='g'&&sewerFinalGrateOpen())exits.push({to:'surface'});
+ for(const exit of exits){
+  if(!sewerEnabled(exit.circuit))continue;
+  const portal=sewerPortal(key,exit);
+  if(!reachedMartExit(portal,player,old))continue;
+  if(exit.to==='street'||exit.to==='surface')void leaveSewers(exit.to==='surface');
+  else void changeSewerArea('sewer-'+exit.to,sewerPortalSpawn(key,exit));
+  return true;
+ }
+ return false;
+}
+// The centre of the bridge sits below the two side platforms. The logical feet
+// stay on the collision path while the displayed feet descend the short ramps.
+function sewerBridgeOffset(x,y,drained){
+ if(!drained||y<148||y>164)return 0;
+ return 7*3*Math.min(clamp((x-198)/12,0,1),clamp((310-x)/12,0,1));
+}
 const travelBeforeSewers=updateTravel;
 updateTravel=function(dt){
  travelBeforeSewers(dt);
  const key=sewerRoomKey();
  if(!key||locked()||dialogue||intro||editor.open||!player.moving)return;
- const distance=Math.hypot(player.x-sewerLastPosition.x,player.y-sewerLastPosition.y)*zoom;
+ if(!sewerLastPosition){resetSewerEncounters();return;}
+ const old=sewerLastPosition;
+ const distance=Math.hypot(player.x-old.x,player.y-old.y)*zoom;
  sewerLastPosition={x:player.x,y:player.y};
- if(distance>45)return;
+ if(distance>45||distance<=0)return;
+ if(updateSewerCrossing(key,old))return;
  sewerDistance+=distance;
  if(sewerDistance<sewerEncounterAt)return;
  const nearDoor=sewerExits(key).some(exit=>{const at=sewerPoint(key,exit.at);return Math.hypot(player.x-at.x,player.y-at.y)*zoom<110;});
@@ -6574,8 +6648,10 @@ function setSewerAilment(f,status){
  if(!f.statusIcons.has(status)){
   const badge=document.createElement('span');
   badge.className='sewer-status '+status;
-  badge.textContent=tr(SEWER_STATUS_NAMES[status]);
-  f.node.append(badge);f.statusIcons.set(status,badge);
+  badge.title=tr(SEWER_STATUS_NAMES[status]);badge.setAttribute('aria-label',badge.title);
+  let strip=f.node.querySelector('.battle-status-strip');
+  if(!strip){strip=document.createElement('span');strip.className='battle-status-strip';f.node.append(strip);}
+  strip.append(badge);f.statusIcons.set(status,badge);
  }
  if(status==='poison')sewerProgress().poison[f.member]=true;
  else if(status==='blind')f.blindTurns=2;
@@ -6585,6 +6661,8 @@ const cleanseBeforeSewers=clearSeonAilments;
 clearSeonAilments=function(f,statuses){
  cleanseBeforeSewers(f,statuses);
  if(f.member&&statuses.includes('poison')&&nightState.sewers)delete nightState.sewers.poison[f.member];
+ if(statuses.includes('confusion'))f.confusionTurns=0;
+ if(statuses.includes('blind'))f.blindTurns=0;
 };
 const sewerStatsBefore=partyStats;
 partyStats=function(f){
@@ -6595,7 +6673,9 @@ const sewerHitBefore=partyHit;
 partyHit=async function(user,target,skill,epoch){
  const hp=target.hp();
  await sewerHitBefore(user,target,skill,epoch);
- if(battleAlive(epoch)&&sewerFoe(user.stats?.profile)&&target.member&&target.hp()>0&&target.hp()<hp&&skill?.status&&skill.status!=='stop'&&Math.random()<(skill.status==='poison'?.5:.35)){
+ if(!battleAlive(epoch)||target.hp()>=hp)return;
+ if(target.confusionTurns&&(!skill||skill.type==='physical'))clearSeonAilments(target,['confusion']);
+ if(sewerFoe(user.stats?.profile)&&target.member&&target.hp()>0&&skill?.status&&skill.status!=='stop'&&Math.random()<(skill.status==='poison'?.5:skill.status==='confusion'?.45:.35)){
   setSewerAilment(target,skill.status);
   announceBattleEffect(fighterDisplayName(target)+' · '+tr(SEWER_STATUS_NAMES[skill.status]));
  }
@@ -6652,12 +6732,17 @@ async function playSewerAttack(user,target,skill,epoch){
 }
 async function confusePartyTurn(f,epoch){
  if(!f.confusionTurns)return false;
- if(--f.confusionTurns===0)clearSeonAilments(f,['confusion']);
- if(Math.random()>=.5)return false;
  f.guard=false;
+ firstBattlePhase='acting';paintFirstBattle();
+ battleHint(fighterDisplayName(f)+' · '+tr('CONFUSION'));
+ const image=f.image;
+ if(image){
+  image.classList.add('confusion-turn');
+  try{if(!await battlePause(480,epoch))return true;}
+  finally{image.classList.remove('confusion-turn');}
+ }
  const allies=partyHeroes().filter(ally=>ally.hp()>0&&ally!==f);
  const target=allies.length?allies[Math.floor(Math.random()*allies.length)]:f;
- firstBattlePhase='acting';paintFirstBattle();
  await partyMelee(f,target,null,epoch);
  if(battleAlive(epoch))await partyFinishAction(epoch);
  return true;
