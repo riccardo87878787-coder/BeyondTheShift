@@ -1720,7 +1720,7 @@ function drawBattlePose(f,pose,restart=false){
 }
 function makeBattleFighter(kind,home,height){
  const node=document.createElement('button');node.className='battle-fighter';node.type='button';node.disabled=true;$('battleStage').appendChild(node);
- const f={kind,node,home,height,x:home.x,y:home.y,pose:'idle',image:null,play:0,hp:()=>kind==='enemy'?firstBattleEnemy.hp:battleMember().hp};
+ const f={kind,node,home,height,heightRatio:height/Math.max(1,$('battleStage').clientHeight),x:home.x,y:home.y,pose:'idle',image:null,play:0,hp:()=>kind==='enemy'?firstBattleEnemy.hp:battleMember().hp};
  node.onclick=()=>{if(firstBattlePhase==='target'&&f.hp()>0)void performFirstBattleAttack(f);};
  positionBattleFighter(f);return f;
 }
@@ -1878,7 +1878,7 @@ new ResizeObserver(()=>{
  if(!firstBattleActive||!firstBattleAssets||battleScreen.hidden)return;
  const stage=$('battleStage'),h=stage.clientHeight;
  for(const f of firstBattleFighters){
-  f.height=h*(f.kind==='enemy'?FIRST_BATTLE.enemyHeight:FIRST_BATTLE.heroHeight)/100;
+  f.height=h*(f.heightRatio||((f.kind==='enemy'?FIRST_BATTLE.enemyHeight:FIRST_BATTLE.heroHeight)/100));
   drawBattlePose(f,f.pose);
  }
 }).observe(battleScreen);
@@ -2246,7 +2246,7 @@ function openProgressionPage(view){if(autoMenu)return;progressionView=view;reset
 $('progressionBack').onclick=()=>{progressionPage.hidden=true;$('menuNav').querySelector('[data-menu-index="'+(progressionView==='skills'?1:3)+'"]')?.focus();};
 const menuBeforeProgression=renderMenu;renderMenu=function(){menuBeforeProgression();for(const [index,view] of [[1,'skills'],[3,'status']])$('menuNav').querySelector('[data-menu-index="'+index+'"]')?.addEventListener('click',()=>openProgressionPage(view));const save=$('menuNav').querySelector('[data-menu-index="5"]');if(save){save.disabled=!(nearMartSavePoint()||atSewerSavePoint());save.onclick=()=>{if(autoMenu||save.disabled||!(nearMartSavePoint()||atSewerSavePoint()))return;save.textContent=tr(saveRpgGame()?'Saved':'Save failed');};}if(!progressionPage.hidden)renderProgressionPage();};
 const closeBeforeProgression=closeMenu;closeMenu=function(){if(!autoMenu)progressionPage.hidden=true;closeBeforeProgression();};
-function saveRpgGame(){if(!menuOpen||autoMenu||!(nearMartSavePoint()||atSewerSavePoint()))return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='sewer-g')data.sewerMapScale=sewerScale('g');if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
+function saveRpgGame(){if(!menuOpen||autoMenu||!(nearMartSavePoint()||atSewerSavePoint()))return false;try{const data={version:RPG_VERSION,balanceVersion:1,members:partyMembers,slots:partySlots,won,language,inventory,equip:equipState,jobAssigned,menuUnlocked,location:locationId,player:{x:player.x,y:player.y,direction:player.direction},story:typeof nightState==='undefined'?null:{...nightState},storyPhase,storyNight,workUniformEnabled};if(locationId==='sewer-g')data.sewerMapScale=sewerScale('g');if(isMangwonArea(locationId))data.mangwonMapSize=[CONFIG.width,CONFIG.height];if(locationId==='mart-dungeon'||isMartRoom(locationId))data.dungeon={...dungeonProgress(),opened:[...dungeonProgress().opened]};const test=(locationId==='mart-dungeon'&&!storyDungeonMode())||(isMartRoom(locationId)&&nightState.mart?.test);localStorage.setItem(test?DUNGEON_SAVE_KEY:RPG_SAVE_KEY,JSON.stringify(data));if(!test)pendingNightSave=data;return true;}catch(_){return false;}}
 function readRpgSave(){try{const data=JSON.parse(localStorage.getItem(RPG_SAVE_KEY));return data?.version===RPG_VERSION&&partyMembers.riccardo&&(['city','office','hongdeon','restaurant','quarters','mart-dungeon'].includes(data.location)||isMartShop(data.location)||isMartRoom(data.location)||isSewerRoom(data.location)||isMangwonArea(data.location))&&['return-inside','after-battle-dialogue','go-to-bed','morning','morning-complete'].includes(data.story?.phase)?data:null;}catch(_){return null;}}
 const beginBeforeProgression=beginIntro;beginIntro=function(){progressionPage.hidden=true;for(const id of ['seon_jong','michael']){partyMembers[id].joined=false;const slot=partySlots.indexOf(id);if(slot>=0)partySlots[slot]=null;}beginBeforeProgression();resetProgression();equipSeoyoonStarter();renderMenu();};
 resetProgression();equipSeoyoonStarter();
@@ -2393,6 +2393,7 @@ async function resumeNightGame(beforeRestore=null){
    const ratio=sewerScale('g')/(data.sewerMapScale||6);
    savedPosition.x*=ratio;savedPosition.y*=ratio;
   }
+  if(isMangwonArea(data.location)){const a=MANGWON_AREAS[data.location],[w,h]=data.mangwonMapSize||MANGWON_PREVIOUS_SIZE[data.location];savedPosition.x*=a.width/w;savedPosition.y*=a.height/h;}
   Object.assign(player,savedPosition,{direction:Object.hasOwn(VECTORS,data.player?.direction)?data.player.direction:'down',moving:false});if(!nearestFree(player)&&isMartRoom(data.location))Object.assign(player,martRoomEntry(data.location));if(isSewerRoom(data.location)||isMangwonArea(data.location))resetSewerEncounters();updateCamera();drawPlayer();syncNightSeoyoon();renderMenu();refreshNightObjective();bedDismissed=nearFirstBed();if(nightState.phase==='morning')void startMorningScene();
   if(!await nightWait(50,epoch))return false;fade.style.transition='opacity 650ms linear';fade.classList.remove('black');if(!await nightWait(700,epoch))return false;fade.style.transition='';fade.style.zIndex='';nightTransition=false;updateInteractionUI();return true;
  }catch(e){if(epoch===nightEpoch){nightTransition=false;fade.classList.remove('black');fade.style.transition='';fade.style.zIndex='';notice('Unable to resume: '+e.message);}return false;}
@@ -3501,10 +3502,10 @@ let combatExtras=null,combatExtraLoad=null;
 function loadCombatExtras(){return combatExtraLoad||(combatExtraLoad=Promise.all(Object.entries(COMBAT_EXTRA_FILES).map(async([id,path])=>[id,await battleAsset(path)])).then(p=>combatExtras=Object.fromEntries(p)).catch(e=>{combatExtraLoad=null;throw e;}));}
 const loadFirstBeforeExtras=loadFirstBattle;loadFirstBattle=async function(){const [assets]=await Promise.all([loadFirstBeforeExtras(),loadCombatExtras()]);assets.riccardo.item=combatExtras.riccardoItem;return assets;};
 const loadPartyBeforeExtras=loadPartyBattle;loadPartyBattle=async function(kind){const [assets]=await Promise.all([loadPartyBeforeExtras(kind),loadCombatExtras()]);firstBattleAssets.seoyoon.item=combatExtras.seoyoonItem;return assets;};
-function renderKnockedOut(f){if(!combatExtras||f.deferKO)return;const id=f.member||f.kind,a=combatExtras[id+'KO'];if(!a){f.node.classList.add('knocked-out');return;}if(f.pose==='ko'&&f.koAsset===a)return;const idle=firstBattleAssets[id].idle;
- const nodeWidth=idle.bounds.w*f.height/idle.bounds.h,scale=f.height*1.32/a.bounds.w,anchor=a.bounds.x+a.bounds.w/2,ground=a.bounds.y+a.bounds.h,canvas=document.createElement('canvas');canvas.width=a.width;canvas.height=a.height;canvas.getContext('2d').drawImage(a.image,0,0);
+function renderKnockedOut(f){if(!combatExtras||f.deferKO)return;const id=f.member||f.kind,a=combatExtras[id+'KO'];if(!a){f.node.classList.add('knocked-out');return;}if(f.pose==='ko'&&f.koAsset===a&&f.koRenderedHeight===f.height)return;const idle=firstBattleAssets[id].idle;
+ const nodeWidth=idle.bounds.w*f.height/idle.bounds.h,scale=f.height*1.188/a.bounds.w,anchor=a.bounds.x+a.bounds.w/2,ground=a.bounds.y+a.bounds.h,canvas=document.createElement('canvas');canvas.width=a.width;canvas.height=a.height;canvas.getContext('2d').drawImage(a.image,0,0);
  Object.assign(canvas.style,{position:'absolute',width:a.width*scale+'px',height:a.height*scale+'px',left:(nodeWidth/2-anchor*scale)+'px',top:(f.height-ground*scale)+'px',imageRendering:'pixelated',pointerEvents:'none'});
- ++f.play;for(const old of f.node.querySelectorAll('img:not(.protective-blend-icon,.stop-status-icon),canvas')){if(old.dataset.temporaryUrl)URL.revokeObjectURL(old.dataset.temporaryUrl);old.remove();}f.node.append(canvas);f.image=canvas;f.pose='ko';f.koAsset=a;f.node.classList.add('ko-sprite');f.node.classList.remove('knocked-out');f.node.style.width=nodeWidth+'px';f.node.style.height=f.height+'px';
+ ++f.play;for(const old of f.node.querySelectorAll('img:not(.protective-blend-icon,.stop-status-icon),canvas')){if(old.dataset.temporaryUrl)URL.revokeObjectURL(old.dataset.temporaryUrl);old.remove();}f.node.append(canvas);f.image=canvas;f.pose='ko';f.koAsset=a;f.koRenderedHeight=f.height;f.node.classList.add('ko-sprite');f.node.classList.remove('knocked-out');f.node.style.width=nodeWidth+'px';f.node.style.height=f.height+'px';
 }
 const hpBeforeKO=partySetHP;partySetHP=function(f,value){hpBeforeKO(f,value);if(f.kind!=='enemy'&&f.hp()<=0){removeProtectiveBlend(f);renderKnockedOut(f);}};
 const poseBeforeKO=drawBattlePose;drawBattlePose=function(f,pose,restart=false){if(f.kind!=='enemy'&&f.hp()<=0&&!f.deferKO&&(f.image||combatExtras?.[(f.member||f.kind)+'KO'])){renderKnockedOut(f);return Promise.resolve(true);}f.node.classList.remove('ko-sprite','knocked-out');f.koAsset=null;return poseBeforeKO(f,pose,restart);};
@@ -6670,7 +6671,7 @@ buildPartyFighters=async function(){
  const foes=partyBattle.enemyIds.map((id,i)=>{
   const {name,hp,attack,defense,speed,level}=sewerFoe(id);
   const stats={profile:id,name,hp,maxHp:hp,attack,defense,speed,level,accuracy:95,resistance:defense};
-  return makePartyFighter('enemy','sewer-foe-'+(i+1),positions[i],height*FIRST_BATTLE.enemyHeight/100*(id==='sewer_strisciante'?.52:1),stats);
+  return makePartyFighter('enemy','sewer-foe-'+(i+1),positions[i],height*FIRST_BATTLE.enemyHeight/100*(id==='sewer_strisciante'?.60:1),stats);
  });
  const homes=partyBattlePositions(partyBattle.members.length);
  const heroes=partyBattle.members.map((id,i)=>makePartyFighter(id,id,homes[i],height*FIRST_BATTLE.heroHeight/100));
@@ -6851,13 +6852,13 @@ beginIntro=function(){
 const MANGWON_ROOT=SEWER_ROOT+'Map/';
 const MANGWON_AGENT_ROOT=SEWER_ROOT+'Hanekang/';
 const MANGWON_AREAS={
- 'mangwon-street':{title:'Mangwon-dong',file:'1000055512.png',ref:[567,850],width:1740,height:2610,
+ 'mangwon-street':{title:'Mangwon-dong',file:'1000055512.png',ref:[567,850],width:1218,height:1827,
   floor:[[34,645,129,730],[0,260,567,294],[130,270,171,734],[0,424,134,454],[165,464,477,497],[458,261,508,738],[0,700,567,758],[358,50,401,272],[412,250,542,278],[445,239,480,267]],
   obstacles:[[39,425,108,459],[472,404,513,452],[78,680,125,702],[466,685,516,712]]},
- 'mangwon-restaurant':{title:'Abandoned restaurant',file:'file_0000000081688211a8f40bcd3d14da7f.png',ref:[567,850],width:768,height:1152,
+ 'mangwon-restaurant':{title:'Abandoned restaurant',file:'file_0000000081688211a8f40bcd3d14da7f.png',ref:[567,850],width:537,height:806,
   floor:[[42,174,531,700],[173,692,296,726],[482,160,529,332]],
   obstacles:[[86,222,128,572],[117,221,301,287],[166,330,276,415],[229,459,345,557],[85,596,200,681],[414,330,526,414],[414,423,526,524],[382,566,514,675]]},
- 'mangwon-basement':{title:'Restaurant basement',file:'file_000000008ad48209a626095849ff2631.png',ref:[850,567],width:1152,height:768,
+ 'mangwon-basement':{title:'Restaurant basement',file:'file_000000008ad48209a626095849ff2631.png',ref:[850,567],width:806,height:537,
   floor:[[53,185,794,510],[698,382,774,535]],
   obstacles:[[54,184,113,297],[53,311,118,411],[54,419,151,493],[738,178,798,309],[683,278,795,361]]}
 };
@@ -6878,7 +6879,16 @@ function mangwonWorld(id){
  }
  return {collisions:[...blocked,...a.obstacles].map(box=>mangwonRect(id,box)),depth:[]};
 }
-for(const [id,a] of Object.entries(MANGWON_AREAS))registerEditableMap({id,map:MANGWON_ROOT+a.file,width:a.width,height:a.height,version:'mangwon-v1',world:mangwonWorld(id)});
+const MANGWON_PREVIOUS_SIZE={'mangwon-street':[1740,2610],'mangwon-restaurant':[768,1152],'mangwon-basement':[1152,768]};
+for(const [id,a] of Object.entries(MANGWON_AREAS))registerEditableMap({
+ id,map:MANGWON_ROOT+a.file,width:a.width,height:a.height,version:'mangwon-v2',world:mangwonWorld(id),
+ migrateWorld:saved=>{
+  if(saved.version!=='mangwon-v1')return null;
+  const [w,h]=MANGWON_PREVIOUS_SIZE[id],sx=a.width/w,sy=a.height/h;
+  const scalePolygon=poly=>poly.map(([x,y])=>[x*sx,y*sy]);
+  return {collisions:saved.world.collisions.map(scalePolygon),depth:saved.world.depth.map(z=>({...z,baseY:z.baseY*sy,polygon:scalePolygon(z.polygon)}))};
+ }
+});
 const MANGWON_BACKGROUNDS={street:MANGWON_ROOT+'file_00000000b50082119943c131ea039c5d.png',agents:MANGWON_ROOT+'file_0000000071b48209af904ae54424d8a9.png'};
 const MANGWON_AGENT_FILES={
  kang:{north:'uomo-blu-fermo-nord.png',south:'uomo-blu-fermo-sud.png',idle:'uomo-blu-guardia-v3.gif',attack:'uomo-blu-attacco-v3.gif',hurt:'uomo-blu-danno.gif'},
@@ -6956,7 +6966,7 @@ const cameraBeforeMangwon=updateCamera;
 updateCamera=function(){
  if(!isMangwonArea(locationId))return cameraBeforeMangwon();
  zoom=.95;const w=viewWidth/zoom,h=viewHeight/zoom;
- const focus=dialogue?.mangwon&&dialogue.target?.owner?dialogue.target.owner:player;
+ const focus=mangwonScene?.fixedFocus||player;
  camera.x=CONFIG.width>w?clamp(focus.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;
  camera.y=CONFIG.height>h?clamp(focus.y-h/2,0,CONFIG.height-h):(CONFIG.height-h)/2;
  scene.style.transform='translate('+(-camera.x*zoom)+'px,'+(-camera.y*zoom)+'px) scale('+zoom+')';
@@ -6978,7 +6988,7 @@ function nearMangwonSavePoint(){
 const nearMartBeforeMangwon=nearMartSavePoint;
 nearMartSavePoint=function(){return nearMartBeforeMangwon()||nearMangwonSavePoint();};
 const lockBeforeMangwon=locked;
-locked=function(){return mangwonAnimating||lockBeforeMangwon();};
+locked=function(){return mangwonAnimating||Boolean(mangwonScene?.defeated)||lockBeforeMangwon();};
 function mangwonMoveActor(n,asset,x,y,progress){
  n.x=x;n.y=y;setAsset(n.actor,asset);place(n.actor,x,y);
 }
@@ -7093,28 +7103,33 @@ async function startMangwonScene(){
   const a=await loadMangwonActors();
   if(locationId!=='mangwon-basement')return;
   const at=p=>mangwonPoint('mangwon-basement',p),actors={
-   han:mangwonActor(a.han.north,at([445,218]),true),
-   kang:mangwonActor(a.kang.north,at([570,218]),true),
-   seoyoon:mangwonActor(seoyoonNpc.idleAssets.up,{x:player.x,y:player.y}),
-   seon_jong:mangwonActor(seonHouseNpc.idleAssets.up,{x:player.x,y:player.y}),
-   michael:mangwonActor(cucchiaioReturnAssets.michaelIdle.up,{x:player.x,y:player.y})
+   han:mangwonActor(a.han.north,at([476,218]),true),
+   kang:mangwonActor(a.kang.north,at([528,218]),true)
   };
-  const state=mangwonScene={actors,index:0};
-  const paths=[
-   ['seoyoon',at([481,375]),seoyoonNpc.walkAssets.up,seoyoonNpc.idleAssets.up],
-   ['seon_jong',at([568,375]),seonHouseNpc.walkAssets.up,seonHouseNpc.idleAssets.up],
-   ['michael',at([613,340]),cucchiaioReturnAssets.michaelWalk.up,cucchiaioReturnAssets.michaelIdle.up]
-  ];
-  const start={x:player.x,y:player.y};
-  player.direction='up';
-  const lead=at([525,340]);mangwonStairDirection='up';
-  await mangwonTween(1400,t=>{
+  const state=mangwonScene={actors,index:0,fixedFocus:null,defeated:false};
+  // Riccardo walks alone up to the two agents.
+  const start={x:player.x,y:player.y},lead=at([502,320]);
+  mangwonStairDirection=facing(lead.x-start.x,lead.y-start.y);
+  if(!await mangwonTween(1300,t=>{
    player.x=start.x+(lead.x-start.x)*t;player.y=start.y+(lead.y-start.y)*t;drawPlayer();
-   for(const [id,p,walk,idle] of paths)mangwonMoveActor(actors[id],t<1?walk:idle,start.x+(p.x-start.x)*t,start.y+(p.y-start.y)*t,t);
-  });
-  mangwonStairDirection=null;player.moving=false;drawPlayer();
+  })||mangwonScene!==state)return;
+  mangwonStairDirection=null;player.direction='up';player.moving=false;drawPlayer();
+  // The three teammates emerge only once Riccardo has reached the agents.
+  const paths=[
+   ['seoyoon',at([450,355]),seoyoonNpc.walkAssets,seoyoonNpc.idleAssets],
+   ['seon_jong',at([554,355]),seonHouseNpc.walkAssets,seonHouseNpc.idleAssets],
+   ['michael',at([590,315]),cucchiaioReturnAssets.michaelWalk,cucchiaioReturnAssets.michaelIdle]
+  ];
+  for(const [id,,walk,idle] of paths)actors[id]=mangwonActor(idle.up,{...lead});
+  if(!await mangwonTween(650,t=>{
+   for(const [id,p,walk,idle] of paths){
+    const dx=p.x-lead.x,dy=p.y-lead.y;
+    mangwonMoveActor(actors[id],t<1?walk[facing(dx,dy)]:idle.up,lead.x+dx*t,lead.y+dy*t,t);
+   }
+  })||mangwonScene!==state)return;
+  state.fixedFocus=at([520,286]);updateCamera();
+  await wait(220);
   if(mangwonScene!==state)return;
-  await wait(250);
   setAsset(actors.han.actor,a.han.south);setAsset(actors.kang.actor,a.kang.south);
   mangwonAnimating=false;paintMangwonLine(0);
  }catch(error){console.error(error);clearMangwonScene();notice(tr('Unable to start the scene. Please try again.'));}
@@ -7174,9 +7189,44 @@ partyHit=async function(user,target,skill,epoch){
 const paintBeforeAgents=paintFirstBattle;
 paintFirstBattle=function(){paintBeforeAgents();if(partyBattle?.kind==='agents'){runCommand.disabled=true;runCommand.classList.remove('available');}};
 function finishAgentsDefeat(){
+ if(firstBattlePhase==='scripted-defeat'||mangwonScene?.defeated)return;
  for(const f of partyHeroes())renderKnockedOut(f);
  firstBattlePhase='scripted-defeat';nightState.mangwonDefeat=true;
  $('battleResult').hidden=true;closeBattleSkills();paintFirstBattle();battleHint(tr('Party defeated.'));
+ void returnToDefeatedBasement(firstBattleEpoch);
+}
+function paintMangwonKO(n,id){
+ const a=combatExtras?.[id+'KO'];
+ if(!a)return false;
+ const node=n.actor.node,scale=56*1.05*.90/(zoom*a.bounds.w);
+ for(const child of node.children)child.hidden=true;
+ const image=document.createElement('img');image.alt='';image.src=a.url;image.draggable=false;
+ Object.assign(image.style,{width:a.width*scale+'px',height:a.height*scale+'px',
+  left:-(a.bounds.x+a.bounds.w/2)*scale+'px',top:-(a.bounds.y+a.bounds.h)*scale+'px'});
+ node.append(image);node.hidden=false;place(n.actor,n.x,n.y);return true;
+}
+async function returnToDefeatedBasement(epoch){
+ const state=mangwonScene;
+ if(!state||locationId!=='mangwon-basement')return;
+ mangwonAnimating=true;
+ const fade=$('fade'),style={transition:fade.style.transition,zIndex:fade.style.zIndex};
+ try{
+  if(!await battlePause(650,epoch)||mangwonScene!==state)return;
+  fade.style.zIndex='45';fade.style.transition='opacity 450ms ease-in-out';fade.classList.add('black');
+  await wait(470);
+  if(!battleAlive(epoch)||mangwonScene!==state)return;
+  state.defeated=true;
+  state.actors.riccardo={x:player.x,y:player.y,actor:createActor(56)};
+  for(const id of ['riccardo','seoyoon','seon_jong','michael']){
+   const n=state.actors[id];if(n)paintMangwonKO(n,id);
+  }
+  player.actor.node.hidden=true;
+  closeFirstBattle();updateCamera();drawPlayer();updateInteractionUI();
+  fade.classList.remove('black');await wait(470);
+ }finally{
+  fade.classList.remove('black');fade.style.transition=style.transition;fade.style.zIndex=style.zIndex;
+  mangwonAnimating=false;resetInput();updateInteractionUI();
+ }
 }
 const resultBeforeAgents=showBattleResult;
 showBattleResult=function(title,text,retry=false){
@@ -7194,7 +7244,7 @@ partyFinishAction=async function(epoch){
  return finishBeforeAgents(epoch);
 };
 const playerBeforeMangwon=drawPlayer;
-drawPlayer=function(){if(mangwonStairDirection){player.direction=mangwonStairDirection;player.moving=true;}return playerBeforeMangwon();};
+drawPlayer=function(){if(locationId==='mangwon-basement'&&mangwonScene?.defeated){player.actor.node.hidden=true;return;}if(mangwonStairDirection){player.direction=mangwonStairDirection;player.moving=true;}return playerBeforeMangwon();};
 const checkpointBeforeMangwon=gameOverCheckpoint;
 gameOverCheckpoint=function(){if(isMangwonArea(locationId)){const save=readRpgSave();if(save&&isMangwonArea(save.location))return {save,test:false};}return checkpointBeforeMangwon();};
 const afterBeforeMangwon=afterDungeonBattle;
