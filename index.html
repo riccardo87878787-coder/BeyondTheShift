@@ -6979,7 +6979,17 @@ showLocation=function(id){
 };
 const cameraBeforeMangwon=updateCamera;
 updateCamera=function(){
- if(!isMangwonArea(locationId))return cameraBeforeMangwon();
+ if(!isMangwonArea(locationId)){
+  const result=cameraBeforeMangwon();
+  // Recalculate the opening scene actors after the camera has selected
+  // the interior zoom, including during pans, before the frame is painted.
+  if(locationId==='restaurant'&&cucchiaioReturn){
+   for(const n of [cucchiaioReturn.blue,cucchiaioReturn.glasses,cucchiaioReturn.michael]){
+    if(n?.actor.active&&!n.actor.node.hidden)setAsset(n.actor,n.actor.active,n.actor.paused);
+   }
+  }
+  return result;
+ }
  zoom=.95;const w=viewWidth/zoom,h=viewHeight/zoom;
  const focus=mangwonScene?.fixedFocus||player;
  camera.x=CONFIG.width>w?clamp(focus.x-w/2,0,CONFIG.width-w):(CONFIG.width-w)/2;
@@ -7213,7 +7223,7 @@ function finishAgentsDefeat(){
 function paintMangwonKO(n,id){
  const a=combatExtras?.[id+'KO'];
  if(!a)return false;
- const node=n.actor.node,scale=56*1.05*.90/(zoom*a.bounds.w);
+ const node=n.actor.node,scale=56*1.05*1.10/(zoom*a.bounds.w);
  for(const child of node.children)child.hidden=true;
  const image=document.createElement('img');image.alt='';image.src=a.url;image.draggable=false;
  Object.assign(image.style,{width:a.width*scale+'px',height:a.height*scale+'px',
