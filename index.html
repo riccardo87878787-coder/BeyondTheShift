@@ -156,7 +156,7 @@ button:focus-visible{outline:3px solid #ffda77}button.active{background:#596c49;
 #sewerLayer{position:absolute;inset:0;z-index:2;pointer-events:none}
 #sewerLayer[hidden],#sewerLayer img[hidden]{display:none}
 #sewerLayer img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
-.battle-fighter.sewer-materializing{z-index:3;animation:sewer-materialize 100ms ease-out}
+.battle-fighter.sewer-materializing{z-index:3;animation:sewer-materialize 118ms ease-out}
 @keyframes sewer-materialize{from{opacity:.15}to{opacity:1}}
 .sewer-status{position:absolute;z-index:2;left:50%;bottom:-.7em;transform:translateX(-50%);color:#fff;
  background:#282342;border:1px solid #c6b8dd;border-radius:4px;padding:2px 3px;font:bold 8px monospace;pointer-events:none}
@@ -240,7 +240,7 @@ button.sewer-fuse-glow::after{content:"";position:absolute;left:50%;top:50%;widt
 .battle-fighter.defeated{opacity:0;pointer-events:none}
 .battle-fighter .manager-defeat-pixels{position:absolute;pointer-events:none;image-rendering:pixelated}
 .battle-fighter.item-ko-target{pointer-events:auto}.battle-fighter.defeated.item-ko-target{opacity:.25}
-.battle-damage{position:absolute;z-index:5;font:bold 5cqw monospace;color:#fff;text-shadow:2px 2px #220b12;pointer-events:none;animation:battleDamage .75s ease-out forwards;transform:translate(-50%,-100%)}
+.battle-damage{position:absolute;z-index:5;font:bold 5cqw monospace;color:#fff;text-shadow:2px 2px #220b12;pointer-events:none;animation:battleDamage .882s ease-out forwards;transform:translate(-50%,-100%)}
 @keyframes battleDamage{0%{opacity:1;translate:0 0}75%{opacity:1}100%{opacity:0;translate:0 -22px}}
 #battleMenu,#battleSkillsList{border:3px double #aac7e6;outline:1px solid #324868;background:linear-gradient(110deg,#060d29,#02071a);box-shadow:inset 0 0 0 1px #283858;}
 #battleMenu{position:absolute;left:1.5%;right:1.5%;top:67.5%;bottom:1.5%;display:grid;grid-template-columns:44% 56%;padding:4px;opacity:0;transition:opacity .3s}
@@ -268,7 +268,7 @@ button.sewer-fuse-glow::after{content:"";position:absolute;left:50%;top:50%;widt
 #battleVortex.closing{display:block}
 #battleVortex canvas{display:block;width:100%;height:100%}
 #game.battle-entering #hud,#game.battle-entering #sideControls,#game.battle-entering #menuOpen,#game.battle-active #hud,#game.battle-active #sideControls,#game.battle-active #menuOpen,#game.battle-active #testHongdeonButton{visibility:hidden}
-.battle-impact{position:absolute;z-index:4;width:42px;height:42px;pointer-events:none;image-rendering:pixelated;transform:translate(-50%,-50%);animation:battleImpact .2s steps(3,end) forwards}
+.battle-impact{position:absolute;z-index:4;width:42px;height:42px;pointer-events:none;image-rendering:pixelated;transform:translate(-50%,-50%);animation:battleImpact .235s steps(3,end) forwards}
 @keyframes battleImpact{0%{opacity:1;scale:.65}45%{opacity:1;scale:1.1}100%{opacity:0;scale:.9}}
 @media(prefers-reduced-motion:reduce){.battle-damage{animation-duration:.1s}}
 
@@ -1657,11 +1657,25 @@ const battleVortex=document.createElement('div');battleVortex.id='battleVortex';
 const battleAttackButton=battleScreen.querySelector('[data-battle-command="attack"]');
 const lockBeforeFirstBattle=locked;locked=function(){return firstBattleActive||lockBeforeFirstBattle();};
 function battleAlive(epoch){return firstBattleActive&&epoch===firstBattleEpoch;}
-async function battlePause(ms,epoch){await wait(ms);return battleAlive(epoch);}
+const BATTLE_ACTION_SPEED=.85;
+const BATTLE_ACTION_TIME=1/BATTLE_ACTION_SPEED;
+function battleActionDuration(ms){return ms*BATTLE_ACTION_TIME;}
+function battleActionPhase(){return firstBattlePhase==='acting'||firstBattlePhase==='enemy';}
+async function battlePause(ms,epoch){await wait(battleActionPhase()?battleActionDuration(ms):ms);return battleAlive(epoch);}
 async function battleAsset(src,prepareBlob=null){
  const response=await fetch(src);if(!response.ok)throw Error('Unable to load '+src);
  const originalBlob=await response.blob();
- const prepared=prepareBlob?await prepareBlob(originalBlob):{blob:originalBlob};
+ let prepared=prepareBlob?await prepareBlob(originalBlob):{blob:originalBlob};
+ // Keep idle/victory loops at their original rate. Action, hurt, item and
+ // skill-effect GIFs use the same rate as their impact and movement timers.
+ const actionGif=/\.gif(?:$|[?#])/i.test(src)&&!/(guardia|idle|vittoria|victory)/i.test(src)&&src!==FIRST_BATTLE.enemy.idle&&prepareBlob!==loopVictoryGif;
+ if(actionGif){
+  try{
+   const originalDuration=prepared.duration;
+   const slowed=await retimeBattleGif(prepared.blob,BATTLE_ACTION_TIME);
+   prepared={...prepared,blob:slowed.blob,duration:originalDuration??slowed.duration*BATTLE_ACTION_SPEED};
+  }catch(error){console.warn('Animation retiming unavailable for',src,error);}
+ }
  const {blob}=prepared,url=URL.createObjectURL(blob);
  return new Promise((resolve,reject)=>{
  const im=new Image();im.onload=()=>{
@@ -1729,7 +1743,7 @@ async function buildBattleFighters(){
  firstBattleFighters=[makeBattleFighter('enemy',FIRST_BATTLE.enemyPosition,h*FIRST_BATTLE.enemyHeight/100),makeBattleFighter('riccardo',FIRST_BATTLE.partyPositions[0],h*FIRST_BATTLE.heroHeight/100)];
  await Promise.all(firstBattleFighters.map(f=>drawBattlePose(f,'idle',true)));
 }
-function floatBattleDamage(f,damage){const n=document.createElement('span');n.className='battle-damage';n.textContent=damage;Object.assign(n.style,{left:f.x+'%',top:(f.y-14)+'%'});$('battleStage').appendChild(n);setTimeout(()=>n.remove(),800);}
+function floatBattleDamage(f,damage){const n=document.createElement('span');n.className='battle-damage';n.textContent=damage;Object.assign(n.style,{left:f.x+'%',top:(f.y-14)+'%'});$('battleStage').appendChild(n);setTimeout(()=>n.remove(),battleActionDuration(800));}
 function battleImpact(f){
  const c=document.createElement('canvas');c.width=c.height=24;c.className='battle-impact';
  // Sagoma pixel: lampo bianco e punte gialle, senza muovere il bersaglio.
@@ -1738,7 +1752,7 @@ function battleImpact(f){
  ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();ctx.fillStyle='#fffbe6';ctx.fillRect(8,8,8,8);ctx.fillRect(10,5,4,14);ctx.fillRect(5,10,14,4);
  const stageHeight=$('battleStage').clientHeight,hitY=f.y-f.height/stageHeight*100*.55;
  Object.assign(c.style,{left:f.x+'%',top:hitY+'%',width:Math.max(30,f.height*.4)+'px',height:Math.max(30,f.height*.4)+'px'});
- $('battleStage').appendChild(c);setTimeout(()=>c.remove(),220);
+ $('battleStage').appendChild(c);setTimeout(()=>c.remove(),battleActionDuration(220));
 }
 function snapshotBattleViewport(){
  const rect=game.getBoundingClientRect(),c=document.createElement('canvas'),density=Math.min(devicePixelRatio||1,1.5);
@@ -2620,9 +2634,9 @@ async function buildPartyFighters(){const stage=$('battleStage');stage.replaceCh
 const originalCommandBattle=commandFirstBattle;commandFirstBattle=function(){if(!partyBattle)return originalCommandBattle();selectedBattleSkill=null;closeBattleSkills();const f=currentPartyFighter();if(f)f.guard=false;firstBattlePhase='command';battleHint(tr('Choose an action.'));paintFirstBattle();};
 function effectImage(asset,style){const img=document.createElement('img');img.className='party-skill-effect';img.alt='';img.src=URL.createObjectURL(asset.blob);Object.assign(img.style,style);$('battleStage').append(img);let done=false;return{img,remove(){if(done)return;done=true;URL.revokeObjectURL(img.src);img.remove();}};}
 function bodyPoint(f){const stage=$('battleStage');return{x:f.x/100*stage.clientWidth,y:f.y/100*stage.clientHeight-f.height*.55};}
-async function partyTween(duration,epoch,draw){return new Promise(resolve=>{const start=performance.now();function frame(now){if(!battleAlive(epoch)){resolve(false);return;}const u=clamp((now-start)/duration,0,1);draw(u);if(u<1)requestAnimationFrame(frame);else resolve(true);}requestAnimationFrame(frame);});}
-function hitElectric(f){const p=bodyPoint(f),size=f.height*1.4,e=effectImage(partyBattleAssets.fx.shock,{left:(p.x-size/2)+'px',top:(p.y-size/2)+'px',width:size+'px',height:size+'px'});setTimeout(e.remove,500);}
-function hitFire(f){const p=bodyPoint(f),n=document.createElement('div');n.className='party-fire-hit';Object.assign(n.style,{left:p.x+'px',top:p.y+'px',width:Math.max(28,f.height*.55)+'px',height:Math.max(32,f.height*.7)+'px'});$('battleStage').append(n);setTimeout(()=>n.remove(),350);}
+async function partyTween(duration,epoch,draw){duration=battleActionPhase()?battleActionDuration(duration):duration;return new Promise(resolve=>{const start=performance.now();function frame(now){if(!battleAlive(epoch)){resolve(false);return;}const u=clamp((now-start)/duration,0,1);draw(u);if(u<1)requestAnimationFrame(frame);else resolve(true);}requestAnimationFrame(frame);});}
+function hitElectric(f){const p=bodyPoint(f),size=f.height*1.4,e=effectImage(partyBattleAssets.fx.shock,{left:(p.x-size/2)+'px',top:(p.y-size/2)+'px',width:size+'px',height:size+'px'});setTimeout(e.remove,battleActionDuration(500));}
+function hitFire(f){const p=bodyPoint(f),n=document.createElement('div');n.className='party-fire-hit';Object.assign(n.style,{left:p.x+'px',top:p.y+'px',width:Math.max(28,f.height*.55)+'px',height:Math.max(32,f.height*.7)+'px'});$('battleStage').append(n);setTimeout(()=>n.remove(),battleActionDuration(350));}
 async function partyHit(user,target,skill,epoch){if(!battleAlive(epoch))return;if(!normalAttackHits(partyStats(user),skill)){floatBattleMiss(target);paintFirstBattle();return;}const d=skill?techniqueDamage(skill,partyStats(user),partyStats(target),{protection:target.guard?0.5:1}):Math.max(1,Math.floor((partyStats(user).attack-partyStats(target).defense)*(target.guard?0.5:1)));partySetHP(target,target.hp()-d);floatBattleDamage(target,d);if(skill?.element==='lightning')hitElectric(target);else if(skill?.element==='fire')hitFire(target);else battleImpact(target);await drawBattlePose(target,'hurt',true);paintFirstBattle();}
 async function partyFire(user,target,skill,epoch){await drawBattlePose(user,'fire',true);if(!await battlePause(500,epoch))return;const from=bodyPoint(user),to=bodyPoint(target),width=user.height*.34,e=effectImage(partyBattleAssets.fx.tray,{width:width+'px',height:(width*126/180)+'px'});let struck=false;
  try{await partyTween(1000,epoch,u=>{const v=u<.5?u*2:(1-u)*2,x=from.x+(to.x-from.x)*v,y=from.y+(to.y-from.y)*v-Math.sin(u*Math.PI*2)*user.height*.12;Object.assign(e.img.style,{left:(x-width/2)+'px',top:(y-width*126/360)+'px'});if(!struck&&u>=.5){struck=true;void partyHit(user,target,skill,epoch);}});}finally{e.remove();}
@@ -2641,9 +2655,9 @@ async function partyMelee(user,target,skill,epoch){
  await partyHit(user,target,skill,epoch);if(!battleAlive(epoch))return;const hitStarted=performance.now(),reaction=target.kind==='seoyoon'?770:t.hurt;
  // Return the attacker before its looping GIF begins a second swing.
  // The target can finish its independent damage reaction afterwards.
- if(!await battlePause(Math.max(0,duration-30-(performance.now()-attackStarted)),epoch))return;
+ if(!await battlePause(Math.max(0,duration-30-((performance.now()-attackStarted)*BATTLE_ACTION_SPEED)),epoch))return;
  positionBattleFighter(user);await drawBattlePose(user,'idle',true);if(!battleAlive(epoch))return;
- await battlePause(Math.max(0,reaction-(performance.now()-hitStarted)),epoch);
+ await battlePause(Math.max(0,reaction-((performance.now()-hitStarted)*BATTLE_ACTION_SPEED)),epoch);
 }
 async function partyFinishAction(epoch){
  if(!battleAlive(epoch))return;
@@ -2926,8 +2940,8 @@ partyMelee=async function(user,target,skill,epoch){
  const duration=customPose?FIRM_PAN_TIMING.duration:enemy?(profile==='manager'?790:profile==='courier'?780:profile&&profile!=='weak'?720:t.enemyAttack):seon?580:t.attack;
  const impact=customPose?FIRM_PAN_TIMING.impact:enemy?(profile==='manager'?330:profile==='cashier'?280:profile==='courier'?340:profile&&profile!=='weak'?320:t.enemyImpact):seon?200:t.impact;
  if(!await battlePause(impact,epoch))return;await partyHit(user,target,skill,epoch);if(!battleAlive(epoch))return;const hitAt=performance.now();
- if(!await battlePause(Math.max(0,duration-30-(performance.now()-started)),epoch))return;
- positionBattleFighter(user);await drawBattlePose(user,'idle',true);if(!battleAlive(epoch))return;await battlePause(Math.max(0,fighterReactionMs(target)-(performance.now()-hitAt)),epoch);
+ if(!await battlePause(Math.max(0,duration-30-((performance.now()-started)*BATTLE_ACTION_SPEED)),epoch))return;
+ positionBattleFighter(user);await drawBattlePose(user,'idle',true);if(!battleAlive(epoch))return;await battlePause(Math.max(0,fighterReactionMs(target)-((performance.now()-hitAt)*BATTLE_ACTION_SPEED)),epoch);
 };
 function pointOnEnemyAsset(f,asset,x,y){const idle=dungeonCombatAssets.enemies[f.stats.profile].idle,scale=f.height/idle.bounds.h,stage=$('battleStage');return{x:f.x/100*stage.clientWidth+(x-asset.foot)*scale,y:f.y/100*stage.clientHeight+(y-asset.ground)*scale};}
 async function enemyPriceCheck(user,target,epoch){
@@ -4946,7 +4960,7 @@ function playButterEffect(asset,x,top,scale){
 function showButterSplash(target){
  const to=bodyPoint(target),scale=target.height/450;
  const effect=playButterEffect(butterEffects.splash,to.x,to.y-550*scale,scale);
- setTimeout(effect.remove,240);
+ setTimeout(effect.remove,battleActionDuration(240));
 }
 async function throwMichaelButter(user,targets,epoch){
  const from=bodyPoint(user),scale=user.height/373;
@@ -6671,7 +6685,7 @@ buildPartyFighters=async function(){
  const foes=partyBattle.enemyIds.map((id,i)=>{
   const {name,hp,attack,defense,speed,level}=sewerFoe(id);
   const stats={profile:id,name,hp,maxHp:hp,attack,defense,speed,level,accuracy:95,resistance:defense};
-  return makePartyFighter('enemy','sewer-foe-'+(i+1),positions[i],height*FIRST_BATTLE.enemyHeight/100*(id==='sewer_strisciante'?.60:1),stats);
+  return makePartyFighter('enemy','sewer-foe-'+(i+1),positions[i],height*FIRST_BATTLE.enemyHeight/100*(id==='sewer_strisciante'?.80:1),stats);
  });
  const homes=partyBattlePositions(partyBattle.members.length);
  const heroes=partyBattle.members.map((id,i)=>makePartyFighter(id,id,homes[i],height*FIRST_BATTLE.heroHeight/100));
@@ -6758,11 +6772,11 @@ async function playSewerAttack(user,target,skill,epoch){
   await partyHit(user,target,skill,epoch);
   if(!battleAlive(epoch))return;
   const hitAt=performance.now();
-  if(!await battlePause(Math.max(0,duration-20-(hitAt-start)),epoch))return;
+  if(!await battlePause(Math.max(0,duration-20-((hitAt-start)*BATTLE_ACTION_SPEED)),epoch))return;
   positionBattleFighter(user);
   user.node.classList.remove('sewer-materializing');
   await drawBattlePose(user,'idle',true);
-  await battlePause(Math.max(0,fighterReactionMs(target)-(performance.now()-hitAt)),epoch);
+  await battlePause(Math.max(0,fighterReactionMs(target)-((performance.now()-hitAt)*BATTLE_ACTION_SPEED)),epoch);
  }finally{
   effect?.remove();
   if(battleAlive(epoch)){positionBattleFighter(user);user.node.classList.remove('sewer-materializing');}
@@ -6852,13 +6866,13 @@ beginIntro=function(){
 const MANGWON_ROOT=SEWER_ROOT+'Map/';
 const MANGWON_AGENT_ROOT=SEWER_ROOT+'Hanekang/';
 const MANGWON_AREAS={
- 'mangwon-street':{title:'Mangwon-dong',file:'1000055512.png',ref:[567,850],width:1218,height:1827,
+ 'mangwon-street':{title:'Mangwon-dong',file:'1000055512.png',ref:[567,850],width:1096,height:1644,
   floor:[[34,645,129,730],[0,260,567,294],[130,270,171,734],[0,424,134,454],[165,464,477,497],[458,261,508,738],[0,700,567,758],[358,50,401,272],[412,250,542,278],[445,239,480,267]],
   obstacles:[[39,425,108,459],[472,404,513,452],[78,680,125,702],[466,685,516,712]]},
- 'mangwon-restaurant':{title:'Abandoned restaurant',file:'file_0000000081688211a8f40bcd3d14da7f.png',ref:[567,850],width:537,height:806,
+ 'mangwon-restaurant':{title:'Abandoned restaurant',file:'file_0000000081688211a8f40bcd3d14da7f.png',ref:[567,850],width:483,height:725,
   floor:[[42,174,531,700],[173,692,296,726],[482,160,529,332]],
   obstacles:[[86,222,128,572],[117,221,301,287],[166,330,276,415],[229,459,345,557],[85,596,200,681],[414,330,526,414],[414,423,526,524],[382,566,514,675]]},
- 'mangwon-basement':{title:'Restaurant basement',file:'file_000000008ad48209a626095849ff2631.png',ref:[850,567],width:806,height:537,
+ 'mangwon-basement':{title:'Restaurant basement',file:'file_000000008ad48209a626095849ff2631.png',ref:[850,567],width:725,height:483,
   floor:[[53,185,794,510],[698,382,774,535]],
   obstacles:[[54,184,113,297],[53,311,118,411],[54,419,151,493],[738,178,798,309],[683,278,795,361]]}
 };
@@ -6880,11 +6894,12 @@ function mangwonWorld(id){
  return {collisions:[...blocked,...a.obstacles].map(box=>mangwonRect(id,box)),depth:[]};
 }
 const MANGWON_PREVIOUS_SIZE={'mangwon-street':[1740,2610],'mangwon-restaurant':[768,1152],'mangwon-basement':[1152,768]};
+const MANGWON_V2_SIZE={'mangwon-street':[1218,1827],'mangwon-restaurant':[537,806],'mangwon-basement':[806,537]};
 for(const [id,a] of Object.entries(MANGWON_AREAS))registerEditableMap({
- id,map:MANGWON_ROOT+a.file,width:a.width,height:a.height,version:'mangwon-v2',world:mangwonWorld(id),
+ id,map:MANGWON_ROOT+a.file,width:a.width,height:a.height,version:'mangwon-v3',world:mangwonWorld(id),
  migrateWorld:saved=>{
-  if(saved.version!=='mangwon-v1')return null;
-  const [w,h]=MANGWON_PREVIOUS_SIZE[id],sx=a.width/w,sy=a.height/h;
+  if(!['mangwon-v1','mangwon-v2'].includes(saved.version))return null;
+  const [w,h]=(saved.version==='mangwon-v2'?MANGWON_V2_SIZE:MANGWON_PREVIOUS_SIZE)[id],sx=a.width/w,sy=a.height/h;
   const scalePolygon=poly=>poly.map(([x,y])=>[x*sx,y*sy]);
   return {collisions:saved.world.collisions.map(scalePolygon),depth:saved.world.depth.map(z=>({...z,baseY:z.baseY*sy,polygon:scalePolygon(z.polygon)}))};
  }
@@ -7168,7 +7183,7 @@ buildPartyFighters=async function(){
  if(partyBattle?.kind!=='agents')return buildBeforeMangwonBattle();
  const stage=$('battleStage'),h=stage.clientHeight;
  stage.replaceChildren();
- const foes=partyBattle.enemyIds.map((id,i)=>makePartyFighter('enemy','agent-'+id,[{x:25,y:70},{x:31,y:94}][i],h*FIRST_BATTLE.heroHeight/100,{profile:id,name:'?',hp:50000,maxHp:50000,attack:0,defense:0,speed:7,accuracy:100,resistance:100}));
+ const foes=partyBattle.enemyIds.map((id,i)=>makePartyFighter('enemy','agent-'+id,[{x:25,y:70},{x:31,y:94}][i],h*FIRST_BATTLE.enemyHeight/100,{profile:id,name:'?',hp:50000,maxHp:50000,attack:0,defense:0,speed:7,accuracy:100,resistance:100}));
  const heroes=partyBattle.members.map((id,i)=>makePartyFighter(id,id,partyBattlePositions(partyBattle.members.length)[i],h*FIRST_BATTLE.heroHeight/100));
  firstBattleFighters=[...foes,...heroes];firstBattleEnemy=foes[0].stats;
  await Promise.all(firstBattleFighters.map(f=>drawBattlePose(f,'idle',true)));
