@@ -7752,7 +7752,7 @@ showLocation=function(id){
  if(!point)return;
  const sprite=document.createElement('img');
  sprite.src=MART_SAVE_SPRITE;sprite.alt='Save point';sprite.className='mart-save-point';
- Object.assign(sprite.style,{position:'absolute',width:'38px',height:'38px',left:'-19px',top:'-35px',pointerEvents:'auto'});
+ Object.assign(sprite.style,{position:'absolute',width:'76px',height:'76px',left:'-38px',top:'-73px',pointerEvents:'auto'});
  const marker=document.createElement('div');marker.className='actor';marker.append(sprite);scene.append(marker);seoulSaveMarker=marker;
  place({node:marker},point.x,point.y);
  sprite.onpointerdown=e=>{if(nearSeoulSavePoint())e.stopPropagation();};
@@ -7802,18 +7802,20 @@ const SEOUL_DESTINATIONS=[
 ];
 const seoulMapDialog=document.createElement('dialog');
 seoulMapDialog.setAttribute('aria-label','Seoul Map');
-seoulMapDialog.style.cssText='background:#0b2232;color:#f9e6af;border:2px solid #a7874e;border-radius:8px;padding:8px;max-width:96vw;width:min(900px, calc((100dvh - 70px) * 1.5));box-sizing:border-box;font-family:inherit;font-weight:inherit';
+seoulMapDialog.style.cssText='position:fixed;inset:0;margin:0;width:100%;height:100%;max-width:none;max-height:none;box-sizing:border-box;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:#162b35;color:#f9e6af;border:0;font-family:inherit;font-weight:inherit';
 const seoulMapArt=document.createElement('div');
-seoulMapArt.style.cssText='position:relative;aspect-ratio:3/2';
+seoulMapArt.style.cssText='position:relative;grid-area:map;aspect-ratio:3/2;width:min(100cqw, calc((100cqh - 56px) * 1.5));place-self:center';
 const seoulMapImage=document.createElement('img');
 seoulMapImage.alt='Seoul Map';seoulMapImage.style.cssText='display:block;width:100%;height:100%';
 seoulMapArt.append(seoulMapImage);
 const seoulMapBack=document.createElement('button');
-seoulMapBack.style.cssText='margin-top:6px;background:#f5e8cf;color:#242725;border:1px solid #977747;font:inherit;padding:5px 16px';
+seoulMapBack.style.cssText='grid-area:back;justify-self:start;align-self:center;margin-inline-start:12px;background:#f5e8cf;color:#242725;border:1px solid #977747;font:inherit;padding:5px 16px;min-height:44px';
 seoulMapBack.type='button';seoulMapBack.onclick=()=>seoulMapDialog.close();
-seoulMapDialog.append(seoulMapArt,seoulMapBack);$('rpgMenu').append(seoulMapDialog);
+const seoulMapLayout=document.createElement('div');
+seoulMapLayout.style.cssText='height:100%;container-type:size;display:grid;grid-template-areas:"map" "back";grid-template-rows:minmax(0,1fr) 56px';
+seoulMapLayout.append(seoulMapArt,seoulMapBack);seoulMapDialog.append(seoulMapLayout);$('rpgMenu').append(seoulMapDialog);
 const seoulMapStyles=document.createElement('style');
-seoulMapStyles.textContent='#rpgMenu dialog::backdrop{background:#08131cdb}.seoul-map-stop{position:absolute;transform:translate(-50%,-50%);height:7%;min-height:24px;border:1px solid transparent;background:transparent;color:#ffe1a0;border-radius:5px;padding:0}.seoul-map-stop:disabled{background:#0b182790;color:#ffe1a0;opacity:1}.seoul-map-stop:hover:not(:disabled),.seoul-map-stop:focus-visible{border-color:#ffe1a0;box-shadow:0 0 8px #ffe1a0}.seoul-lock{display:block;position:absolute;right:1px;top:-5px;width:9px;height:7px;border-radius:1px;background:#eaca83;box-shadow:0 1px 2px #161310}.seoul-lock::before{content:"";position:absolute;border:2px solid #eaca83;border-bottom:0;left:1px;bottom:6px;width:3px;height:4px;border-radius:4px 4px 0 0}';
+seoulMapStyles.textContent='#rpgMenu dialog::backdrop{background:#162b35}.seoul-map-stop{position:absolute;transform:translate(-50%,-50%);height:7%;min-height:24px;border:1px solid transparent;background:transparent;color:#ffe1a0;border-radius:5px;padding:0}.seoul-map-stop:disabled{background:#0b182790;color:#ffe1a0;opacity:1}.seoul-map-stop:hover:not(:disabled),.seoul-map-stop:focus-visible{border-color:#ffe1a0;box-shadow:0 0 8px #ffe1a0}.seoul-lock{display:block;position:absolute;right:1px;top:-5px;width:9px;height:7px;border-radius:1px;background:#eaca83;box-shadow:0 1px 2px #161310}.seoul-lock::before{content:"";position:absolute;border:2px solid #eaca83;border-bottom:0;left:1px;bottom:6px;width:3px;height:4px;border-radius:4px 4px 0 0}';
 document.head.append(seoulMapStyles);
 function canUseSeoulMap(){
  return !autoMenu&&!editor.open&&!intro&&!dialogue&&!transitioning&&!destinationOpen&&!cucchiaioEveningBusy&&!warehouseBusy&&!sewerBusy&&!blockBusy&&!mangwonAnimating&&!firstBattleActive&&!partyBattle&&nearSeoulSavePoint();
