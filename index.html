@@ -7370,9 +7370,10 @@ async function returnToDefeatedBasement(epoch){
    updateMember(id,{hp:Math.ceil(member.maxHp*.6),ep:Math.max(member.ep,Math.ceil(member.maxEp*.5))});
   }
   drawPlayer();updateCamera();
+  player.direction='down';drawPlayer();
   await runGroupScene(MANGWON_WAKE_LINES,{},'placed',async()=>{
    fade.classList.remove('black');await wait(470);
-  });
+  },[[-36,27,'right'],[36,27,'left'],[0,55,'up']]);
  }finally{
   fade.classList.remove('black');fade.style.transition=style.transition;fade.style.zIndex=style.zIndex;
   mangwonAnimating=false;resetInput();updateInteractionUI();
@@ -7586,7 +7587,7 @@ function paintGroupLine(state){
  Object.assign(dialogue,{newGroup:true,type:owner?'npc':'story',target:owner?{type:'npc',owner}:null,newSpeaker:groupNames[id]||BLOCK_CIVILIANS[id]?.[0]||id});
  setSpeechText(words);pop($('speech'));updateInteractionUI();
 }
-async function runGroupScene(lines,extras={},unfold=true,beforeDialogue=null){
+async function runGroupScene(lines,extras={},unfold=true,beforeDialogue=null,formation=null){
  if(groupScene||blockBusy)return false;
  const area=locationId,epoch=sceneEpoch;
  blockBusy=true;resetInput();
@@ -7597,7 +7598,7 @@ async function runGroupScene(lines,extras={},unfold=true,beforeDialogue=null){
   const origin={x:player.x,y:player.y};
   state=groupScene={origin,actors:{},lines,extras,index:0,resolve:()=>{},epoch,area};
   for(const [i,pack] of fields.entries()){
-   const [dx,dy]=[[-32,12],[29,17],[0,35]][i],d=player.direction;
+   const [dx,dy,d=player.direction]=(formation||[[-32,12],[29,17],[0,35]])[i];
    const destination={x:origin.x+dx/zoom,y:origin.y+dy/zoom};
    const n=mangwonActor(pack.idleAssets[d]||pack.idleAssets.down,unfold==='placed'?destination:origin);
    Object.assign(n,{pack,destination,facing:d});state.actors[groupIds[i]]=n;
@@ -7923,8 +7924,8 @@ const MANGWON_AGENTS_AFTER=[
  ['han','Doesn’t matter. We’re done here.'],['kang','With those wounds, it won’t get far.'],['han','Let’s go.']
 ];
 const MANGWON_WAKE_LINES=[
- ['riccardo','Ugh… Guys… Can you hear me?'],['seoyoon','Ah… I can’t… Everything hurts…'],
- ['riccardo','Can you get up?'],['seoyoon','Wait… My head is spinning…'],
+ ['riccardo','Ugh… Guys… Can you hear me?'],['seoyoon','Everything hurts…'],
+ ['seoyoon','Wait… My head is spinning…'],
  ['seon_jong','Where are they? Where did those two go?!'],['michael','They’re gone… I think…'],
  ['seon_jong','Oh God… I thought they were going to kill us…'],['seoyoon','We couldn’t even defend ourselves…'],
  ['michael','We didn’t stand a chance…'],['riccardo','What the hell were we thinking coming here?'],
@@ -7984,27 +7985,34 @@ async function meetMangwonBoss(){
  try{
   const [walk,idle]=await Promise.all(['camminata-nord-v5','fermo-nord-v3'].map(key=>loadAsset(MANGWON_BOSS_ASSETS[key].src)));
   if(!walk||!idle||sceneEpoch!==epoch||locationId!=='mangwon-restaurant')return;
-  const start=mangwonPoint(locationId,[235,720]);
+  const start=mangwonPoint(locationId,[235,708]);
   const from={x:player.x,y:player.y};
   let retreatY=from.y;
-  for(let step=2;step<=26;step+=2){
-   const y=from.y-step/zoom;
+  for(let y=from.y-1;y>=0;y--){
    if(!staticFree(from.x,y,player.radius))break;
    retreatY=y;
   }
   boss=mangwonActor(idle,start,true);
-  player.direction='down';player.moving=false;drawPlayer();
-  await wait(240);
+  boss.actor.fixedScreenHeight=MART_MANAGER.height*MART_DUNGEON_VIEW.zoom*2;
+  setAsset(boss.actor,idle);
+  player.direction=facing(start.x-from.x,start.y-from.y);player.moving=false;drawPlayer();
+  await wait(350);
   if(epoch!==sceneEpoch)return;
-  const end={x:from.x,y:retreatY+28/zoom};
-  const advanceBoss=t=>mangwonMoveActor(boss,walk,start.x+(end.x-start.x)*t,start.y+(end.y-start.y)*t,t);
-  player.moving=true;
-  if(!await mangwonTween(650,t=>{
-   player.y=from.y+(retreatY-from.y)*t;drawPlayer();updateCamera();
-   advanceBoss(t*.42);
+  const retreatDistance=(from.y-retreatY)*zoom;
+  player.moving=retreatDistance>0;
+  if(!await mangwonTween(Math.max(2650,retreatDistance/55*1000),t=>{
+   player.y=from.y+(retreatY-from.y)*t;
+   player.direction=facing(start.x-player.x,start.y-player.y);
+   drawPlayer();updateCamera();
   }))return;
   player.moving=false;drawPlayer();
-  if(!await mangwonTween(900,t=>advanceBoss(.42+t*.58)))return;
+  const distance=Math.hypot(player.x-start.x,player.y-start.y);
+  const approach=Math.max(0,distance-34/zoom);
+  const end={x:start.x+(player.x-start.x)*approach/(distance||1),y:start.y+(player.y-start.y)*approach/(distance||1)};
+  if(!await mangwonTween(Math.max(1200,approach*zoom/42*1000),t=>{
+   mangwonMoveActor(boss,walk,start.x+(end.x-start.x)*t,start.y+(end.y-start.y)*t,t);
+   player.direction=facing(boss.x-player.x,boss.y-player.y);drawPlayer();
+  }))return;
   mangwonMoveActor(boss,idle,end.x,end.y,1);
   if(epoch===sceneEpoch&&locationId==='mangwon-restaurant')
    await startRescueBattle({kind:'mangwon-boss',enemyIds:[MANGWON_BOSS],rewardExp:400});
