@@ -7145,6 +7145,10 @@ async function mangwonTransition(id,point,direction){
  const success=await changeSewerArea(id,{...mangwonPoint(id,point),direction});
  if(success&&id==='mangwon-basement'&&!nightState.mangwonDefeat)void startMangwonScene();
 }
+function leaveMangwonBasement(){
+ if(locationId!=='mangwon-basement'||!nightState.mangwonDefeat||locked()||dialogue)return;
+ void mangwonTransition('mangwon-restaurant',[503,204],'down');
+}
 const uiBeforeMangwon=updateInteractionUI;
 updateInteractionUI=function(){
  uiBeforeMangwon();
@@ -7154,11 +7158,6 @@ updateInteractionUI=function(){
  if(locationId==='mangwon-street'){
   const at=mangwonPoint(locationId,MANGWON_DOOR);
   if(Math.hypot(player.x-at.x,player.y-at.y)*zoom<85)warehouseMarker('mangwon-door',{x:at.x,y:at.y-35},()=>void mangwonTransition('mangwon-restaurant',MANGWON_RESTAURANT_ENTRY,'up'),'Enter the restaurant'),visibleWarehouseMarkers.add('mangwon-door');
- }
- if(locationId==='mangwon-basement'&&nightState.mangwonDefeat){
-  const at=mangwonPoint(locationId,MANGWON_BASEMENT_ENTRY);
-  if(Math.hypot(player.x-at.x,player.y-at.y)*zoom<65)
-   warehouseMarker('mangwon-upstairs',{x:at.x,y:at.y-35},()=>void mangwonTransition('mangwon-restaurant',[503,204],'down'),'Go upstairs'),visibleWarehouseMarkers.add('mangwon-upstairs');
  }
  if(locationId==='mangwon-restaurant'&&!mangwonBossPending()){
   const at=mangwonPoint(locationId,[235,699]);
@@ -7175,11 +7174,19 @@ updateTravel=function(dt){
  if(distance<=0||distance>25)return;
  if(locationId==='mangwon-restaurant'){
   const a=MANGWON_AREAS[locationId],p={x:player.x*a.ref[0]/a.width,y:player.y*a.ref[1]/a.height};
-  if(mangwonBossPending()&&p.y>633&&p.x>169&&p.x<303){void meetMangwonBoss();return;}
+  if(mangwonBossPending()&&Math.hypot((p.x-235)*a.width/a.ref[0],(p.y-699)*a.height/a.ref[1])*zoom<54){void meetMangwonBoss();return;}
   if(p.x>485&&p.x<526&&p.y<178&&player.y<old.y){void mangwonTransition('mangwon-basement',MANGWON_BASEMENT_ENTRY,'up');}
   return;
  }
- if(locationId==='mangwon-basement'){if(!mangwonScene&&!nightState.mangwonDefeat)void startMangwonScene();return;}
+ if(locationId==='mangwon-basement'){
+  if(!mangwonScene&&!nightState.mangwonDefeat)void startMangwonScene();
+  if(nightState.mangwonDefeat){
+   const stairs=mangwonPoint(locationId,MANGWON_BASEMENT_ENTRY);
+   const distanceToStairs=Math.hypot(player.x-stairs.x,player.y-stairs.y);
+   if(distanceToStairs*zoom<40&&distanceToStairs<Math.hypot(old.x-stairs.x,old.y-stairs.y))leaveMangwonBasement();
+  }
+  return;
+ }
  if(locationId!=='mangwon-street')return;
  if(sewerGrace>0){sewerGrace=Math.max(0,sewerGrace-distance);return;}
  sewerDistance+=distance;
@@ -7360,8 +7367,9 @@ async function returnToDefeatedBasement(epoch){
    updateMember(id,{hp:Math.ceil(member.maxHp*.6),ep:Math.max(member.ep,Math.ceil(member.maxEp*.5))});
   }
   drawPlayer();updateCamera();
-  fade.classList.remove('black');await wait(470);
-  if(locationId==='mangwon-basement')await runGroupScene(MANGWON_WAKE_LINES,{},'placed');
+  await runGroupScene(MANGWON_WAKE_LINES,{},'placed',async()=>{
+   fade.classList.remove('black');await wait(470);
+  });
  }finally{
   fade.classList.remove('black');fade.style.transition=style.transition;fade.style.zIndex=style.zIndex;
   mangwonAnimating=false;resetInput();updateInteractionUI();
@@ -7578,7 +7586,7 @@ function paintGroupLine(state){
  Object.assign(dialogue,{newGroup:true,type:owner?'npc':'story',target:owner?{type:'npc',owner}:null,newSpeaker:groupNames[id]||BLOCK_CIVILIANS[id]?.[0]||id});
  setSpeechText(words);pop($('speech'));updateInteractionUI();
 }
-async function runGroupScene(lines,extras={},unfold=true){
+async function runGroupScene(lines,extras={},unfold=true,beforeDialogue=null){
  if(groupScene||blockBusy)return false;
  const area=locationId,epoch=sceneEpoch;
  blockBusy=true;resetInput();
@@ -7595,6 +7603,7 @@ async function runGroupScene(lines,extras={},unfold=true){
    Object.assign(n,{pack,destination,facing:d});state.actors[groupIds[i]]=n;
   }
   if(unfold===true)await moveGroup(state,true);
+  if(beforeDialogue)await beforeDialogue();
   if(groupScene!==state||epoch!==sceneEpoch)return false;
   blockBusy=false;
   const completed=await new Promise(resolve=>{state.resolve=resolve;paintGroupLine(state);});
