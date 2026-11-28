@@ -1087,8 +1087,8 @@ const partyMembers={riccardo:{name:{ko:'Guy 1',en:'Guy 1'},level:1,hp:250,maxHp:
 partyMembers.seoyoon={name:{ko:'Girl 1',en:'Girl 1'},level:1,hp:160,maxHp:160,ep:18,maxEp:18,hpLimit:9999,epLimit:5800,joined:false,card:'Seoyoon/file_00000000db8c8209b2a8fc318cab46ef.png'};
 const SEON_MAP_SPRITES={
  down:'SeonJong/file_000000002630821183f796752874c507.png',
- left:'SeonJong/file_000000006bb48209b2573a08a1c90738.png',
- right:'SeonJong/file_00000000845c8209a444529f593e5fef.png',
+ left:'SeonJong/seon-jong-ferma-sx.png',
+ right:'SeonJong/seon-jong-ferma-dx.png',
  up:'SeonJong/file_00000000e1748209ad1a02cb5aeff250.png'
 };
 partyMembers.seon_jong={name:{ko:'Girl 2',en:'Girl 2'},level:1,hp:180,maxHp:180,ep:20,maxEp:20,joined:false,card:'SeonJong/file_0000000090588209a75519f8058fa6f1.png'};
@@ -7302,7 +7302,7 @@ buildPartyFighters=async function(){
  const stage=$('battleStage'),h=stage.clientHeight;
  stage.replaceChildren();
  const foes=partyBattle.kind==='mangwon-boss'
- ?[makePartyFighter('enemy',MANGWON_BOSS,{x:27,y:80},h*FIRST_BATTLE.enemyHeight/100,{profile:MANGWON_BOSS,name:'Wounded Cook',level:12,hp:800,maxHp:800,attack:36,defense:16,speed:7,accuracy:100,resistance:0})]
+ ?[makePartyFighter('enemy',MANGWON_BOSS,{x:27,y:80},h*FIRST_BATTLE.enemyHeight/100*1.2,{profile:MANGWON_BOSS,name:'Wounded Cook',level:12,hp:800,maxHp:800,attack:36,defense:16,speed:7,accuracy:100,resistance:0})]
  :partyBattle.enemyIds.map((id,i)=>makePartyFighter('enemy','agent-'+id,[{x:25,y:70},{x:31,y:94}][i],h*FIRST_BATTLE.enemyHeight/100,{profile:id,name:'?',hp:50000,maxHp:50000,attack:0,defense:0,speed:7,accuracy:100,resistance:100}));
  const heroes=partyBattle.members.map((id,i)=>makePartyFighter(id,id,partyBattlePositions(partyBattle.members.length)[i],h*FIRST_BATTLE.heroHeight/100));
  firstBattleFighters=[...foes,...heroes];firstBattleEnemy=foes[0].stats;
@@ -7993,7 +7993,7 @@ async function meetMangwonBoss(){
    retreatY=y;
   }
   boss=mangwonActor(idle,start,true);
-  boss.actor.fixedScreenHeight=MART_MANAGER.height*MART_DUNGEON_VIEW.zoom*2;
+  boss.actor.fixedScreenHeight=MART_MANAGER.height*MART_DUNGEON_VIEW.zoom*2*.8;
   setAsset(boss.actor,idle);
   player.direction=facing(start.x-from.x,start.y-from.y);player.moving=false;drawPlayer();
   await wait(350);
